@@ -1,0 +1,1252 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Flatfolks – Student Housing & Roommate Finder</title>
+  <meta name="description" content="Find verified student housing, compatible roommates, and move-in support — all in one platform built for university students." />
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: { inter: ['Inter', 'sans-serif'] },
+          colors: {
+            primary: { 50:'#eff6ff', 100:'#dbeafe', 200:'#bfdbfe', 300:'#93c5fd', 400:'#60a5fa', 500:'#3b82f6', 600:'#2563eb', 700:'#1d4ed8', 800:'#1e40af', 900:'#1e3a8a', 950:'#172554' },
+            navy: '#0f2044',
+          },
+          animation: {
+            'fade-up': 'fadeUp 0.6s ease forwards',
+            'pulse-slow': 'pulse 3s ease-in-out infinite',
+            'float': 'float 3s ease-in-out infinite',
+          },
+          keyframes: {
+            fadeUp: { '0%':{ opacity:'0', transform:'translateY(24px)' }, '100%':{ opacity:'1', transform:'translateY(0)' } },
+            float: { '0%,100%':{ transform:'translateY(0)' }, '50%':{ transform:'translateY(-8px)' } },
+          },
+          boxShadow: {
+            'card': '0 4px 24px -4px rgba(30,64,175,0.10)',
+            'card-hover': '0 16px 48px -8px rgba(30,64,175,0.22)',
+            'hero': '0 8px 40px rgba(30,64,175,0.18)',
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    * { font-family: 'Inter', sans-serif; }
+    html { scroll-behavior: smooth; }
+
+    /* Scrollbar */
+    ::-webkit-scrollbar { width: 6px; }
+    ::-webkit-scrollbar-track { background: #f1f5f9; }
+    ::-webkit-scrollbar-thumb { background: #93c5fd; border-radius: 99px; }
+
+    /* Navbar blur */
+    .navbar-blur { backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); }
+
+    /* Hero gradient overlay */
+    .hero-overlay {
+      background: linear-gradient(135deg, rgba(15,32,68,0.82) 0%, rgba(30,64,175,0.62) 55%, rgba(59,130,246,0.25) 100%);
+    }
+
+    /* Hero search card */
+    .search-pill {
+      transition: all 0.22s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+    .search-pill:hover { background: #eff6ff; }
+
+    /* Property card hover */
+    .property-card {
+      transition: transform 0.28s cubic-bezier(0.4,0,0.2,1), box-shadow 0.28s cubic-bezier(0.4,0,0.2,1);
+    }
+    .property-card:hover {
+      transform: translateY(-6px);
+      box-shadow: 0 20px 56px -8px rgba(30,64,175,0.22);
+    }
+    .property-card img { transition: transform 0.45s ease; }
+    .property-card:hover img { transform: scale(1.07); }
+
+    /* Badge pulse */
+    .badge-verified { animation: pulse 2.4s ease-in-out infinite; }
+
+    /* Step connector line */
+    .step-line::after {
+      content: '';
+      position: absolute;
+      top: 28px;
+      left: calc(50% + 44px);
+      width: calc(100% - 88px);
+      height: 2px;
+      background: linear-gradient(90deg, #bfdbfe, #3b82f6);
+    }
+
+    /* Gradient text */
+    .gradient-text {
+      background: linear-gradient(135deg, #1d4ed8 0%, #3b82f6 50%, #06b6d4 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    /* Tab active */
+    .tab-btn.active {
+      background: #1e40af;
+      color: white;
+      box-shadow: 0 4px 16px rgba(30,64,175,0.3);
+    }
+
+    /* Category chip hover */
+    .cat-chip { transition: all 0.22s ease; }
+    .cat-chip:hover, .cat-chip.active-cat {
+      background: #1e40af;
+      color: white;
+      box-shadow: 0 4px 14px rgba(30,64,175,0.28);
+      transform: translateY(-2px);
+    }
+
+    /* Roommate card */
+    .roommate-card { transition: all 0.25s ease; }
+    .roommate-card:hover { transform: translateY(-4px); box-shadow: 0 16px 40px rgba(30,64,175,0.16); }
+
+    /* Match bar fill */
+    .match-fill { transition: width 1.2s cubic-bezier(0.4, 0, 0.2, 1); }
+
+    /* Feature card hover */
+    .feat-card { transition: all 0.25s ease; }
+    .feat-card:hover { transform: translateY(-4px); box-shadow: 0 12px 36px rgba(30,64,175,0.14); }
+    .feat-card:hover .feat-icon { background: #1e40af; color: white; }
+    .feat-icon { transition: all 0.25s ease; }
+
+    /* Testimonial card */
+    .testi-card { transition: all 0.25s ease; }
+    .testi-card:hover { box-shadow: 0 12px 40px rgba(30,64,175,0.16); transform: translateY(-4px); }
+
+    /* Floating badge */
+    .floating-badge { animation: float 3s ease-in-out infinite; }
+    .floating-badge-2 { animation: float 3.5s ease-in-out infinite; animation-delay: 0.5s; }
+
+    /* Stat counter */
+    .stat-card { border-left: 4px solid #3b82f6; }
+
+    /* Neighborhood card */
+    .nbr-card { transition: all 0.28s ease; overflow: hidden; }
+    .nbr-card:hover .nbr-overlay { opacity: 1; }
+    .nbr-overlay { transition: opacity 0.28s ease; opacity: 0; }
+    .nbr-card:hover .nbr-img { transform: scale(1.08); }
+    .nbr-img { transition: transform 0.45s ease; }
+
+    /* Checkbox animate */
+    input[type="checkbox"]:checked { background: #1e40af; }
+
+    /* Scroll reveal */
+    .reveal { opacity: 0; transform: translateY(32px); transition: all 0.7s cubic-bezier(0.4,0,0.2,1); }
+    .reveal.visible { opacity: 1; transform: translateY(0); }
+  </style>
+</head>
+<body class="bg-white text-slate-800 antialiased overflow-x-hidden">
+
+<!-- ════════════════════════════════════════
+     NAVBAR
+════════════════════════════════════════ -->
+<nav id="navbar" class="fixed top-0 left-0 right-0 z-50 transition-all duration-300 navbar-blur bg-white/95 border-b border-blue-50 shadow-sm">
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+    <div class="flex items-center justify-between h-16">
+
+      <!-- Logo -->
+      <a href="#" class="flex items-center gap-2.5 group">
+        <div class="w-9 h-9 bg-primary-700 rounded-xl flex items-center justify-center shadow-md group-hover:bg-primary-800 transition-colors">
+          <i class="fa-solid fa-house-chimney text-white text-lg"></i>
+        </div>
+        <span class="text-xl font-800 font-black text-primary-900 tracking-tight">Flat<span class="text-primary-600">folks</span></span>
+      </a>
+
+      <!-- Nav Links (Desktop) -->
+      <div class="hidden md:flex items-center gap-1">
+        <a href="#listings" class="px-4 py-2 text-sm font-medium text-slate-600 hover:text-primary-700 hover:bg-primary-50 rounded-lg transition-all">Browse Listings</a>
+        <a href="#roommates" class="px-4 py-2 text-sm font-medium text-slate-600 hover:text-primary-700 hover:bg-primary-50 rounded-lg transition-all">Find Roommates</a>
+        <a href="#how-it-works" class="px-4 py-2 text-sm font-medium text-slate-600 hover:text-primary-700 hover:bg-primary-50 rounded-lg transition-all">How It Works</a>
+        <a href="#landlords" class="px-4 py-2 text-sm font-medium text-slate-600 hover:text-primary-700 hover:bg-primary-50 rounded-lg transition-all">For Landlords</a>
+      </div>
+
+      <!-- Auth Buttons -->
+      <div class="flex items-center gap-2.5">
+        <a href="#" class="hidden sm:block px-4 py-2 text-sm font-semibold text-primary-700 hover:bg-primary-50 rounded-lg transition-all">Sign In</a>
+        <a href="#" class="px-4 py-2 text-sm font-semibold text-white bg-primary-700 hover:bg-primary-800 rounded-xl transition-all shadow-md hover:shadow-lg">
+          <span class="hidden sm:inline">Get Started</span>
+          <span class="sm:hidden"><i class="fa-solid fa-arrow-right"></i></span>
+        </a>
+        <!-- Mobile menu -->
+        <button id="mobileMenuBtn" class="md:hidden p-2 text-slate-600 hover:bg-primary-50 rounded-lg transition-all">
+          <i class="fa-solid fa-bars text-lg"></i>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Mobile Menu -->
+  <div id="mobileMenu" class="hidden md:hidden border-t border-blue-50 bg-white px-4 py-3 space-y-1">
+    <a href="#listings" class="block px-4 py-2.5 text-sm font-medium text-slate-700 hover:bg-primary-50 hover:text-primary-700 rounded-lg">Browse Listings</a>
+    <a href="#roommates" class="block px-4 py-2.5 text-sm font-medium text-slate-700 hover:bg-primary-50 hover:text-primary-700 rounded-lg">Find Roommates</a>
+    <a href="#how-it-works" class="block px-4 py-2.5 text-sm font-medium text-slate-700 hover:bg-primary-50 hover:text-primary-700 rounded-lg">How It Works</a>
+    <a href="#landlords" class="block px-4 py-2.5 text-sm font-medium text-slate-700 hover:bg-primary-50 hover:text-primary-700 rounded-lg">For Landlords</a>
+  </div>
+</nav>
+
+<!-- ════════════════════════════════════════
+     HERO SECTION
+════════════════════════════════════════ -->
+<section class="relative min-h-screen flex items-center justify-center overflow-hidden">
+
+  <!-- Background -->
+  <div class="absolute inset-0">
+    <img
+      src="https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?w=1800&q=80"
+      alt="Student apartment"
+      class="w-full h-full object-cover object-center"
+      onerror="this.parentElement.style.background='linear-gradient(135deg,#0f2044 0%,#1e40af 60%,#3b82f6 100%)'; this.style.display='none'"
+    />
+    <div class="absolute inset-0 hero-overlay"></div>
+  </div>
+
+  <!-- Floating decoration -->
+  <div class="absolute top-32 right-16 hidden lg:block floating-badge z-10">
+    <div class="bg-white/95 backdrop-blur-sm rounded-2xl px-4 py-3 shadow-hero flex items-center gap-3">
+      <div class="w-10 h-10 bg-green-100 rounded-full flex items-center justify-center">
+        <i class="fa-solid fa-shield-check text-green-600"></i>
+      </div>
+      <div>
+        <p class="text-xs text-slate-500 font-medium">Verified Listing</p>
+        <p class="text-sm font-bold text-slate-800">2-BHK · Dhanmondi</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="absolute bottom-40 right-8 hidden lg:block floating-badge-2 z-10">
+    <div class="bg-white/95 backdrop-blur-sm rounded-2xl px-4 py-3 shadow-hero flex items-center gap-3">
+      <div class="w-10 h-10 bg-primary-100 rounded-full flex items-center justify-center">
+        <i class="fa-solid fa-users text-primary-600"></i>
+      </div>
+      <div>
+        <p class="text-xs text-slate-500 font-medium">Roommate Match</p>
+        <p class="text-sm font-bold text-slate-800">94% Compatible 🎯</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Hero Content -->
+  <div class="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-24 pb-16 text-center">
+    <div class="inline-flex items-center gap-2 px-4 py-1.5 bg-primary-500/20 border border-primary-400/40 rounded-full text-blue-200 text-sm font-medium mb-6 backdrop-blur-sm">
+      <span class="w-1.5 h-1.5 bg-blue-300 rounded-full inline-block animate-pulse-slow"></span>
+      Bangladesh's #1 Student Housing Platform
+    </div>
+
+    <h1 class="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-black text-white leading-[1.08] tracking-tight mb-6">
+      Find Your Perfect<br />
+      <span class="text-blue-300">Student Home.</span>
+    </h1>
+
+    <p class="text-lg sm:text-xl text-blue-100/90 max-w-2xl mx-auto mb-10 font-light leading-relaxed">
+      Verified listings, smart roommate matching, and move-in support — all in one place built for university students.
+    </p>
+
+    <!-- Search Widget -->
+    <div class="max-w-4xl mx-auto">
+
+      <!-- Tabs -->
+      <div class="flex items-center justify-center gap-2 mb-4">
+        <button id="tab-rent" class="tab-btn active px-5 py-2.5 text-sm font-semibold rounded-xl transition-all bg-white/15 text-white border border-white/30 backdrop-blur-sm" onclick="switchTab('rent')">
+          <i class="fa-solid fa-building mr-2"></i>Rent a Place
+        </button>
+        <button id="tab-roommate" class="tab-btn px-5 py-2.5 text-sm font-semibold rounded-xl transition-all bg-white/15 text-white border border-white/30 backdrop-blur-sm" onclick="switchTab('roommate')">
+          <i class="fa-solid fa-user-group mr-2"></i>Find Roommates
+        </button>
+      </div>
+
+      <!-- Search Card -->
+      <div class="bg-white rounded-2xl shadow-hero p-2.5 flex flex-col lg:flex-row items-stretch gap-2">
+        <!-- Location -->
+        <div class="flex-1 flex items-center gap-3 px-4 py-3 rounded-xl search-pill cursor-pointer border border-transparent hover:border-primary-100">
+          <div class="w-9 h-9 bg-primary-100 rounded-lg flex items-center justify-center flex-shrink-0">
+            <i class="fa-solid fa-location-dot text-primary-600 text-sm"></i>
+          </div>
+          <div class="text-left min-w-0">
+            <p class="text-xs font-semibold text-slate-400 uppercase tracking-wide">Location</p>
+            <input type="text" placeholder="Near your university..." class="text-sm font-medium text-slate-700 bg-transparent outline-none w-full placeholder-slate-400" />
+          </div>
+        </div>
+
+        <div class="hidden lg:block w-px bg-slate-100 self-stretch my-1"></div>
+
+        <!-- Move-in Date -->
+        <div class="flex-1 flex items-center gap-3 px-4 py-3 rounded-xl search-pill cursor-pointer border border-transparent hover:border-primary-100">
+          <div class="w-9 h-9 bg-primary-100 rounded-lg flex items-center justify-center flex-shrink-0">
+            <i class="fa-solid fa-calendar-days text-primary-600 text-sm"></i>
+          </div>
+          <div class="text-left min-w-0">
+            <p class="text-xs font-semibold text-slate-400 uppercase tracking-wide">Move-in</p>
+            <input type="text" placeholder="Select date..." class="text-sm font-medium text-slate-700 bg-transparent outline-none w-full placeholder-slate-400" />
+          </div>
+        </div>
+
+        <div class="hidden lg:block w-px bg-slate-100 self-stretch my-1"></div>
+
+        <!-- Budget -->
+        <div class="flex-1 flex items-center gap-3 px-4 py-3 rounded-xl search-pill cursor-pointer border border-transparent hover:border-primary-100">
+          <div class="w-9 h-9 bg-primary-100 rounded-lg flex items-center justify-center flex-shrink-0">
+            <i class="fa-solid fa-bangladeshi-taka-sign text-primary-600 text-sm"></i>
+          </div>
+          <div class="text-left min-w-0">
+            <p class="text-xs font-semibold text-slate-400 uppercase tracking-wide">Budget</p>
+            <input type="text" placeholder="Monthly rent..." class="text-sm font-medium text-slate-700 bg-transparent outline-none w-full placeholder-slate-400" />
+          </div>
+        </div>
+
+        <!-- Search Button -->
+        <button class="flex-shrink-0 px-8 py-4 bg-primary-700 hover:bg-primary-800 text-white font-semibold rounded-xl transition-all shadow-md hover:shadow-lg flex items-center gap-2 justify-center">
+          <i class="fa-solid fa-magnifying-glass"></i>
+          <span>Search</span>
+        </button>
+      </div>
+
+      <!-- Quick Filters -->
+      <div class="flex flex-wrap items-center justify-center gap-2 mt-4">
+        <span class="text-blue-200/80 text-sm font-medium">Popular:</span>
+        <button class="px-3 py-1 bg-white/15 hover:bg-white/25 text-white text-xs font-medium rounded-full border border-white/20 transition-all backdrop-blur-sm">Near BRACU</button>
+        <button class="px-3 py-1 bg-white/15 hover:bg-white/25 text-white text-xs font-medium rounded-full border border-white/20 transition-all backdrop-blur-sm">Furnished</button>
+        <button class="px-3 py-1 bg-white/15 hover:bg-white/25 text-white text-xs font-medium rounded-full border border-white/20 transition-all backdrop-blur-sm">Bills Included</button>
+        <button class="px-3 py-1 bg-white/15 hover:bg-white/25 text-white text-xs font-medium rounded-full border border-white/20 transition-all backdrop-blur-sm">Girls Only</button>
+        <button class="px-3 py-1 bg-white/15 hover:bg-white/25 text-white text-xs font-medium rounded-full border border-white/20 transition-all backdrop-blur-sm">Under ৳10,000</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Scroll Indicator -->
+  <div class="absolute bottom-8 left-1/2 -translate-x-1/2 flex flex-col items-center gap-2 text-white/60 animate-bounce">
+    <span class="text-xs font-medium uppercase tracking-wider">Scroll</span>
+    <i class="fa-solid fa-chevron-down text-sm"></i>
+  </div>
+</section>
+
+<!-- ════════════════════════════════════════
+     TRUST / STATS BAR
+════════════════════════════════════════ -->
+<section class="bg-primary-950 py-6">
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+    <div class="grid grid-cols-2 sm:grid-cols-4 gap-6 sm:gap-0 sm:divide-x divide-primary-800">
+      <div class="text-center sm:px-6">
+        <p class="text-2xl sm:text-3xl font-black text-white">12,400+</p>
+        <p class="text-sm text-primary-300 mt-1">Verified Listings</p>
+      </div>
+      <div class="text-center sm:px-6">
+        <p class="text-2xl sm:text-3xl font-black text-white">58,000+</p>
+        <p class="text-sm text-primary-300 mt-1">Students Matched</p>
+      </div>
+      <div class="text-center sm:px-6">
+        <p class="text-2xl sm:text-3xl font-black text-white">320+</p>
+        <p class="text-sm text-primary-300 mt-1">Universities Covered</p>
+      </div>
+      <div class="text-center sm:px-6">
+        <p class="text-2xl sm:text-3xl font-black text-white">4.8 <span class="text-yellow-400">★</span></p>
+        <p class="text-sm text-primary-300 mt-1">Average Rating</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ════════════════════════════════════════
+     BROWSE BY CATEGORY
+════════════════════════════════════════ -->
+<section class="py-12 bg-white border-b border-slate-100">
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+    <div class="flex items-center justify-between mb-6">
+      <h2 class="text-lg font-bold text-slate-800">Browse by Type</h2>
+      <a href="#" class="text-sm text-primary-600 font-semibold hover:underline">See all →</a>
+    </div>
+    <div class="flex gap-3 overflow-x-auto pb-2 scrollbar-hide">
+      <button class="cat-chip active-cat flex-shrink-0 flex flex-col items-center gap-2 px-5 py-4 rounded-2xl bg-primary-50 text-primary-800 border border-primary-100 font-medium text-sm cursor-pointer">
+        <i class="fa-solid fa-building-user text-xl"></i>
+        <span>Shared Room</span>
+      </button>
+      <button class="cat-chip flex-shrink-0 flex flex-col items-center gap-2 px-5 py-4 rounded-2xl bg-slate-50 text-slate-700 border border-slate-100 font-medium text-sm cursor-pointer">
+        <i class="fa-solid fa-door-closed text-xl"></i>
+        <span>Studio Flat</span>
+      </button>
+      <button class="cat-chip flex-shrink-0 flex flex-col items-center gap-2 px-5 py-4 rounded-2xl bg-slate-50 text-slate-700 border border-slate-100 font-medium text-sm cursor-pointer">
+        <i class="fa-solid fa-bed text-xl"></i>
+        <span>1-Bedroom</span>
+      </button>
+      <button class="cat-chip flex-shrink-0 flex flex-col items-center gap-2 px-5 py-4 rounded-2xl bg-slate-50 text-slate-700 border border-slate-100 font-medium text-sm cursor-pointer">
+        <i class="fa-solid fa-house text-xl"></i>
+        <span>2-Bedroom</span>
+      </button>
+      <button class="cat-chip flex-shrink-0 flex flex-col items-center gap-2 px-5 py-4 rounded-2xl bg-slate-50 text-slate-700 border border-slate-100 font-medium text-sm cursor-pointer">
+        <i class="fa-solid fa-city text-xl"></i>
+        <span>3-Bedroom</span>
+      </button>
+      <button class="cat-chip flex-shrink-0 flex flex-col items-center gap-2 px-5 py-4 rounded-2xl bg-slate-50 text-slate-700 border border-slate-100 font-medium text-sm cursor-pointer">
+        <i class="fa-solid fa-couch text-xl"></i>
+        <span>Furnished</span>
+      </button>
+      <button class="cat-chip flex-shrink-0 flex flex-col items-center gap-2 px-5 py-4 rounded-2xl bg-slate-50 text-slate-700 border border-slate-100 font-medium text-sm cursor-pointer">
+        <i class="fa-solid fa-female text-xl"></i>
+        <span>Girls Only</span>
+      </button>
+      <button class="cat-chip flex-shrink-0 flex flex-col items-center gap-2 px-5 py-4 rounded-2xl bg-slate-50 text-slate-700 border border-slate-100 font-medium text-sm cursor-pointer">
+        <i class="fa-solid fa-bolt text-xl"></i>
+        <span>Bills Included</span>
+      </button>
+    </div>
+  </div>
+</section>
+
+<!-- ════════════════════════════════════════
+     FEATURED LISTINGS
+════════════════════════════════════════ -->
+<section id="listings" class="py-20 bg-slate-50">
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+
+    <!-- Header -->
+    <div class="flex items-end justify-between mb-10 reveal">
+      <div>
+        <p class="text-primary-600 font-semibold text-sm uppercase tracking-wider mb-2">Handpicked For You</p>
+        <h2 class="text-3xl sm:text-4xl font-black text-slate-900">Featured Listings</h2>
+        <p class="text-slate-500 mt-2">All listings are verified by our admin team.</p>
+      </div>
+      <a href="#" class="hidden sm:flex items-center gap-2 text-primary-700 font-semibold hover:underline">
+        View all listings <i class="fa-solid fa-arrow-right text-xs"></i>
+      </a>
+    </div>
+
+    <!-- Cards Grid -->
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+
+      <!-- Card 1 -->
+      <div class="property-card bg-white rounded-2xl overflow-hidden shadow-card cursor-pointer group reveal">
+        <div class="relative overflow-hidden h-52">
+          <img src="https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?w=600&q=75" alt="Apartment in Dhanmondi" class="w-full h-full object-cover" onerror="this.parentElement.style.background='linear-gradient(135deg,#bfdbfe,#1e40af)'; this.style.display='none'" />
+          <div class="absolute top-3 left-3 flex gap-1.5">
+            <span class="px-2.5 py-1 bg-green-500 text-white text-xs font-bold rounded-lg flex items-center gap-1">
+              <i class="fa-solid fa-shield-check text-xs"></i> Verified
+            </span>
+          </div>
+          <button class="absolute top-3 right-3 w-8 h-8 bg-white/90 backdrop-blur-sm rounded-full flex items-center justify-center text-slate-400 hover:text-red-500 transition-colors shadow-sm">
+            <i class="fa-regular fa-heart"></i>
+          </button>
+          <div class="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/50 to-transparent px-4 py-3">
+            <span class="text-white text-xs font-semibold bg-primary-700 px-2 py-0.5 rounded">📍 Dhanmondi</span>
+          </div>
+        </div>
+        <div class="p-4">
+          <div class="flex items-start justify-between mb-1.5">
+            <h3 class="font-bold text-slate-800 text-base leading-tight">Modern 2-BHK Flat</h3>
+            <div class="flex items-center gap-1 text-sm ml-2 flex-shrink-0">
+              <i class="fa-solid fa-star text-yellow-400 text-xs"></i>
+              <span class="font-semibold text-slate-700">4.9</span>
+              <span class="text-slate-400 text-xs">(47)</span>
+            </div>
+          </div>
+          <p class="text-slate-500 text-sm mb-3 flex items-center gap-1">
+            <i class="fa-solid fa-location-dot text-xs text-primary-500"></i>
+            Dhanmondi, 1.2 km from BRACU
+          </p>
+          <div class="flex flex-wrap gap-1.5 mb-3">
+            <span class="text-xs px-2 py-0.5 bg-primary-50 text-primary-700 rounded-full font-medium">Furnished</span>
+            <span class="text-xs px-2 py-0.5 bg-blue-50 text-blue-700 rounded-full font-medium">WiFi Incl.</span>
+            <span class="text-xs px-2 py-0.5 bg-slate-100 text-slate-600 rounded-full font-medium">2 Beds</span>
+          </div>
+          <div class="flex items-center justify-between">
+            <div>
+              <span class="text-xl font-black text-primary-800">৳14,500</span>
+              <span class="text-slate-400 text-sm">/month</span>
+            </div>
+            <button class="text-xs px-3 py-1.5 border-2 border-primary-600 text-primary-700 font-semibold rounded-lg hover:bg-primary-600 hover:text-white transition-all">View</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Card 2 -->
+      <div class="property-card bg-white rounded-2xl overflow-hidden shadow-card cursor-pointer group reveal" style="animation-delay:0.08s">
+        <div class="relative overflow-hidden h-52">
+          <img src="https://images.unsplash.com/photo-1502672260266-1c1ef2d93688?w=600&q=75" alt="Studio Flat Mirpur" class="w-full h-full object-cover" onerror="this.parentElement.style.background='linear-gradient(135deg,#93c5fd,#1d4ed8)'; this.style.display='none'" />
+          <div class="absolute top-3 left-3 flex gap-1.5">
+            <span class="px-2.5 py-1 bg-orange-500 text-white text-xs font-bold rounded-lg">🔥 Hot Deal</span>
+          </div>
+          <button class="absolute top-3 right-3 w-8 h-8 bg-white/90 backdrop-blur-sm rounded-full flex items-center justify-center text-red-500 shadow-sm">
+            <i class="fa-solid fa-heart"></i>
+          </button>
+          <div class="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/50 to-transparent px-4 py-3">
+            <span class="text-white text-xs font-semibold bg-primary-700 px-2 py-0.5 rounded">📍 Mirpur</span>
+          </div>
+        </div>
+        <div class="p-4">
+          <div class="flex items-start justify-between mb-1.5">
+            <h3 class="font-bold text-slate-800 text-base leading-tight">Cozy Studio Flat</h3>
+            <div class="flex items-center gap-1 text-sm ml-2 flex-shrink-0">
+              <i class="fa-solid fa-star text-yellow-400 text-xs"></i>
+              <span class="font-semibold text-slate-700">4.7</span>
+              <span class="text-slate-400 text-xs">(31)</span>
+            </div>
+          </div>
+          <p class="text-slate-500 text-sm mb-3 flex items-center gap-1">
+            <i class="fa-solid fa-location-dot text-xs text-primary-500"></i>
+            Mirpur-10, 2.0 km from UIU
+          </p>
+          <div class="flex flex-wrap gap-1.5 mb-3">
+            <span class="text-xs px-2 py-0.5 bg-primary-50 text-primary-700 rounded-full font-medium">Furnished</span>
+            <span class="text-xs px-2 py-0.5 bg-green-50 text-green-700 rounded-full font-medium">Bills Incl.</span>
+            <span class="text-xs px-2 py-0.5 bg-slate-100 text-slate-600 rounded-full font-medium">1 Bed</span>
+          </div>
+          <div class="flex items-center justify-between">
+            <div>
+              <span class="text-xl font-black text-primary-800">৳8,200</span>
+              <span class="text-slate-400 text-sm">/month</span>
+            </div>
+            <button class="text-xs px-3 py-1.5 border-2 border-primary-600 text-primary-700 font-semibold rounded-lg hover:bg-primary-600 hover:text-white transition-all">View</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Card 3 -->
+      <div class="property-card bg-white rounded-2xl overflow-hidden shadow-card cursor-pointer group reveal" style="animation-delay:0.16s">
+        <div class="relative overflow-hidden h-52">
+          <img src="https://images.unsplash.com/photo-1484154218962-a197022b5858?w=600&q=75" alt="Shared Room Uttara" class="w-full h-full object-cover" onerror="this.parentElement.style.background='linear-gradient(135deg,#60a5fa,#1e3a8a)'; this.style.display='none'" />
+          <div class="absolute top-3 left-3 flex gap-1.5">
+            <span class="px-2.5 py-1 bg-green-500 text-white text-xs font-bold rounded-lg flex items-center gap-1">
+              <i class="fa-solid fa-shield-check text-xs"></i> Verified
+            </span>
+          </div>
+          <button class="absolute top-3 right-3 w-8 h-8 bg-white/90 backdrop-blur-sm rounded-full flex items-center justify-center text-slate-400 hover:text-red-500 transition-colors shadow-sm">
+            <i class="fa-regular fa-heart"></i>
+          </button>
+          <div class="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/50 to-transparent px-4 py-3">
+            <span class="text-white text-xs font-semibold bg-primary-700 px-2 py-0.5 rounded">📍 Uttara</span>
+          </div>
+        </div>
+        <div class="p-4">
+          <div class="flex items-start justify-between mb-1.5">
+            <h3 class="font-bold text-slate-800 text-base leading-tight">Girls-Only Shared Flat</h3>
+            <div class="flex items-center gap-1 text-sm ml-2 flex-shrink-0">
+              <i class="fa-solid fa-star text-yellow-400 text-xs"></i>
+              <span class="font-semibold text-slate-700">4.8</span>
+              <span class="text-slate-400 text-xs">(62)</span>
+            </div>
+          </div>
+          <p class="text-slate-500 text-sm mb-3 flex items-center gap-1">
+            <i class="fa-solid fa-location-dot text-xs text-primary-500"></i>
+            Uttara Sector 7, Near NSU
+          </p>
+          <div class="flex flex-wrap gap-1.5 mb-3">
+            <span class="text-xs px-2 py-0.5 bg-pink-50 text-pink-700 rounded-full font-medium">Girls Only</span>
+            <span class="text-xs px-2 py-0.5 bg-primary-50 text-primary-700 rounded-full font-medium">WiFi Incl.</span>
+            <span class="text-xs px-2 py-0.5 bg-slate-100 text-slate-600 rounded-full font-medium">Shared</span>
+          </div>
+          <div class="flex items-center justify-between">
+            <div>
+              <span class="text-xl font-black text-primary-800">৳6,000</span>
+              <span class="text-slate-400 text-sm">/month</span>
+            </div>
+            <button class="text-xs px-3 py-1.5 border-2 border-primary-600 text-primary-700 font-semibold rounded-lg hover:bg-primary-600 hover:text-white transition-all">View</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Card 4 -->
+      <div class="property-card bg-white rounded-2xl overflow-hidden shadow-card cursor-pointer group reveal" style="animation-delay:0.24s">
+        <div class="relative overflow-hidden h-52">
+          <img src="https://images.unsplash.com/photo-1567767292278-a4f21aa2d36e?w=600&q=75" alt="3-BHK Bashundhara" class="w-full h-full object-cover" onerror="this.parentElement.style.background='linear-gradient(135deg,#3b82f6,#172554)'; this.style.display='none'" />
+          <div class="absolute top-3 left-3 flex gap-1.5">
+            <span class="px-2.5 py-1 bg-purple-500 text-white text-xs font-bold rounded-lg">✨ New</span>
+          </div>
+          <button class="absolute top-3 right-3 w-8 h-8 bg-white/90 backdrop-blur-sm rounded-full flex items-center justify-center text-slate-400 hover:text-red-500 transition-colors shadow-sm">
+            <i class="fa-regular fa-heart"></i>
+          </button>
+          <div class="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/50 to-transparent px-4 py-3">
+            <span class="text-white text-xs font-semibold bg-primary-700 px-2 py-0.5 rounded">📍 Bashundhara</span>
+          </div>
+        </div>
+        <div class="p-4">
+          <div class="flex items-start justify-between mb-1.5">
+            <h3 class="font-bold text-slate-800 text-base leading-tight">Spacious 3-BHK Flat</h3>
+            <div class="flex items-center gap-1 text-sm ml-2 flex-shrink-0">
+              <i class="fa-solid fa-star text-yellow-400 text-xs"></i>
+              <span class="font-semibold text-slate-700">4.6</span>
+              <span class="text-slate-400 text-xs">(18)</span>
+            </div>
+          </div>
+          <p class="text-slate-500 text-sm mb-3 flex items-center gap-1">
+            <i class="fa-solid fa-location-dot text-xs text-primary-500"></i>
+            Bashundhara, 0.8 km from BRAC
+          </p>
+          <div class="flex flex-wrap gap-1.5 mb-3">
+            <span class="text-xs px-2 py-0.5 bg-primary-50 text-primary-700 rounded-full font-medium">Semi-Furnished</span>
+            <span class="text-xs px-2 py-0.5 bg-slate-100 text-slate-600 rounded-full font-medium">3 Beds</span>
+            <span class="text-xs px-2 py-0.5 bg-green-50 text-green-700 rounded-full font-medium">Parking</span>
+          </div>
+          <div class="flex items-center justify-between">
+            <div>
+              <span class="text-xl font-black text-primary-800">৳22,000</span>
+              <span class="text-slate-400 text-sm">/month</span>
+            </div>
+            <button class="text-xs px-3 py-1.5 border-2 border-primary-600 text-primary-700 font-semibold rounded-lg hover:bg-primary-600 hover:text-white transition-all">View</button>
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- Load More -->
+    <div class="text-center mt-10 reveal">
+      <a href="#" class="inline-flex items-center gap-2 px-6 py-3 border-2 border-primary-600 text-primary-700 font-semibold rounded-xl hover:bg-primary-600 hover:text-white transition-all">
+        Explore All Listings <i class="fa-solid fa-arrow-right text-sm"></i>
+      </a>
+    </div>
+  </div>
+</section>
+
+<!-- ════════════════════════════════════════
+     HOW IT WORKS
+════════════════════════════════════════ -->
+<section id="how-it-works" class="py-24 bg-white">
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+
+    <div class="text-center mb-16 reveal">
+      <p class="text-primary-600 font-semibold text-sm uppercase tracking-wider mb-3">Simple Process</p>
+      <h2 class="text-3xl sm:text-4xl font-black text-slate-900">Find Your Home in 3 Steps</h2>
+      <p class="text-slate-500 mt-3 max-w-xl mx-auto">From search to signed lease — Flatfolks makes the entire process smooth and secure.</p>
+    </div>
+
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-8 relative">
+
+      <!-- Step 1 -->
+      <div class="text-center group reveal">
+        <div class="relative inline-flex">
+          <div class="w-20 h-20 bg-primary-100 group-hover:bg-primary-700 rounded-2xl flex items-center justify-center mx-auto mb-6 transition-all duration-300 shadow-md">
+            <i class="fa-solid fa-magnifying-glass text-3xl text-primary-700 group-hover:text-white transition-colors duration-300"></i>
+          </div>
+          <span class="absolute -top-3 -right-3 w-7 h-7 bg-primary-700 text-white text-xs font-black rounded-full flex items-center justify-center shadow">1</span>
+        </div>
+        <h3 class="text-xl font-bold text-slate-900 mb-3">Search & Filter</h3>
+        <p class="text-slate-500 leading-relaxed">Filter by rent, distance from campus, furnished status, gender preference, and move-in date.</p>
+      </div>
+
+      <!-- Connector -->
+      <div class="hidden md:flex items-center justify-center absolute left-1/3 top-10 w-1/3">
+        <div class="w-full h-0.5 bg-gradient-to-r from-primary-200 to-primary-400 relative">
+          <i class="fa-solid fa-chevron-right absolute right-0 top-1/2 -translate-y-1/2 text-primary-400 text-xs -mr-1"></i>
+        </div>
+      </div>
+
+      <!-- Step 2 -->
+      <div class="text-center group reveal" style="animation-delay:0.15s">
+        <div class="relative inline-flex">
+          <div class="w-20 h-20 bg-primary-100 group-hover:bg-primary-700 rounded-2xl flex items-center justify-center mx-auto mb-6 transition-all duration-300 shadow-md">
+            <i class="fa-solid fa-people-arrows text-3xl text-primary-700 group-hover:text-white transition-colors duration-300"></i>
+          </div>
+          <span class="absolute -top-3 -right-3 w-7 h-7 bg-primary-700 text-white text-xs font-black rounded-full flex items-center justify-center shadow">2</span>
+        </div>
+        <h3 class="text-xl font-bold text-slate-900 mb-3">Match & Connect</h3>
+        <p class="text-slate-500 leading-relaxed">Take our lifestyle quiz and get matched with compatible roommates. Chat in-app, no personal numbers shared.</p>
+      </div>
+
+      <!-- Step 3 -->
+      <div class="text-center group reveal" style="animation-delay:0.3s">
+        <div class="relative inline-flex">
+          <div class="w-20 h-20 bg-primary-100 group-hover:bg-primary-700 rounded-2xl flex items-center justify-center mx-auto mb-6 transition-all duration-300 shadow-md">
+            <i class="fa-solid fa-key text-3xl text-primary-700 group-hover:text-white transition-colors duration-300"></i>
+          </div>
+          <span class="absolute -top-3 -right-3 w-7 h-7 bg-primary-700 text-white text-xs font-black rounded-full flex items-center justify-center shadow">3</span>
+        </div>
+        <h3 class="text-xl font-bold text-slate-900 mb-3">Sign & Move In</h3>
+        <p class="text-slate-500 leading-relaxed">Sign digital leases, complete a move-in report, and get utility & maintenance support right on the platform.</p>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+<!-- ════════════════════════════════════════
+     ROOMMATE MATCHING
+════════════════════════════════════════ -->
+<section id="roommates" class="py-24 bg-primary-950 relative overflow-hidden">
+
+  <!-- BG Decoration -->
+  <div class="absolute top-0 right-0 w-96 h-96 bg-primary-800/20 rounded-full blur-3xl -translate-y-1/2 translate-x-1/3"></div>
+  <div class="absolute bottom-0 left-0 w-80 h-80 bg-blue-500/10 rounded-full blur-3xl translate-y-1/2 -translate-x-1/3"></div>
+
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
+    <div class="grid lg:grid-cols-2 gap-16 items-center">
+
+      <!-- Left: Text -->
+      <div class="reveal">
+        <p class="text-blue-400 font-semibold text-sm uppercase tracking-wider mb-4">Smart Matching</p>
+        <h2 class="text-3xl sm:text-4xl font-black text-white mb-6 leading-tight">
+          Find Roommates Who<br /><span class="text-blue-300">Actually Vibe With You</span>
+        </h2>
+        <p class="text-primary-300 text-lg leading-relaxed mb-8">
+          Our lifestyle compatibility quiz covers sleep schedule, cleanliness, noise tolerance, study habits, and more — generating a real match score so you live with the right people.
+        </p>
+        <ul class="space-y-4 mb-10">
+          <li class="flex items-start gap-3">
+            <div class="w-7 h-7 bg-blue-500/20 rounded-lg flex items-center justify-center flex-shrink-0 mt-0.5">
+              <i class="fa-solid fa-check text-blue-400 text-xs"></i>
+            </div>
+            <p class="text-primary-200 text-sm leading-relaxed">Compatibility quiz across 6 lifestyle dimensions</p>
+          </li>
+          <li class="flex items-start gap-3">
+            <div class="w-7 h-7 bg-blue-500/20 rounded-lg flex items-center justify-center flex-shrink-0 mt-0.5">
+              <i class="fa-solid fa-check text-blue-400 text-xs"></i>
+            </div>
+            <p class="text-primary-200 text-sm leading-relaxed">Smart match feed sorted by % compatibility, not just location</p>
+          </li>
+          <li class="flex items-start gap-3">
+            <div class="w-7 h-7 bg-blue-500/20 rounded-lg flex items-center justify-center flex-shrink-0 mt-0.5">
+              <i class="fa-solid fa-check text-blue-400 text-xs"></i>
+            </div>
+            <p class="text-primary-200 text-sm leading-relaxed">Form groups of 2–4 to search for a flat together as a unit</p>
+          </li>
+          <li class="flex items-start gap-3">
+            <div class="w-7 h-7 bg-blue-500/20 rounded-lg flex items-center justify-center flex-shrink-0 mt-0.5">
+              <i class="fa-solid fa-check text-blue-400 text-xs"></i>
+            </div>
+            <p class="text-primary-200 text-sm leading-relaxed">Send & accept roommate requests before committing to a flat</p>
+          </li>
+        </ul>
+        <a href="#" class="inline-flex items-center gap-2 px-7 py-3.5 bg-blue-500 hover:bg-blue-600 text-white font-semibold rounded-xl transition-all shadow-lg">
+          Take the Compatibility Quiz <i class="fa-solid fa-arrow-right text-sm"></i>
+        </a>
+      </div>
+
+      <!-- Right: Roommate Cards -->
+      <div class="space-y-4 reveal">
+
+        <!-- Card A -->
+        <div class="roommate-card bg-white/10 backdrop-blur-sm border border-white/10 rounded-2xl p-5 flex items-center gap-4">
+          <div class="w-14 h-14 rounded-2xl flex-shrink-0 overflow-hidden bg-gradient-to-br from-blue-400 to-blue-700 flex items-center justify-center">
+            <span class="text-2xl font-black text-white">R</span>
+          </div>
+          <div class="flex-1 min-w-0">
+            <div class="flex items-center gap-2 mb-1">
+              <p class="font-bold text-white text-sm">Rania Islam</p>
+              <span class="text-xs px-2 py-0.5 bg-blue-500/30 text-blue-300 rounded-full">CSE · BRACU</span>
+            </div>
+            <p class="text-primary-300 text-xs mb-2.5">Night owl · Clean · Quiet study · No guests</p>
+            <div class="flex items-center gap-2">
+              <div class="flex-1 h-1.5 bg-white/10 rounded-full overflow-hidden">
+                <div class="h-full bg-gradient-to-r from-blue-400 to-emerald-400 rounded-full" style="width:94%"></div>
+              </div>
+              <span class="text-xs font-black text-emerald-400 flex-shrink-0">94% Match</span>
+            </div>
+          </div>
+          <button class="flex-shrink-0 px-3 py-1.5 bg-blue-500 hover:bg-blue-600 text-white text-xs font-semibold rounded-lg transition-all">Connect</button>
+        </div>
+
+        <!-- Card B -->
+        <div class="roommate-card bg-white/10 backdrop-blur-sm border border-white/10 rounded-2xl p-5 flex items-center gap-4">
+          <div class="w-14 h-14 rounded-2xl flex-shrink-0 overflow-hidden bg-gradient-to-br from-indigo-400 to-purple-600 flex items-center justify-center">
+            <span class="text-2xl font-black text-white">T</span>
+          </div>
+          <div class="flex-1 min-w-0">
+            <div class="flex items-center gap-2 mb-1">
+              <p class="font-bold text-white text-sm">Tahmid Hasan</p>
+              <span class="text-xs px-2 py-0.5 bg-blue-500/30 text-blue-300 rounded-full">EEE · NSU</span>
+            </div>
+            <p class="text-primary-300 text-xs mb-2.5">Early riser · Moderate · Social · Non-smoker</p>
+            <div class="flex items-center gap-2">
+              <div class="flex-1 h-1.5 bg-white/10 rounded-full overflow-hidden">
+                <div class="h-full bg-gradient-to-r from-blue-400 to-emerald-400 rounded-full" style="width:87%"></div>
+              </div>
+              <span class="text-xs font-black text-emerald-400 flex-shrink-0">87% Match</span>
+            </div>
+          </div>
+          <button class="flex-shrink-0 px-3 py-1.5 bg-white/15 hover:bg-blue-500 text-white text-xs font-semibold rounded-lg transition-all border border-white/20">Connect</button>
+        </div>
+
+        <!-- Card C -->
+        <div class="roommate-card bg-white/10 backdrop-blur-sm border border-white/10 rounded-2xl p-5 flex items-center gap-4">
+          <div class="w-14 h-14 rounded-2xl flex-shrink-0 overflow-hidden bg-gradient-to-br from-teal-400 to-blue-600 flex items-center justify-center">
+            <span class="text-2xl font-black text-white">N</span>
+          </div>
+          <div class="flex-1 min-w-0">
+            <div class="flex items-center gap-2 mb-1">
+              <p class="font-bold text-white text-sm">Nusrat Jahan</p>
+              <span class="text-xs px-2 py-0.5 bg-blue-500/30 text-blue-300 rounded-full">BBA · IUB</span>
+            </div>
+            <p class="text-primary-300 text-xs mb-2.5">Flexible · Tidy · Quiet evenings · Non-smoker</p>
+            <div class="flex items-center gap-2">
+              <div class="flex-1 h-1.5 bg-white/10 rounded-full overflow-hidden">
+                <div class="h-full bg-gradient-to-r from-blue-400 to-emerald-400 rounded-full" style="width:81%"></div>
+              </div>
+              <span class="text-xs font-black text-emerald-400 flex-shrink-0">81% Match</span>
+            </div>
+          </div>
+          <button class="flex-shrink-0 px-3 py-1.5 bg-white/15 hover:bg-blue-500 text-white text-xs font-semibold rounded-lg transition-all border border-white/20">Connect</button>
+        </div>
+
+        <!-- View More CTA -->
+        <div class="text-center pt-2">
+          <a href="#" class="text-blue-300 text-sm font-semibold hover:text-blue-200 transition-colors">View all compatible roommates →</a>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ════════════════════════════════════════
+     NEIGHBORHOOD INSIGHTS
+════════════════════════════════════════ -->
+<section class="py-24 bg-slate-50">
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+
+    <div class="text-center mb-12 reveal">
+      <p class="text-primary-600 font-semibold text-sm uppercase tracking-wider mb-3">Explore by Area</p>
+      <h2 class="text-3xl sm:text-4xl font-black text-slate-900">Popular Student Neighborhoods</h2>
+      <p class="text-slate-500 mt-3">Live near your campus with real neighborhood insights.</p>
+    </div>
+
+    <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4">
+
+      <!-- Neighborhood Card 1 -->
+      <div class="nbr-card relative rounded-2xl overflow-hidden aspect-[3/4] cursor-pointer shadow-card group reveal">
+        <img src="https://images.unsplash.com/photo-1480714378408-67cf0d13bc1b?w=400&q=70" alt="Dhanmondi" class="nbr-img w-full h-full object-cover" onerror="this.parentElement.style.background='linear-gradient(160deg,#1e40af,#0f2044)'; this.style.display='none'" />
+        <div class="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent"></div>
+        <div class="nbr-overlay absolute inset-0 bg-primary-700/30"></div>
+        <div class="absolute bottom-0 left-0 right-0 p-3">
+          <h3 class="text-white font-bold text-sm mb-0.5">Dhanmondi</h3>
+          <p class="text-blue-200 text-xs">Avg ৳13,500/mo</p>
+          <div class="flex items-center gap-1 mt-1">
+            <i class="fa-solid fa-star text-yellow-400 text-xs"></i>
+            <span class="text-white text-xs font-medium">4.7</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Neighborhood Card 2 -->
+      <div class="nbr-card relative rounded-2xl overflow-hidden aspect-[3/4] cursor-pointer shadow-card group reveal" style="animation-delay:0.07s">
+        <img src="https://images.unsplash.com/photo-1449824913935-59a10b8d2000?w=400&q=70" alt="Mirpur" class="nbr-img w-full h-full object-cover" onerror="this.parentElement.style.background='linear-gradient(160deg,#1d4ed8,#172554)'; this.style.display='none'" />
+        <div class="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent"></div>
+        <div class="nbr-overlay absolute inset-0 bg-primary-700/30"></div>
+        <div class="absolute bottom-0 left-0 right-0 p-3">
+          <h3 class="text-white font-bold text-sm mb-0.5">Mirpur</h3>
+          <p class="text-blue-200 text-xs">Avg ৳7,500/mo</p>
+          <div class="flex items-center gap-1 mt-1">
+            <i class="fa-solid fa-star text-yellow-400 text-xs"></i>
+            <span class="text-white text-xs font-medium">4.5</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Neighborhood Card 3 -->
+      <div class="nbr-card relative rounded-2xl overflow-hidden aspect-[3/4] cursor-pointer shadow-card group reveal" style="animation-delay:0.14s">
+        <img src="https://images.unsplash.com/photo-1444723121867-7a241cacace9?w=400&q=70" alt="Uttara" class="nbr-img w-full h-full object-cover" onerror="this.parentElement.style.background='linear-gradient(160deg,#2563eb,#1e3a8a)'; this.style.display='none'" />
+        <div class="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent"></div>
+        <div class="nbr-overlay absolute inset-0 bg-primary-700/30"></div>
+        <div class="absolute bottom-0 left-0 right-0 p-3">
+          <h3 class="text-white font-bold text-sm mb-0.5">Uttara</h3>
+          <p class="text-blue-200 text-xs">Avg ৳9,200/mo</p>
+          <div class="flex items-center gap-1 mt-1">
+            <i class="fa-solid fa-star text-yellow-400 text-xs"></i>
+            <span class="text-white text-xs font-medium">4.6</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Neighborhood Card 4 -->
+      <div class="nbr-card relative rounded-2xl overflow-hidden aspect-[3/4] cursor-pointer shadow-card group reveal" style="animation-delay:0.21s">
+        <img src="https://images.unsplash.com/photo-1494522855154-9297ac14b55f?w=400&q=70" alt="Bashundhara" class="nbr-img w-full h-full object-cover" onerror="this.parentElement.style.background='linear-gradient(160deg,#3b82f6,#1e40af)'; this.style.display='none'" />
+        <div class="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent"></div>
+        <div class="nbr-overlay absolute inset-0 bg-primary-700/30"></div>
+        <div class="absolute bottom-0 left-0 right-0 p-3">
+          <h3 class="text-white font-bold text-sm mb-0.5">Bashundhara</h3>
+          <p class="text-blue-200 text-xs">Avg ৳12,000/mo</p>
+          <div class="flex items-center gap-1 mt-1">
+            <i class="fa-solid fa-star text-yellow-400 text-xs"></i>
+            <span class="text-white text-xs font-medium">4.8</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Neighborhood Card 5 -->
+      <div class="nbr-card relative rounded-2xl overflow-hidden aspect-[3/4] cursor-pointer shadow-card group reveal" style="animation-delay:0.28s">
+        <img src="https://images.unsplash.com/photo-1486325212027-8081e485255e?w=400&q=70" alt="Mohammadpur" class="nbr-img w-full h-full object-cover" onerror="this.parentElement.style.background='linear-gradient(160deg,#60a5fa,#0f2044)'; this.style.display='none'" />
+        <div class="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent"></div>
+        <div class="nbr-overlay absolute inset-0 bg-primary-700/30"></div>
+        <div class="absolute bottom-0 left-0 right-0 p-3">
+          <h3 class="text-white font-bold text-sm mb-0.5">Mohammadpur</h3>
+          <p class="text-blue-200 text-xs">Avg ৳8,800/mo</p>
+          <div class="flex items-center gap-1 mt-1">
+            <i class="fa-solid fa-star text-yellow-400 text-xs"></i>
+            <span class="text-white text-xs font-medium">4.4</span>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+<!-- ════════════════════════════════════════
+     KEY FEATURES
+════════════════════════════════════════ -->
+<section class="py-24 bg-white">
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+
+    <div class="text-center mb-16 reveal">
+      <p class="text-primary-600 font-semibold text-sm uppercase tracking-wider mb-3">Everything You Need</p>
+      <h2 class="text-3xl sm:text-4xl font-black text-slate-900">Built for Student Life</h2>
+      <p class="text-slate-500 mt-3 max-w-xl mx-auto">Flatfolks handles everything from finding a listing to splitting bills — all in one platform.</p>
+    </div>
+
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+
+      <!-- Feature 1 -->
+      <div class="feat-card p-6 rounded-2xl bg-primary-50 border border-primary-100 reveal">
+        <div class="feat-icon w-12 h-12 bg-primary-100 text-primary-700 rounded-xl flex items-center justify-center mb-4 text-xl">
+          <i class="fa-solid fa-map-location-dot"></i>
+        </div>
+        <h3 class="text-lg font-bold text-slate-800 mb-2">Interactive Map View</h3>
+        <p class="text-slate-500 text-sm leading-relaxed">Browse listings on a map showing distance to campus gates, bus stops, and nearby amenities.</p>
+      </div>
+
+      <!-- Feature 2 -->
+      <div class="feat-card p-6 rounded-2xl bg-slate-50 border border-slate-100 reveal" style="animation-delay:0.08s">
+        <div class="feat-icon w-12 h-12 bg-primary-100 text-primary-700 rounded-xl flex items-center justify-center mb-4 text-xl">
+          <i class="fa-solid fa-video"></i>
+        </div>
+        <h3 class="text-lg font-bold text-slate-800 mb-2">360° Virtual Tours</h3>
+        <p class="text-slate-500 text-sm leading-relaxed">Landlords can post rich media — photos, video tours, floor plans, and 360° walkthroughs.</p>
+      </div>
+
+      <!-- Feature 3 -->
+      <div class="feat-card p-6 rounded-2xl bg-slate-50 border border-slate-100 reveal" style="animation-delay:0.16s">
+        <div class="feat-icon w-12 h-12 bg-primary-100 text-primary-700 rounded-xl flex items-center justify-center mb-4 text-xl">
+          <i class="fa-solid fa-comments"></i>
+        </div>
+        <h3 class="text-lg font-bold text-slate-800 mb-2">In-App Messaging</h3>
+        <p class="text-slate-500 text-sm leading-relaxed">Communicate with landlords or roommates securely without sharing personal phone numbers.</p>
+      </div>
+
+      <!-- Feature 4 -->
+      <div class="feat-card p-6 rounded-2xl bg-slate-50 border border-slate-100 reveal" style="animation-delay:0.08s">
+        <div class="feat-icon w-12 h-12 bg-primary-100 text-primary-700 rounded-xl flex items-center justify-center mb-4 text-xl">
+          <i class="fa-solid fa-file-signature"></i>
+        </div>
+        <h3 class="text-lg font-bold text-slate-800 mb-2">Digital Lease Signing</h3>
+        <p class="text-slate-500 text-sm leading-relaxed">Read, annotate, and digitally sign lease agreements within the platform — no printing needed.</p>
+      </div>
+
+      <!-- Feature 5 -->
+      <div class="feat-card p-6 rounded-2xl bg-slate-50 border border-slate-100 reveal" style="animation-delay:0.16s">
+        <div class="feat-icon w-12 h-12 bg-primary-100 text-primary-700 rounded-xl flex items-center justify-center mb-4 text-xl">
+          <i class="fa-solid fa-scale-balanced"></i>
+        </div>
+        <h3 class="text-lg font-bold text-slate-800 mb-2">Fair Rent Calculator</h3>
+        <p class="text-slate-500 text-sm leading-relaxed">Auto-calculates each roommate's fair share based on room size and amenity access.</p>
+      </div>
+
+      <!-- Feature 6 -->
+      <div class="feat-card p-6 rounded-2xl bg-primary-50 border border-primary-100 reveal" style="animation-delay:0.24s">
+        <div class="feat-icon w-12 h-12 bg-primary-100 text-primary-700 rounded-xl flex items-center justify-center mb-4 text-xl">
+          <i class="fa-solid fa-toolbox"></i>
+        </div>
+        <h3 class="text-lg font-bold text-slate-800 mb-2">Move-In Support</h3>
+        <p class="text-slate-500 text-sm leading-relaxed">Book electricians, plumbers, AC technicians, meal plans, and utility connections on-call.</p>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+<!-- ════════════════════════════════════════
+     FOR LANDLORDS CTA
+════════════════════════════════════════ -->
+<section id="landlords" class="py-20 bg-primary-700">
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+    <div class="grid lg:grid-cols-2 gap-12 items-center">
+
+      <!-- Left Text -->
+      <div class="reveal">
+        <p class="text-blue-200 font-semibold text-sm uppercase tracking-wider mb-4">For Landlords</p>
+        <h2 class="text-3xl sm:text-4xl font-black text-white mb-6">
+          Reach Thousands of<br/>Verified Students
+        </h2>
+        <p class="text-primary-200 text-lg leading-relaxed mb-8">
+          Post listings with rich media, manage all properties from one dashboard, review tenant applications, and schedule viewings — everything in one place.
+        </p>
+        <div class="flex flex-wrap gap-4">
+          <a href="#" class="px-7 py-3.5 bg-white text-primary-800 font-bold rounded-xl hover:bg-primary-50 transition-all shadow-lg text-sm">
+            List Your Property
+          </a>
+          <a href="#" class="px-7 py-3.5 bg-primary-600 hover:bg-primary-500 text-white font-semibold rounded-xl transition-all border border-primary-500 text-sm">
+            Learn More
+          </a>
+        </div>
+      </div>
+
+      <!-- Right: Landlord Benefit Cards -->
+      <div class="grid grid-cols-2 gap-4 reveal">
+        <div class="bg-white/10 backdrop-blur-sm border border-white/10 rounded-2xl p-5">
+          <i class="fa-solid fa-shield-halved text-2xl text-blue-300 mb-3"></i>
+          <h4 class="text-white font-bold mb-1">Verified Badge</h4>
+          <p class="text-primary-300 text-xs leading-relaxed">Upload ownership docs and earn a trusted landlord badge.</p>
+        </div>
+        <div class="bg-white/10 backdrop-blur-sm border border-white/10 rounded-2xl p-5">
+          <i class="fa-solid fa-chart-bar text-2xl text-blue-300 mb-3"></i>
+          <h4 class="text-white font-bold mb-1">Smart Dashboard</h4>
+          <p class="text-primary-300 text-xs leading-relaxed">Manage listings, vacancies, and tenant contacts with charts.</p>
+        </div>
+        <div class="bg-white/10 backdrop-blur-sm border border-white/10 rounded-2xl p-5">
+          <i class="fa-solid fa-calendar-check text-2xl text-blue-300 mb-3"></i>
+          <h4 class="text-white font-bold mb-1">Viewing Scheduler</h4>
+          <p class="text-primary-300 text-xs leading-relaxed">Approve viewing requests via shared scheduling calendar.</p>
+        </div>
+        <div class="bg-white/10 backdrop-blur-sm border border-white/10 rounded-2xl p-5">
+          <i class="fa-solid fa-user-check text-2xl text-blue-300 mb-3"></i>
+          <h4 class="text-white font-bold mb-1">Tenant Manager</h4>
+          <p class="text-primary-300 text-xs leading-relaxed">Review and approve student applications with notes.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ════════════════════════════════════════
+     TESTIMONIALS
+════════════════════════════════════════ -->
+<section class="py-24 bg-white">
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+
+    <div class="text-center mb-14 reveal">
+      <p class="text-primary-600 font-semibold text-sm uppercase tracking-wider mb-3">Student Stories</p>
+      <h2 class="text-3xl sm:text-4xl font-black text-slate-900">What Students Say</h2>
+    </div>
+
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+
+      <!-- Testimonial 1 -->
+      <div class="testi-card p-7 rounded-2xl bg-primary-50 border border-primary-100 reveal">
+        <div class="flex gap-1 mb-4">
+          <i class="fa-solid fa-star text-yellow-400 text-sm"></i><i class="fa-solid fa-star text-yellow-400 text-sm"></i><i class="fa-solid fa-star text-yellow-400 text-sm"></i><i class="fa-solid fa-star text-yellow-400 text-sm"></i><i class="fa-solid fa-star text-yellow-400 text-sm"></i>
+        </div>
+        <p class="text-slate-700 leading-relaxed mb-6 text-sm">"I found my flat and two compatible roommates within a week! The compatibility quiz was so accurate — we've been living together for 6 months with zero drama."</p>
+        <div class="flex items-center gap-3">
+          <div class="w-10 h-10 rounded-full bg-gradient-to-br from-blue-400 to-blue-700 flex items-center justify-center text-white font-bold text-sm flex-shrink-0">S</div>
+          <div>
+            <p class="font-bold text-slate-800 text-sm">Sadia Rahman</p>
+            <p class="text-slate-500 text-xs">CSE Student · BRACU</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Testimonial 2 -->
+      <div class="testi-card p-7 rounded-2xl bg-white border border-slate-100 shadow-card reveal" style="animation-delay:0.1s">
+        <div class="flex gap-1 mb-4">
+          <i class="fa-solid fa-star text-yellow-400 text-sm"></i><i class="fa-solid fa-star text-yellow-400 text-sm"></i><i class="fa-solid fa-star text-yellow-400 text-sm"></i><i class="fa-solid fa-star text-yellow-400 text-sm"></i><i class="fa-solid fa-star text-yellow-400 text-sm"></i>
+        </div>
+        <p class="text-slate-700 leading-relaxed mb-6 text-sm">"The map view was a game-changer. I could instantly see how far each listing was from my campus gate and the nearest bus stops. Signed my lease digitally — super convenient!"</p>
+        <div class="flex items-center gap-3">
+          <div class="w-10 h-10 rounded-full bg-gradient-to-br from-indigo-400 to-purple-600 flex items-center justify-center text-white font-bold text-sm flex-shrink-0">A</div>
+          <div>
+            <p class="font-bold text-slate-800 text-sm">Arif Hossain</p>
+            <p class="text-slate-500 text-xs">EEE Student · NSU</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Testimonial 3 -->
+      <div class="testi-card p-7 rounded-2xl bg-primary-50 border border-primary-100 reveal" style="animation-delay:0.2s">
+        <div class="flex gap-1 mb-4">
+          <i class="fa-solid fa-star text-yellow-400 text-sm"></i><i class="fa-solid fa-star text-yellow-400 text-sm"></i><i class="fa-solid fa-star text-yellow-400 text-sm"></i><i class="fa-solid fa-star text-yellow-400 text-sm"></i><i class="fa-solid fa-star-half-stroke text-yellow-400 text-sm"></i>
+        </div>
+        <p class="text-slate-700 leading-relaxed mb-6 text-sm">"As a landlord, the multi-property dashboard is fantastic. I can track all my listings, manage tenant applications, and schedule viewings without any back-and-forth messages."</p>
+        <div class="flex items-center gap-3">
+          <div class="w-10 h-10 rounded-full bg-gradient-to-br from-teal-400 to-blue-600 flex items-center justify-center text-white font-bold text-sm flex-shrink-0">K</div>
+          <div>
+            <p class="font-bold text-slate-800 text-sm">Karim Uddin</p>
+            <p class="text-slate-500 text-xs">Landlord · Dhanmondi</p>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+<!-- ════════════════════════════════════════
+     FINAL CTA BANNER
+════════════════════════════════════════ -->
+<section class="py-24 bg-gradient-to-br from-primary-950 via-primary-900 to-primary-800 relative overflow-hidden">
+  <div class="absolute inset-0 opacity-10">
+    <div class="absolute top-0 left-1/4 w-64 h-64 bg-blue-400 rounded-full blur-3xl"></div>
+    <div class="absolute bottom-0 right-1/4 w-80 h-80 bg-blue-300 rounded-full blur-3xl"></div>
+  </div>
+  <div class="relative z-10 max-w-3xl mx-auto px-4 text-center reveal">
+    <h2 class="text-4xl sm:text-5xl font-black text-white mb-6 leading-tight">
+      Your Perfect Home<br /><span class="text-blue-300">Is Waiting for You</span>
+    </h2>
+    <p class="text-primary-300 text-lg mb-10 leading-relaxed">
+      Join 58,000+ students who found their home, their roommates, and their community through Flatfolks.
+    </p>
+    <div class="flex flex-col sm:flex-row items-center justify-center gap-4">
+      <a href="#" class="w-full sm:w-auto px-8 py-4 bg-blue-500 hover:bg-blue-600 text-white font-bold rounded-xl transition-all shadow-lg text-base">
+        <i class="fa-solid fa-magnifying-glass mr-2"></i>Start Your Search
+      </a>
+      <a href="#" class="w-full sm:w-auto px-8 py-4 bg-white/10 hover:bg-white/20 text-white font-semibold rounded-xl transition-all border border-white/20 text-base backdrop-blur-sm">
+        <i class="fa-solid fa-user-group mr-2"></i>Find Roommates
+      </a>
+    </div>
+  </div>
+</section>
+
+<!-- ════════════════════════════════════════
+     FOOTER
+════════════════════════════════════════ -->
+<footer class="bg-primary-950 text-primary-300">
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-10">
+
+      <!-- Brand Column -->
+      <div class="lg:col-span-2">
+        <div class="flex items-center gap-2.5 mb-4">
+          <div class="w-9 h-9 bg-primary-700 rounded-xl flex items-center justify-center">
+            <i class="fa-solid fa-house-chimney text-white text-lg"></i>
+          </div>
+          <span class="text-xl font-black text-white">Flat<span class="text-blue-400">folks</span></span>
+        </div>
+        <p class="text-sm leading-relaxed mb-6 text-primary-400">Bangladesh's trusted student housing and roommate finder. Verified listings. Smart matching. Secure platform.</p>
+        <div class="flex gap-3">
+          <a href="#" class="w-9 h-9 bg-primary-800 hover:bg-blue-600 rounded-lg flex items-center justify-center transition-all">
+            <i class="fa-brands fa-facebook-f text-sm text-white"></i>
+          </a>
+          <a href="#" class="w-9 h-9 bg-primary-800 hover:bg-blue-600 rounded-lg flex items-center justify-center transition-all">
+            <i class="fa-brands fa-instagram text-sm text-white"></i>
+          </a>
+          <a href="#" class="w-9 h-9 bg-primary-800 hover:bg-blue-600 rounded-lg flex items-center justify-center transition-all">
+            <i class="fa-brands fa-twitter text-sm text-white"></i>
+          </a>
+          <a href="#" class="w-9 h-9 bg-primary-800 hover:bg-blue-600 rounded-lg flex items-center justify-center transition-all">
+            <i class="fa-brands fa-linkedin-in text-sm text-white"></i>
+          </a>
+        </div>
+      </div>
+
+      <!-- Links -->
+      <div>
+        <h4 class="text-white font-bold text-sm mb-4 uppercase tracking-wider">Students</h4>
+        <ul class="space-y-2.5 text-sm">
+          <li><a href="#" class="hover:text-white transition-colors">Browse Listings</a></li>
+          <li><a href="#" class="hover:text-white transition-colors">Find Roommates</a></li>
+          <li><a href="#" class="hover:text-white transition-colors">Compatibility Quiz</a></li>
+          <li><a href="#" class="hover:text-white transition-colors">Saved Listings</a></li>
+          <li><a href="#" class="hover:text-white transition-colors">Move-In Support</a></li>
+        </ul>
+      </div>
+
+      <div>
+        <h4 class="text-white font-bold text-sm mb-4 uppercase tracking-wider">Landlords</h4>
+        <ul class="space-y-2.5 text-sm">
+          <li><a href="#" class="hover:text-white transition-colors">Post a Listing</a></li>
+          <li><a href="#" class="hover:text-white transition-colors">Manage Properties</a></li>
+          <li><a href="#" class="hover:text-white transition-colors">Get Verified</a></li>
+          <li><a href="#" class="hover:text-white transition-colors">Tenant Applications</a></li>
+          <li><a href="#" class="hover:text-white transition-colors">Pricing Plans</a></li>
+        </ul>
+      </div>
+
+      <div>
+        <h4 class="text-white font-bold text-sm mb-4 uppercase tracking-wider">Company</h4>
+        <ul class="space-y-2.5 text-sm">
+          <li><a href="#" class="hover:text-white transition-colors">About Us</a></li>
+          <li><a href="#" class="hover:text-white transition-colors">Contact</a></li>
+          <li><a href="#" class="hover:text-white transition-colors">Privacy Policy</a></li>
+          <li><a href="#" class="hover:text-white transition-colors">Terms of Service</a></li>
+          <li><a href="#" class="hover:text-white transition-colors">Help Center</a></li>
+        </ul>
+      </div>
+    </div>
+
+    <!-- Bottom Bar -->
+    <div class="border-t border-primary-800 mt-12 pt-8 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-primary-500">
+      <p>© 2026 Flatfolks. All rights reserved. Built for students, by students.</p>
+      <div class="flex items-center gap-2">
+        <i class="fa-solid fa-shield-check text-green-500"></i>
+        <span>SSL Secured · Verified Platform</span>
+      </div>
+    </div>
+  </div>
+</footer>
+
+<!-- ════════════════════════════════════════
+     JAVASCRIPT
+════════════════════════════════════════ -->
+<script>
+  // Mobile Menu Toggle
+  const mobileMenuBtn = document.getElementById('mobileMenuBtn');
+  const mobileMenu = document.getElementById('mobileMenu');
+  mobileMenuBtn.addEventListener('click', () => {
+    mobileMenu.classList.toggle('hidden');
+    const icon = mobileMenuBtn.querySelector('i');
+    icon.classList.toggle('fa-bars');
+    icon.classList.toggle('fa-xmark');
+  });
+
+  // Navbar scroll behavior
+  const navbar = document.getElementById('navbar');
+  window.addEventListener('scroll', () => {
+    if (window.scrollY > 20) {
+      navbar.classList.add('shadow-md');
+    } else {
+      navbar.classList.remove('shadow-md');
+    }
+  });
+
+  // Search Tab Switcher
+  function switchTab(tab) {
+    const tabs = ['rent', 'roommate'];
+    tabs.forEach(t => {
+      const btn = document.getElementById('tab-' + t);
+      btn.classList.remove('active');
+    });
+    document.getElementById('tab-' + tab).classList.add('active');
+  }
+
+  // Category Chip Toggle
+  document.querySelectorAll('.cat-chip').forEach(chip => {
+    chip.addEventListener('click', () => {
+      document.querySelectorAll('.cat-chip').forEach(c => c.classList.remove('active-cat'));
+      chip.classList.add('active-cat');
+    });
+  });
+
+  // Scroll reveal
+  const revealObserver = new IntersectionObserver((entries) => {
+    entries.forEach(entry => {
+      if (entry.isIntersecting) {
+        entry.target.classList.add('visible');
+      }
+    });
+  }, { threshold: 0.12, rootMargin: '0px 0px -40px 0px' });
+
+  document.querySelectorAll('.reveal').forEach(el => revealObserver.observe(el));
+
+  // Animated match bars on scroll
+  const matchBars = document.querySelectorAll('.match-fill');
+  const barObserver = new IntersectionObserver((entries) => {
+    entries.forEach(entry => {
+      if (entry.isIntersecting) {
+        const width = entry.target.style.width;
+        entry.target.style.width = '0%';
+        setTimeout(() => { entry.target.style.width = width; }, 200);
+        barObserver.unobserve(entry.target);
+      }
+    });
+  }, { threshold: 0.5 });
+  matchBars.forEach(bar => barObserver.observe(bar));
+</script>
+
+</body>
+</html>

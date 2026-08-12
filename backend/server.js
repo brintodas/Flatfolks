@@ -24,8 +24,11 @@ app.get('/api/ping', (req, res) => {
 })
 
 // routes
-const listingsRoute = require('./routes/listings')
-app.use('/api/listings', listingsRoute)
+const listingsRoute  = require('./routes/listings')
+const bookmarksRoute = require('./routes/bookmarks')
+app.use('/api/listings',  listingsRoute)
+app.use('/api/bookmarks', bookmarksRoute)
+
 
 app.get('/', (req, res) => {
   res.send('Flatfolks API is running')

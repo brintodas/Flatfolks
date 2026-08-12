@@ -13,8 +13,9 @@ import FeaturesGrid     from './components/FeaturesGrid'
 import LandlordCta      from './components/LandlordCta'
 import Testimonials     from './components/Testimonials'
 
-import PostListing from './pages/PostListing'
-import Listings    from './pages/Listings'
+import PostListing    from './pages/PostListing'
+import Listings       from './pages/Listings'
+import ListingDetail  from './pages/ListingDetail'
 
 // Home page - all the sections together
 function Home() {
@@ -41,8 +42,9 @@ function App() {
         <Navbar />
         <Routes>
           <Route path="/"             element={<Home />} />
-          <Route path="/listings"     element={<Listings />} />
-          <Route path="/post-listing" element={<PostListing />} />
+          <Route path="/listings"       element={<Listings />} />
+          <Route path="/listings/:id"   element={<ListingDetail />} />
+          <Route path="/post-listing"   element={<PostListing />} />
         </Routes>
         <Footer />
       </div>

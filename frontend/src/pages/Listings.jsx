@@ -13,11 +13,22 @@ const emptyFilters = {
   availableBefore: ''
 }
 
+function getUserKey() {
+  let key = localStorage.getItem('ff_user_key')
+  if (!key) {
+    key = 'guest_' + Math.random().toString(36).slice(2, 11)
+    localStorage.setItem('ff_user_key', key)
+  }
+  return key
+}
+
 function Listings() {
   const [listings, setListings] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
   const [filters, setFilters] = useState(emptyFilters)
+  const [bookmarked, setBookmarked] = useState(new Set()) // set of bookmarked listing IDs
+  const userKey = getUserKey()
 
   const updateFilter = (key, value) => {
     setFilters(prev => ({ ...prev, [key]: value }))
@@ -60,6 +71,36 @@ function Listings() {
 
     return () => clearTimeout(timer)
   }, [filters])
+
+  // load which listings this user has already bookmarked
+  useEffect(() => {
+    fetch(`http://localhost:8000/api/bookmarks/ids?user_key=${userKey}`)
+      .then(res => res.json())
+      .then(json => {
+        if (json.success) setBookmarked(new Set(json.data))
+      })
+      .catch(() => {})
+  }, [])
+
+  const toggleBookmark = (e, listingId) => {
+    e.stopPropagation()
+    fetch('http://localhost:8000/api/bookmarks', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ listing_id: listingId, user_key: userKey })
+    })
+      .then(res => res.json())
+      .then(json => {
+        if (json.success) {
+          setBookmarked(prev => {
+            const next = new Set(prev)
+            json.bookmarked ? next.add(listingId) : next.delete(listingId)
+            return next
+          })
+        }
+      })
+      .catch(() => {})
+  }
 
   const hasActiveFilters = Object.values(filters).some(v => v !== '')
 
@@ -252,22 +293,33 @@ function Listings() {
 
             <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-6">
               {listings.map(listing => (
-                <div key={listing.id} className="bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden hover:shadow-md transition-shadow">
+                <div key={listing.id} className="bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden hover:shadow-md transition-shadow relative">
 
                   {/* Photo or placeholder */}
                   <div className="h-44 bg-gradient-to-br from-blue-100 to-blue-200 relative">
-                    {listing.photos ? (
-                      <img
-                        src={`http://localhost:8000/uploads/${listing.photos.split(',')[0]}`}
-                        alt={listing.title}
-                        className="w-full h-full object-cover"
-                        onError={(e) => { e.target.style.display = 'none' }}
-                      />
-                    ) : (
-                      <div className="w-full h-full flex items-center justify-center">
-                        <i className="fa-solid fa-building text-4xl text-blue-300"></i>
+                    {listing.photos
+                      ? <img src={`http://localhost:8000/uploads/${listing.photos.split(',')[0]}`} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" alt={listing.title} />
+                      : <div className="w-full h-full flex flex-col items-center justify-center text-slate-300">
+                        <i className="fa-solid fa-house text-4xl mb-2"></i>
+                        <span className="text-xs font-medium">No Photo</span>
                       </div>
-                    )}
+                    }
+
+                    {/* Bookmark button */}
+                    <button
+                      onClick={(e) => toggleBookmark(e, listing.id)}
+                      title={bookmarked.has(listing.id) ? 'Remove from watchlist' : 'Save to watchlist'}
+                      className={`absolute top-3 right-3 w-8 h-8 rounded-full shadow flex items-center justify-center transition-all ${
+                        bookmarked.has(listing.id)
+                          ? 'bg-blue-600 text-white'
+                          : 'bg-white text-slate-400 hover:text-blue-600'
+                      }`}
+                    >
+                      <i className={`fa-bookmark text-sm ${
+                        bookmarked.has(listing.id) ? 'fa-solid' : 'fa-regular'
+                      }`}></i>
+                    </button>
+
                     <span className={`absolute top-3 left-3 text-xs font-semibold px-2 py-1 rounded text-white ${
                       listing.gender_preference === 'female' ? 'bg-pink-500' :
                       listing.gender_preference === 'male' ? 'bg-blue-600' : 'bg-green-600'

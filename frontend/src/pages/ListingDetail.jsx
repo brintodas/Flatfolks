@@ -266,7 +266,7 @@ function ListingDetail() {
               {listing.distance_to_campus && (
                 <div className="flex justify-between">
                   <span className="text-slate-500">To Campus</span>
-                  <span className="font-medium">{listing.distance_to_campus}</span>
+                  <span className="font-medium">{listing.distance_to_campus} km</span>
                 </div>
               )}
               {listing.advance_deposit && (

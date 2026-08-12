@@ -94,7 +94,7 @@ router.post('/', upload.fields([{ name: 'photos', maxCount: 5 }, { name: 'video'
     floor_plan,
     walkthrough_link || null,
     property_type || 'entire_flat',
-    distance_to_campus || '',
+    distance_to_campus ? parseFloat(distance_to_campus) : null,
     advance_deposit || '',
     curfew_time || '',
     guests_allowed === 'false' ? 0 : 1,
@@ -120,7 +120,11 @@ router.post('/', upload.fields([{ name: 'photos', maxCount: 5 }, { name: 'video'
 
 // GET /api/listings
 router.get('/', (req, res) => {
-  const { available_before, available_after } = req.query
+  const {
+    available_before, available_after, search,
+    min_rent, max_rent, max_distance,
+    furnished, utilities_included, gender_preference, lease_duration
+  } = req.query
 
   let sql = 'SELECT * FROM listings WHERE status = "active"'
   const params = []
@@ -133,6 +137,49 @@ router.get('/', (req, res) => {
   if (available_after) {
     sql += ' AND (available_from >= ? OR available_from IS NULL)'
     params.push(available_after)
+  }
+
+  // search box - matches title, location, area or district
+  if (search) {
+    sql += ' AND (title LIKE ? OR location LIKE ? OR area LIKE ? OR district LIKE ?)'
+    const term = `%${search}%`
+    params.push(term, term, term, term)
+  }
+
+  if (min_rent) {
+    sql += ' AND rent >= ?'
+    params.push(parseInt(min_rent))
+  }
+
+  if (max_rent) {
+    sql += ' AND rent <= ?'
+    params.push(parseInt(max_rent))
+  }
+
+  // distance to campus in km, listings with no distance set are kept too
+  if (max_distance) {
+    sql += ' AND (distance_to_campus <= ? OR distance_to_campus IS NULL)'
+    params.push(parseFloat(max_distance))
+  }
+
+  if (furnished === 'true' || furnished === 'false') {
+    sql += ' AND furnished = ?'
+    params.push(furnished === 'true' ? 1 : 0)
+  }
+
+  if (utilities_included === 'true' || utilities_included === 'false') {
+    sql += ' AND utilities_included = ?'
+    params.push(utilities_included === 'true' ? 1 : 0)
+  }
+
+  if (gender_preference && gender_preference !== 'any') {
+    sql += ' AND gender_preference = ?'
+    params.push(gender_preference)
+  }
+
+  if (lease_duration) {
+    sql += ' AND lease_duration = ?'
+    params.push(lease_duration)
   }
 
   sql += ' ORDER BY created_at DESC'

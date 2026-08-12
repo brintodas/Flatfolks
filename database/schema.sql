@@ -32,7 +32,7 @@ CREATE TABLE `bookmarks` (
   PRIMARY KEY (`id`),
   KEY `listing_id` (`listing_id`),
   CONSTRAINT `bookmarks_ibfk_1` FOREIGN KEY (`listing_id`) REFERENCES `listings` (`id`) ON DELETE CASCADE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=2 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -65,7 +65,7 @@ CREATE TABLE `listings` (
   `floor_plan` varchar(255) DEFAULT NULL,
   `walkthrough_link` varchar(255) DEFAULT NULL,
   `property_type` enum('entire_flat','single_room','shared_room','sublet') DEFAULT 'entire_flat',
-  `distance_to_campus` varchar(100) DEFAULT NULL,
+  `distance_to_campus` decimal(4,1) DEFAULT NULL,
   `advance_deposit` varchar(100) DEFAULT NULL,
   `curfew_time` varchar(50) DEFAULT NULL,
   `guests_allowed` tinyint(1) DEFAULT 1,
@@ -88,4 +88,4 @@ CREATE TABLE `listings` (
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
--- Dump completed on 2026-08-13  1:57:30
+-- Dump completed on 2026-08-13  2:22:23

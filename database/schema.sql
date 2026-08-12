@@ -22,7 +22,7 @@ CREATE TABLE IF NOT EXISTS listings (
   floor_plan VARCHAR(255),
   walkthrough_link VARCHAR(255),
   property_type ENUM('entire_flat','single_room','shared_room','sublet') DEFAULT 'entire_flat',
-  distance_to_campus VARCHAR(100),
+  distance_to_campus DECIMAL(4,1),
   advance_deposit VARCHAR(100),
   curfew_time VARCHAR(50),
   guests_allowed TINYINT(1) DEFAULT 1,

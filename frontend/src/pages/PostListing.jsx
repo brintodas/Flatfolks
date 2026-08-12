@@ -461,13 +461,15 @@ function PostListing() {
               </select>
             </div>
             <div>
-              <label className="block text-sm font-medium text-slate-700 mb-1">Distance to Campus</label>
+              <label className="block text-sm font-medium text-slate-700 mb-1">Distance to Campus (km)</label>
               <input
-                type="text"
+                type="number"
+                step="0.1"
+                min="0"
                 name="distance_to_campus"
                 value={form.distance_to_campus}
                 onChange={handleChange}
-                placeholder="e.g. 5 mins walk"
+                placeholder="e.g. 1.5"
                 className="w-full border border-slate-200 rounded-lg px-3 py-2.5 text-sm text-slate-800 outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
               />
             </div>

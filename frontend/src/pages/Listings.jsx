@@ -17,9 +17,16 @@ function Listings() {
   const [error, setError]             = useState('')
   const [bookmarked, setBookmarked]   = useState(new Set()) // set of bookmarked listing IDs
   const userKey = getUserKey()
+  const [availableBefore, setAvailableBefore] = useState('')
 
   useEffect(() => {
-    fetch('http://localhost:8000/api/listings')
+    let url = 'http://localhost:8000/api/listings'
+    if (availableBefore) {
+      url += `?available_before=${availableBefore}`
+    }
+
+    setLoading(true)
+    fetch(url)
       .then(res => res.json())
       .then(json => {
         if (json.success) {
@@ -34,7 +41,7 @@ function Listings() {
         setError('Could not connect to server')
         setLoading(false)
       })
-  }, [])
+  }, [availableBefore])
 
   // load which listings this user has already bookmarked
   useEffect(() => {
@@ -78,17 +85,39 @@ function Listings() {
     <div className="min-h-screen bg-slate-50 pt-20 pb-12">
       <div className="max-w-6xl mx-auto px-4">
 
-        <div className="flex items-center justify-between mb-8">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
           <div>
             <h1 className="text-3xl font-bold text-slate-800">All Listings</h1>
             <p className="text-slate-500 mt-1">{listings.length} properties found</p>
           </div>
-          <Link
-            to="/post-listing"
-            className="px-4 py-2 bg-blue-700 hover:bg-blue-800 text-white text-sm font-semibold rounded-xl transition-colors"
-          >
-            + Post a Listing
-          </Link>
+          
+          <div className="flex flex-wrap items-center gap-4">
+            <div className="flex items-center gap-2 bg-white px-3 py-2 rounded-xl border border-slate-200 shadow-sm">
+              <label className="text-sm font-medium text-slate-600">Move-in by:</label>
+              <input 
+                type="date" 
+                className="text-sm text-slate-800 outline-none bg-transparent"
+                value={availableBefore}
+                onChange={(e) => setAvailableBefore(e.target.value)}
+              />
+              {availableBefore && (
+                <button 
+                  onClick={() => setAvailableBefore('')}
+                  className="text-slate-400 hover:text-red-500 ml-1"
+                  title="Clear filter"
+                >
+                  <i className="fa-solid fa-xmark"></i>
+                </button>
+              )}
+            </div>
+
+            <Link
+              to="/post-listing"
+              className="px-4 py-2.5 bg-blue-700 hover:bg-blue-800 text-white text-sm font-semibold rounded-xl transition-colors shadow-sm"
+            >
+              + Post a Listing
+            </Link>
+          </div>
         </div>
 
         {error && (
@@ -150,10 +179,24 @@ function Listings() {
 
               <div className="p-4">
                 <h3 className="font-bold text-slate-800 mb-1 truncate">{listing.title}</h3>
-                <p className="text-slate-500 text-sm mb-2 flex items-center gap-1">
+                <p className="text-slate-500 text-sm mb-3 flex items-center gap-1">
                   <i className="fa-solid fa-location-dot text-blue-500 text-xs"></i>
-                  {listing.location}
+                  {[listing.area, listing.district].filter(Boolean).join(', ') || listing.location}
                 </p>
+                
+                <div className="mb-3">
+                  {listing.available_from ? (
+                    <p className="text-xs font-medium text-indigo-700 bg-indigo-50 inline-block px-2 py-1 rounded-md">
+                      <i className="fa-regular fa-calendar mr-1"></i>
+                      Available from {new Date(listing.available_from).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+                    </p>
+                  ) : (
+                    <p className="text-xs font-medium text-emerald-700 bg-emerald-50 inline-block px-2 py-1 rounded-md">
+                      <i className="fa-solid fa-bolt mr-1"></i>
+                      Immediate Move-in
+                    </p>
+                  )}
+                </div>
 
                 <div className="flex gap-2 flex-wrap mb-3">
                   <span className="text-xs bg-blue-50 text-blue-700 px-2 py-0.5 rounded-full">
@@ -172,9 +215,12 @@ function Listings() {
                     ৳{Number(listing.rent).toLocaleString()}
                     <span className="text-slate-400 text-sm font-normal">/mo</span>
                   </span>
-                  <button className="text-xs px-3 py-1.5 border border-blue-600 text-blue-700 font-medium rounded-lg hover:bg-blue-600 hover:text-white transition-all">
+                  <Link
+                    to={`/listings/${listing.id}`}
+                    className="text-xs px-3 py-1.5 border border-blue-600 text-blue-700 font-medium rounded-lg hover:bg-blue-600 hover:text-white transition-all"
+                  >
                     View
-                  </button>
+                  </Link>
                 </div>
               </div>
             </div>

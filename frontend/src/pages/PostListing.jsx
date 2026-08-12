@@ -8,8 +8,9 @@ function PostListing() {
     title: '',
     description: '',
     rent: '',
-    location: '',
+    district: '',
     area: '',
+    location: '',
     beds: '1',
     furnished: 'false',
     gender_preference: 'any',
@@ -17,10 +18,24 @@ function PostListing() {
     lease_duration: '',
     available_from: '',
     landlord_name: '',
-    landlord_phone: ''
+    landlord_phone: '',
+    walkthrough_link: '',
+    property_type: 'entire_flat',
+    distance_to_campus: '',
+    advance_deposit: '',
+    curfew_time: '',
+    guests_allowed: 'true',
+    smoking_allowed: 'false',
+    has_wifi: 'false',
+    has_generator: 'false',
+    has_cctv: 'false',
+    has_lift: 'false',
+    has_fridge: 'false'
   })
 
   const [photos, setPhotos] = useState([])
+  const [video, setVideo] = useState(null)
+  const [floorPlan, setFloorPlan] = useState(null)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   const [success, setSuccess] = useState('')
@@ -61,6 +76,16 @@ function PostListing() {
     // append photos
     for (let i = 0; i < photos.length; i++) {
       data.append('photos', photos[i])
+    }
+
+    // append video if exists
+    if (video) {
+      data.append('video', video)
+    }
+
+    // append floor plan if exists
+    if (floorPlan) {
+      data.append('floor_plan', floorPlan)
     }
 
     try {
@@ -181,30 +206,121 @@ function PostListing() {
             </div>
           </div>
 
-          {/* Location + Area */}
+          {/* District → Area → Road/Block */}
+          <div>
+            <label className="block text-sm font-medium text-slate-700 mb-1">
+              District <span className="text-red-500">*</span>
+            </label>
+            <select
+              name="district"
+              value={form.district}
+              onChange={e => {
+                setForm({ ...form, district: e.target.value, area: '' })
+              }}
+              required
+              className="w-full border border-slate-200 rounded-lg px-3 py-2.5 text-sm text-slate-800 outline-none focus:border-blue-500 bg-white"
+            >
+              <option value="">Select district</option>
+              <option value="Dhaka">Dhaka</option>
+              <option value="Gazipur">Gazipur</option>
+              <option value="Narayanganj">Narayanganj</option>
+              <option value="Chittagong">Chittagong</option>
+              <option value="Sylhet">Sylhet</option>
+              <option value="Rajshahi">Rajshahi</option>
+              <option value="Khulna">Khulna</option>
+              <option value="Comilla">Comilla</option>
+            </select>
+          </div>
+
           <div className="grid grid-cols-2 gap-4">
             <div>
               <label className="block text-sm font-medium text-slate-700 mb-1">
-                Full Address <span className="text-red-500">*</span>
+                Area / Neighbourhood <span className="text-red-500">*</span>
+              </label>
+              <select
+                name="area"
+                value={form.area}
+                onChange={handleChange}
+                required
+                disabled={!form.district}
+                className="w-full border border-slate-200 rounded-lg px-3 py-2.5 text-sm text-slate-800 outline-none focus:border-blue-500 bg-white disabled:opacity-50"
+              >
+                <option value="">Select area</option>
+                {form.district === 'Dhaka' && (<>
+                  <option>Dhanmondi</option>
+                  <option>Banani</option>
+                  <option>Gulshan</option>
+                  <option>Bashundhara R/A</option>
+                  <option>Mirpur</option>
+                  <option>Mohakhali</option>
+                  <option>Uttara</option>
+                  <option>Mohammadpur</option>
+                  <option>Aftabnagar</option>
+                  <option>Badda</option>
+                  <option>Moghbazar</option>
+                  <option>Farmgate</option>
+                  <option>Baridhara</option>
+                  <option>Khilgaon</option>
+                  <option>Rampura</option>
+                  <option>Lalmatia</option>
+                  <option>Shyamoli</option>
+                  <option>Tejgaon</option>
+                  <option>Kuril</option>
+                  <option>Vatara</option>
+                </>)}
+                {form.district === 'Gazipur' && (<>
+                  <option>Tongi</option>
+                  <option>Joydebpur</option>
+                  <option>Gazipur Sadar</option>
+                  <option>Kashimpur</option>
+                </>)}
+                {form.district === 'Narayanganj' && (<>
+                  <option>Narayanganj Sadar</option>
+                  <option>Siddhirganj</option>
+                  <option>Fatullah</option>
+                </>)}
+                {form.district === 'Chittagong' && (<>
+                  <option>Halishahar</option>
+                  <option>GEC Circle</option>
+                  <option>Agrabad</option>
+                  <option>Nasirabad</option>
+                  <option>Pahartali</option>
+                  <option>Khulshi</option>
+                  <option>Chawkbazar</option>
+                </>)}
+                {form.district === 'Sylhet' && (<>
+                  <option>Sylhet Sadar</option>
+                  <option>Zindabazar</option>
+                  <option>Amberkhana</option>
+                  <option>Shahjalal Upashahar</option>
+                </>)}
+                {form.district === 'Rajshahi' && (<>
+                  <option>Rajshahi Sadar</option>
+                  <option>Boalia</option>
+                  <option>Motihar</option>
+                </>)}
+                {form.district === 'Khulna' && (<>
+                  <option>Khulna Sadar</option>
+                  <option>Sonadanga</option>
+                  <option>Khalishpur</option>
+                </>)}
+                {form.district === 'Comilla' && (<>
+                  <option>Comilla Sadar</option>
+                  <option>Kotbari</option>
+                </>)}
+              </select>
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-slate-700 mb-1">
+                Road / Block / House No.
               </label>
               <input
                 type="text"
                 name="location"
                 value={form.location}
                 onChange={handleChange}
-                placeholder="e.g. Road 5, Dhanmondi"
-                required
-                className="w-full border border-slate-200 rounded-lg px-3 py-2.5 text-sm text-slate-800 outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-slate-700 mb-1">Area / Neighbourhood</label>
-              <input
-                type="text"
-                name="area"
-                value={form.area}
-                onChange={handleChange}
-                placeholder="e.g. Dhanmondi"
+                placeholder="e.g. Road 5, Block C, House 12"
                 className="w-full border border-slate-200 rounded-lg px-3 py-2.5 text-sm text-slate-800 outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
               />
             </div>
@@ -286,14 +402,153 @@ function PostListing() {
 
           {/* Available From */}
           <div>
-            <label className="block text-sm font-medium text-slate-700 mb-1">Available From</label>
-            <input
-              type="date"
-              name="available_from"
-              value={form.available_from}
-              onChange={handleChange}
-              className="w-full border border-slate-200 rounded-lg px-3 py-2.5 text-sm text-slate-800 outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
-            />
+            <label className="block text-sm font-medium text-slate-700 mb-2">Available From</label>
+            <div className="flex flex-col gap-3">
+              <div className="flex gap-2">
+                <button
+                  type="button"
+                  onClick={() => {
+                    const today = new Date();
+                    const yyyy = today.getFullYear();
+                    const mm = String(today.getMonth() + 1).padStart(2, '0');
+                    const dd = String(today.getDate()).padStart(2, '0');
+                    setForm(prev => ({ ...prev, available_from: `${yyyy}-${mm}-${dd}` }));
+                  }}
+                  className="px-3 py-1.5 text-xs font-medium bg-blue-50 text-blue-700 hover:bg-blue-100 rounded-md border border-blue-200 transition-colors"
+                >
+                  Immediate Move-in
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    const d = new Date();
+                    d.setMonth(d.getMonth() + 1);
+                    d.setDate(1);
+                    const yyyy = d.getFullYear();
+                    const mm = String(d.getMonth() + 1).padStart(2, '0');
+                    const dd = String(d.getDate()).padStart(2, '0');
+                    setForm(prev => ({ ...prev, available_from: `${yyyy}-${mm}-${dd}` }));
+                  }}
+                  className="px-3 py-1.5 text-xs font-medium bg-slate-50 text-slate-700 hover:bg-slate-100 rounded-md border border-slate-200 transition-colors"
+                >
+                  1st of Next Month
+                </button>
+              </div>
+              <input
+                type="date"
+                name="available_from"
+                value={form.available_from}
+                onChange={handleChange}
+                className="w-full border border-slate-200 rounded-lg px-3 py-2.5 text-sm text-slate-800 outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
+              />
+            </div>
+          </div>
+
+          {/* Property Type + Distance to Campus */}
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-medium text-slate-700 mb-1">Property Type</label>
+              <select
+                name="property_type"
+                value={form.property_type}
+                onChange={handleChange}
+                className="w-full border border-slate-200 rounded-lg px-3 py-2.5 text-sm text-slate-800 outline-none focus:border-blue-500 bg-white"
+              >
+                <option value="entire_flat">Entire Flat</option>
+                <option value="single_room">Single Room</option>
+                <option value="shared_room">Shared Room / Seat</option>
+                <option value="sublet">Sublet</option>
+              </select>
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-slate-700 mb-1">Distance to Campus</label>
+              <input
+                type="text"
+                name="distance_to_campus"
+                value={form.distance_to_campus}
+                onChange={handleChange}
+                placeholder="e.g. 5 mins walk"
+                className="w-full border border-slate-200 rounded-lg px-3 py-2.5 text-sm text-slate-800 outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
+              />
+            </div>
+          </div>
+
+          {/* Advance Deposit + Curfew */}
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-medium text-slate-700 mb-1">Advance Deposit</label>
+              <input
+                type="text"
+                name="advance_deposit"
+                value={form.advance_deposit}
+                onChange={handleChange}
+                placeholder="e.g. 2 months rent"
+                className="w-full border border-slate-200 rounded-lg px-3 py-2.5 text-sm text-slate-800 outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-slate-700 mb-1">Gate Curfew Time</label>
+              <input
+                type="text"
+                name="curfew_time"
+                value={form.curfew_time}
+                onChange={handleChange}
+                placeholder="e.g. 10:00 PM or None"
+                className="w-full border border-slate-200 rounded-lg px-3 py-2.5 text-sm text-slate-800 outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
+              />
+            </div>
+          </div>
+
+          {/* Rules */}
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-medium text-slate-700 mb-1">Guests Allowed?</label>
+              <select
+                name="guests_allowed"
+                value={form.guests_allowed}
+                onChange={handleChange}
+                className="w-full border border-slate-200 rounded-lg px-3 py-2.5 text-sm text-slate-800 outline-none focus:border-blue-500 bg-white"
+              >
+                <option value="true">Yes</option>
+                <option value="false">No</option>
+              </select>
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-slate-700 mb-1">Smoking Allowed?</label>
+              <select
+                name="smoking_allowed"
+                value={form.smoking_allowed}
+                onChange={handleChange}
+                className="w-full border border-slate-200 rounded-lg px-3 py-2.5 text-sm text-slate-800 outline-none focus:border-blue-500 bg-white"
+              >
+                <option value="false">No</option>
+                <option value="true">Yes</option>
+              </select>
+            </div>
+          </div>
+
+          {/* Amenities checkboxes */}
+          <div>
+            <label className="block text-sm font-medium text-slate-700 mb-2">Amenities</label>
+            <div className="flex flex-wrap gap-x-5 gap-y-2">
+              {[
+                { key: 'has_wifi', label: 'WiFi' },
+                { key: 'has_generator', label: 'Generator' },
+                { key: 'has_cctv', label: 'CCTV' },
+                { key: 'has_lift', label: 'Lift' },
+                { key: 'has_fridge', label: 'Fridge' },
+              ].map(({ key, label }) => (
+                <label key={key} className="flex items-center gap-2 text-sm text-slate-700 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={form[key] === 'true'}
+                    onChange={e => setForm({ ...form, [key]: e.target.checked ? 'true' : 'false' })}
+                    className="w-4 h-4 accent-blue-600"
+                  />
+                  {label}
+                </label>
+              ))}
+            </div>
           </div>
 
           {/* Landlord info */}
@@ -325,21 +580,69 @@ function PostListing() {
             </div>
           </div>
 
-          {/* Photos */}
-          <div>
-            <label className="block text-sm font-medium text-slate-700 mb-1">
-              Photos <span className="text-slate-400 font-normal">(up to 5 images)</span>
-            </label>
-            <input
-              type="file"
-              accept="image/*"
-              multiple
-              onChange={handlePhotos}
-              className="w-full border border-slate-200 rounded-lg px-3 py-2.5 text-sm text-slate-600 bg-white file:mr-3 file:py-1 file:px-3 file:rounded-md file:border-0 file:text-sm file:font-medium file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100 cursor-pointer"
-            />
-            {photos.length > 0 && (
-              <p className="text-xs text-slate-500 mt-1">{photos.length} photo(s) selected</p>
-            )}
+          {/* Rich Media Section */}
+          <div className="border-t border-slate-100 pt-5">
+            <p className="text-sm font-semibold text-slate-700 mb-3">Property Media</p>
+            
+            {/* Photos */}
+            <div className="mb-4">
+              <label className="block text-sm font-medium text-slate-700 mb-1">
+                Photos <span className="text-slate-400 font-normal">(up to 5 images)</span>
+              </label>
+              <input
+                type="file"
+                accept="image/*"
+                multiple
+                onChange={handlePhotos}
+                className="w-full border border-slate-200 rounded-lg px-3 py-2.5 text-sm text-slate-600 bg-white file:mr-3 file:py-1 file:px-3 file:rounded-md file:border-0 file:text-sm file:font-medium file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100 cursor-pointer"
+              />
+              {photos.length > 0 && (
+                <p className="text-xs text-slate-500 mt-1">{photos.length} photo(s) selected</p>
+              )}
+            </div>
+
+            <div className="grid grid-cols-2 gap-4 mb-4">
+              {/* Floor Plan */}
+              <div>
+                <label className="block text-sm font-medium text-slate-700 mb-1">
+                  Floor Plan <span className="text-slate-400 font-normal">(optional)</span>
+                </label>
+                <input
+                  type="file"
+                  accept="image/*"
+                  onChange={(e) => setFloorPlan(e.target.files[0])}
+                  className="w-full border border-slate-200 rounded-lg px-3 py-2.5 text-sm text-slate-600 bg-white file:mr-3 file:py-1 file:px-3 file:rounded-md file:border-0 file:text-sm file:font-medium file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100 cursor-pointer"
+                />
+              </div>
+
+              {/* Video Tour */}
+              <div>
+                <label className="block text-sm font-medium text-slate-700 mb-1">
+                  Video Tour <span className="text-slate-400 font-normal">(mp4/webm, max 100MB)</span>
+                </label>
+                <input
+                  type="file"
+                  accept="video/mp4,video/webm"
+                  onChange={(e) => setVideo(e.target.files[0])}
+                  className="w-full border border-slate-200 rounded-lg px-3 py-2.5 text-sm text-slate-600 bg-white file:mr-3 file:py-1 file:px-3 file:rounded-md file:border-0 file:text-sm file:font-medium file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100 cursor-pointer"
+                />
+              </div>
+            </div>
+
+            {/* 360 Walkthrough Link */}
+            <div>
+              <label className="block text-sm font-medium text-slate-700 mb-1">
+                360° Walkthrough Link <span className="text-slate-400 font-normal">(Matterport / YouTube 360)</span>
+              </label>
+              <input
+                type="url"
+                name="walkthrough_link"
+                value={form.walkthrough_link}
+                onChange={handleChange}
+                placeholder="https://my.matterport.com/show/?m=..."
+                className="w-full border border-slate-200 rounded-lg px-3 py-2.5 text-sm text-slate-800 outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
+              />
+            </div>
           </div>
 
           {/* Submit */}

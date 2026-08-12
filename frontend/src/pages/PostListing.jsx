@@ -8,8 +8,9 @@ function PostListing() {
     title: '',
     description: '',
     rent: '',
-    location: '',
+    district: '',
     area: '',
+    location: '',
     beds: '1',
     furnished: 'false',
     gender_preference: 'any',
@@ -205,30 +206,121 @@ function PostListing() {
             </div>
           </div>
 
-          {/* Location + Area */}
+          {/* District → Area → Road/Block */}
+          <div>
+            <label className="block text-sm font-medium text-slate-700 mb-1">
+              District <span className="text-red-500">*</span>
+            </label>
+            <select
+              name="district"
+              value={form.district}
+              onChange={e => {
+                setForm({ ...form, district: e.target.value, area: '' })
+              }}
+              required
+              className="w-full border border-slate-200 rounded-lg px-3 py-2.5 text-sm text-slate-800 outline-none focus:border-blue-500 bg-white"
+            >
+              <option value="">Select district</option>
+              <option value="Dhaka">Dhaka</option>
+              <option value="Gazipur">Gazipur</option>
+              <option value="Narayanganj">Narayanganj</option>
+              <option value="Chittagong">Chittagong</option>
+              <option value="Sylhet">Sylhet</option>
+              <option value="Rajshahi">Rajshahi</option>
+              <option value="Khulna">Khulna</option>
+              <option value="Comilla">Comilla</option>
+            </select>
+          </div>
+
           <div className="grid grid-cols-2 gap-4">
             <div>
               <label className="block text-sm font-medium text-slate-700 mb-1">
-                Full Address <span className="text-red-500">*</span>
+                Area / Neighbourhood <span className="text-red-500">*</span>
+              </label>
+              <select
+                name="area"
+                value={form.area}
+                onChange={handleChange}
+                required
+                disabled={!form.district}
+                className="w-full border border-slate-200 rounded-lg px-3 py-2.5 text-sm text-slate-800 outline-none focus:border-blue-500 bg-white disabled:opacity-50"
+              >
+                <option value="">Select area</option>
+                {form.district === 'Dhaka' && (<>
+                  <option>Dhanmondi</option>
+                  <option>Banani</option>
+                  <option>Gulshan</option>
+                  <option>Bashundhara R/A</option>
+                  <option>Mirpur</option>
+                  <option>Mohakhali</option>
+                  <option>Uttara</option>
+                  <option>Mohammadpur</option>
+                  <option>Aftabnagar</option>
+                  <option>Badda</option>
+                  <option>Moghbazar</option>
+                  <option>Farmgate</option>
+                  <option>Baridhara</option>
+                  <option>Khilgaon</option>
+                  <option>Rampura</option>
+                  <option>Lalmatia</option>
+                  <option>Shyamoli</option>
+                  <option>Tejgaon</option>
+                  <option>Kuril</option>
+                  <option>Vatara</option>
+                </>)}
+                {form.district === 'Gazipur' && (<>
+                  <option>Tongi</option>
+                  <option>Joydebpur</option>
+                  <option>Gazipur Sadar</option>
+                  <option>Kashimpur</option>
+                </>)}
+                {form.district === 'Narayanganj' && (<>
+                  <option>Narayanganj Sadar</option>
+                  <option>Siddhirganj</option>
+                  <option>Fatullah</option>
+                </>)}
+                {form.district === 'Chittagong' && (<>
+                  <option>Halishahar</option>
+                  <option>GEC Circle</option>
+                  <option>Agrabad</option>
+                  <option>Nasirabad</option>
+                  <option>Pahartali</option>
+                  <option>Khulshi</option>
+                  <option>Chawkbazar</option>
+                </>)}
+                {form.district === 'Sylhet' && (<>
+                  <option>Sylhet Sadar</option>
+                  <option>Zindabazar</option>
+                  <option>Amberkhana</option>
+                  <option>Shahjalal Upashahar</option>
+                </>)}
+                {form.district === 'Rajshahi' && (<>
+                  <option>Rajshahi Sadar</option>
+                  <option>Boalia</option>
+                  <option>Motihar</option>
+                </>)}
+                {form.district === 'Khulna' && (<>
+                  <option>Khulna Sadar</option>
+                  <option>Sonadanga</option>
+                  <option>Khalishpur</option>
+                </>)}
+                {form.district === 'Comilla' && (<>
+                  <option>Comilla Sadar</option>
+                  <option>Kotbari</option>
+                </>)}
+              </select>
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-slate-700 mb-1">
+                Road / Block / House No.
               </label>
               <input
                 type="text"
                 name="location"
                 value={form.location}
                 onChange={handleChange}
-                placeholder="e.g. Road 5, Dhanmondi"
-                required
-                className="w-full border border-slate-200 rounded-lg px-3 py-2.5 text-sm text-slate-800 outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-slate-700 mb-1">Area / Neighbourhood</label>
-              <input
-                type="text"
-                name="area"
-                value={form.area}
-                onChange={handleChange}
-                placeholder="e.g. Dhanmondi"
+                placeholder="e.g. Road 5, Block C, House 12"
                 className="w-full border border-slate-200 rounded-lg px-3 py-2.5 text-sm text-slate-800 outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
               />
             </div>

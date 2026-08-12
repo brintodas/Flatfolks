@@ -106,7 +106,7 @@ function ListingDetail() {
 
               <p className="text-slate-500 text-sm flex items-center gap-1 mb-4">
                 <i className="fa-solid fa-location-dot text-blue-500"></i>
-                {listing.location}{listing.area ? `, ${listing.area}` : ''}
+                {[listing.location, listing.area, listing.district].filter(Boolean).join(', ')}
               </p>
 
               <div className="flex flex-wrap gap-2 mb-4">

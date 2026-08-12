@@ -124,7 +124,7 @@ function Listings() {
                 <h3 className="font-bold text-slate-800 mb-1 truncate">{listing.title}</h3>
                 <p className="text-slate-500 text-sm mb-3 flex items-center gap-1">
                   <i className="fa-solid fa-location-dot text-blue-500 text-xs"></i>
-                  {listing.location}
+                  {[listing.area, listing.district].filter(Boolean).join(', ') || listing.location}
                 </p>
                 
                 <div className="mb-3">

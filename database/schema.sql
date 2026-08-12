@@ -10,6 +10,7 @@ CREATE TABLE IF NOT EXISTS listings (
   rent INT NOT NULL,
   location VARCHAR(255) NOT NULL,
   area VARCHAR(100),
+  district VARCHAR(100),
   beds INT DEFAULT 1,
   furnished TINYINT(1) DEFAULT 0,
   gender_preference ENUM('any', 'male', 'female') DEFAULT 'any',

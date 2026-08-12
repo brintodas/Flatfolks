@@ -39,7 +39,7 @@ const upload = multer({
 // POST /api/listings
 router.post('/', upload.fields([{ name: 'photos', maxCount: 5 }, { name: 'video', maxCount: 1 }, { name: 'floor_plan', maxCount: 1 }]), (req, res) => {
   const {
-    title, description, rent, location, area,
+    title, description, rent, location, area, district,
     beds, furnished, gender_preference,
     utilities_included, lease_duration,
     available_from, landlord_name, landlord_phone, walkthrough_link,
@@ -68,12 +68,12 @@ router.post('/', upload.fields([{ name: 'photos', maxCount: 5 }, { name: 'video'
 
   const sql = `
     INSERT INTO listings 
-    (title, description, rent, location, area, beds, furnished, gender_preference,
+    (title, description, rent, location, area, district, beds, furnished, gender_preference,
      utilities_included, lease_duration, available_from, photos, video, floor_plan, walkthrough_link,
      property_type, distance_to_campus, advance_deposit, curfew_time,
      guests_allowed, smoking_allowed, has_wifi, has_generator, has_cctv, has_lift, has_fridge,
      landlord_name, landlord_phone)
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
   `
 
   const values = [
@@ -82,6 +82,7 @@ router.post('/', upload.fields([{ name: 'photos', maxCount: 5 }, { name: 'video'
     parseInt(rent),
     location,
     area || '',
+    district || '',
     parseInt(beds) || 1,
     furnished === 'true' ? 1 : 0,
     gender_preference || 'any',

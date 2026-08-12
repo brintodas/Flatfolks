@@ -115,9 +115,12 @@ function Listings() {
                     ৳{Number(listing.rent).toLocaleString()}
                     <span className="text-slate-400 text-sm font-normal">/mo</span>
                   </span>
-                  <button className="text-xs px-3 py-1.5 border border-blue-600 text-blue-700 font-medium rounded-lg hover:bg-blue-600 hover:text-white transition-all">
+                  <Link
+                    to={`/listings/${listing.id}`}
+                    className="text-xs px-3 py-1.5 border border-blue-600 text-blue-700 font-medium rounded-lg hover:bg-blue-600 hover:text-white transition-all"
+                  >
                     View
-                  </button>
+                  </Link>
                 </div>
               </div>
             </div>

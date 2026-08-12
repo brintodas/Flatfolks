@@ -29,7 +29,10 @@ const Navbar = () => {
 
           {/* Desktop Nav */}
           <div className="hidden md:flex items-center gap-1">
-            {['Browse Listings', 'Find Roommates', 'How It Works', 'For Landlords'].map((item, i) => (
+            <Link to="/listings" className="px-4 py-2 text-sm font-medium text-slate-600 hover:text-blue-700 hover:bg-blue-50 rounded-lg transition-all">
+              Browse Listings
+            </Link>
+            {['Find Roommates', 'How It Works', 'For Landlords'].map((item, i) => (
               <a key={i} href={`#${item.toLowerCase().replace(/ /g, '-')}`}
                 className="px-4 py-2 text-sm font-medium text-slate-600 hover:text-blue-700 hover:bg-blue-50 rounded-lg transition-all">
                 {item}

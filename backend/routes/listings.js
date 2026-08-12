@@ -119,9 +119,24 @@ router.post('/', upload.fields([{ name: 'photos', maxCount: 5 }, { name: 'video'
 
 // GET /api/listings
 router.get('/', (req, res) => {
-  const sql = 'SELECT * FROM listings WHERE status = "active" ORDER BY created_at DESC'
+  const { available_before, available_after } = req.query
 
-  db.query(sql, (err, results) => {
+  let sql = 'SELECT * FROM listings WHERE status = "active"'
+  const params = []
+
+  if (available_before) {
+    sql += ' AND (available_from <= ? OR available_from IS NULL)'
+    params.push(available_before)
+  }
+
+  if (available_after) {
+    sql += ' AND (available_from >= ? OR available_from IS NULL)'
+    params.push(available_after)
+  }
+
+  sql += ' ORDER BY created_at DESC'
+
+  db.query(sql, params, (err, results) => {
     if (err) {
       console.log('Error fetching listings:', err)
       return res.json({ success: false, message: 'Failed to fetch listings' })

@@ -15,6 +15,7 @@ import Testimonials     from './components/Testimonials'
 
 import PostListing from './pages/PostListing'
 import Listings    from './pages/Listings'
+import Watchlist   from './pages/Watchlist'
 
 // Home page - all the sections together
 function Home() {
@@ -43,6 +44,7 @@ function App() {
           <Route path="/"             element={<Home />} />
           <Route path="/listings"     element={<Listings />} />
           <Route path="/post-listing" element={<PostListing />} />
+          <Route path="/watchlist"    element={<Watchlist />} />
         </Routes>
         <Footer />
       </div>

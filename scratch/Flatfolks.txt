@@ -1,0 +1,63 @@
+Student Housing & Roommate Finder[1][2]
+Requirement Analysis
+Functional Requirements
+1. Landlords can post property listings with rich media, including photos, video tours, floor plans, and 360° walkthroughs.
+2. Users can filter housing listings by rent range, distance from campus, furnished/unfurnished status, utilities included, gender preference, and lease duration.
+3. Users can browse listings on an interactive map view showing distance to campus gates, bus stops, and nearby amenities.
+4. Users can bookmark properties to a saved listings watchlist and receive notifications when rent drops or availability changes.
+5. Landlords can mark move-in dates on an availability calendar, and students can filter listings by their required move-in timeframe.
+6. Students can complete a lifestyle compatibility quiz covering sleep schedule, cleanliness, noise tolerance, guests, smoking, and study habits to generate a compatibility score with potential roommates.
+7. Students can build a public roommate profile listing their budget, preferred area, course, and personality tags.
+8. Students can browse a smart match feed of compatible roommates sorted by match percentage rather than location alone.
+9. Students can send and accept roommate requests before committing to a property together.
+10. Groups of 2-4 students can form a roommate group and search for a flat together as a single unit.
+11. Landlords can upload ownership documents and receive a verification badge once approved by an admin.
+12. Landlords can manage all their listings, tenant contacts, and vacancies from a single multi-property dashboard[3]. (will have graph,bar charts)
+13. Students and landlords can communicate directly through in-app messaging without sharing personal phone numbers.
+14. Students can flag scam listings, misleading photos, or unsafe conditions for admin review[4] and will have automated fraud detection.
+15. The system calculates each roommate's fair share of rent based on room size and amenities.
+16. Roommates can log shared bills, such as electricity, internet, and groceries, and track who owes what.
+17. Students can set their rent due date and receive recurring payment reminders before it hits.
+18. Landlords can upload digital lease agreements, and students can read, annotate, and digitally sign them within the platform.
+19. Students and landlords can jointly complete a move-in condition report with photos to avoid deposit disputes.
+20. The system displays a neighborhood insights dashboard with average rent trends, safety ratings, nearby amenities, and student population density for each listing area.
+
+Modules
+Module 1: Housing Discovery
+1. Landlords can post property listings with rich media, including photos, video tours, floor plans, and 360° walkthroughs.
+2. Users can filter housing listings by rent range, distance from campus, furnished/unfurnished status, utilities included, gender preference, and lease duration.
+3. Users can browse listings on an interactive map view showing distance to campus gates, bus stops, and nearby amenities.
+4. Users can bookmark properties to a saved listings watchlist and receive notifications when rent drops or availability changes.
+5. Landlords can mark move-in dates on an availability calendar, and students can filter listings by their required move-in timeframe.
+Module 2: Roommate Matching
+6. Students can complete a lifestyle compatibility quiz covering sleep schedule, cleanliness, noise tolerance, guests, smoking, and study habits to generate a compatibility score with potential roommates.
+7. Students can build a public roommate profile listing their budget, preferred area, course, and personality tags.
+8. Students can browse a smart match feed of compatible roommates sorted by match percentage rather than location alone.
+9. Students can send and accept roommate requests before committing to a property together.
+10. Groups of 2-4 students can form a roommate group and search for a flat together as a single unit.
+Module 3: Landlord & Property Management
+11. Landlords can upload ownership documents and receive a verification badge once approved by an admin.
+12. Landlords can manage all their listings, tenant contacts, and vacancies from a single multi-property dashboard.
+13. Students can request property viewings, and landlords can approve time slots through a shared scheduling calendar.
+14. Landlords can review student applications and approve or reject them with notes through a tenant application manager.
+Module 4: Communication & Safety
+15. Students and landlords can communicate directly through in-app messaging without sharing personal phone numbers.
+16. Students can verify their identity via university email to unlock a verified student badge and full platform access.
+17. Students can rate landlords on responsiveness, accuracy, and fairness after their stay.
+18. Students can flag scam listings, misleading photos, or unsafe conditions for admin review.
+Module 5: Financial Tools, Legal Documentation & Insights
+19. The system calculates each roommate's fair share of rent based on room size and amenities.
+20. Roommates can log shared bills, such as electricity, internet, and groceries, and track who owes what.
+21. Students can set their rent due date and receive recurring payment reminders before it hits.
+22. Users can record the security deposit paid, terms, and expected return date, with landlord acknowledgment.
+23. Landlords can upload digital lease agreements, and students can read, annotate, and digitally sign them within the platform.
+24. Students and landlords can jointly complete a move-in condition report with photos to avoid deposit disputes.
+25. The system displays a neighborhood insights dashboard with average rent trends, safety ratings, nearby amenities, and student population density for each listing area.
+Module 6: Move-In Support Services
+26. Students can subscribe to local catering or mess meal plans for daily meals when they do not yet have kitchen access in their new place.
+27. Students can request utility connection assistance for gas, electricity, water, and WiFi setup when moving into a new rental.
+28. Students can book on-call repair and maintenance services, such as electricians, plumbers, and AC technicians, for issues in their rented accommodation.
+[1]Give me edit access
+[2]given, sir.
+[3]Make sure to add graphs , bar charts etc to make it look premium
+[4]also add automated fraud detection

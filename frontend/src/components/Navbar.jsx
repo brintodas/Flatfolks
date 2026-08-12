@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react'
+import { Link } from 'react-router-dom'
 
 const Navbar = () => {
   const [scrolled, setScrolled] = useState(false)
@@ -36,8 +37,16 @@ const Navbar = () => {
             ))}
           </div>
 
-          {/* Auth Buttons */}
+          {/* Right side buttons */}
           <div className="flex items-center gap-2.5">
+
+            {/* Watchlist icon – FR#4 */}
+            <Link to="/watchlist" title="My Watchlist"
+              className="hidden sm:flex items-center gap-1.5 px-3 py-2 text-sm font-semibold text-blue-700 hover:bg-blue-50 rounded-lg transition-all">
+              <i className="fa-regular fa-bookmark"></i>
+              <span className="hidden lg:inline">Watchlist</span>
+            </Link>
+
             <a href="#" className="hidden sm:block px-4 py-2 text-sm font-semibold text-blue-700 hover:bg-blue-50 rounded-lg transition-all">
               Sign In
             </a>
@@ -49,6 +58,7 @@ const Navbar = () => {
               className="md:hidden p-2 text-slate-600 hover:bg-blue-50 rounded-lg transition-all">
               <i className={`fa-solid ${mobileOpen ? 'fa-xmark' : 'fa-bars'} text-lg`}></i>
             </button>
+
           </div>
         </div>
       </div>
@@ -62,6 +72,10 @@ const Navbar = () => {
               {item}
             </a>
           ))}
+          <Link to="/watchlist"
+            className="block px-4 py-2.5 text-sm font-medium text-blue-700 hover:bg-blue-50 rounded-lg">
+            <i className="fa-regular fa-bookmark mr-2"></i>My Watchlist
+          </Link>
         </div>
       )}
     </nav>

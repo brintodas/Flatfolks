@@ -1,10 +1,22 @@
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 
+// stable guest key stored in localStorage so bookmarks persist per browser
+function getUserKey() {
+  let key = localStorage.getItem('ff_user_key')
+  if (!key) {
+    key = 'guest_' + Math.random().toString(36).slice(2, 11)
+    localStorage.setItem('ff_user_key', key)
+  }
+  return key
+}
+
 function Listings() {
-  const [listings, setListings] = useState([])
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState('')
+  const [listings, setListings]       = useState([])
+  const [loading, setLoading]         = useState(true)
+  const [error, setError]             = useState('')
+  const [bookmarked, setBookmarked]   = useState(new Set()) // set of bookmarked listing IDs
+  const userKey = getUserKey()
 
   useEffect(() => {
     fetch('http://localhost:8000/api/listings')
@@ -23,6 +35,36 @@ function Listings() {
         setLoading(false)
       })
   }, [])
+
+  // load which listings this user has already bookmarked
+  useEffect(() => {
+    fetch(`http://localhost:8000/api/bookmarks/ids?user_key=${userKey}`)
+      .then(res => res.json())
+      .then(json => {
+        if (json.success) setBookmarked(new Set(json.data))
+      })
+      .catch(() => {})
+  }, [])
+
+  const toggleBookmark = (e, listingId) => {
+    e.stopPropagation()
+    fetch('http://localhost:8000/api/bookmarks', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ listing_id: listingId, user_key: userKey })
+    })
+      .then(res => res.json())
+      .then(json => {
+        if (json.success) {
+          setBookmarked(prev => {
+            const next = new Set(prev)
+            json.bookmarked ? next.add(listingId) : next.delete(listingId)
+            return next
+          })
+        }
+      })
+      .catch(() => {})
+  }
 
   if (loading) {
     return (
@@ -89,6 +131,21 @@ function Listings() {
                   {listing.gender_preference === 'any' ? 'All Welcome' :
                    listing.gender_preference === 'female' ? 'Girls Only' : 'Boys Only'}
                 </span>
+
+                {/* Bookmark button – FR#4 */}
+                <button
+                  onClick={(e) => toggleBookmark(e, listing.id)}
+                  title={bookmarked.has(listing.id) ? 'Remove from watchlist' : 'Save to watchlist'}
+                  className={`absolute top-3 right-3 w-8 h-8 rounded-full shadow flex items-center justify-center transition-all ${
+                    bookmarked.has(listing.id)
+                      ? 'bg-blue-600 text-white'
+                      : 'bg-white text-slate-400 hover:text-blue-600'
+                  }`}
+                >
+                  <i className={`fa-bookmark text-sm ${
+                    bookmarked.has(listing.id) ? 'fa-solid' : 'fa-regular'
+                  }`}></i>
+                </button>
               </div>
 
               <div className="p-4">

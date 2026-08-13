@@ -26,8 +26,10 @@ app.get('/api/ping', (req, res) => {
 // routes
 const listingsRoute  = require('./routes/listings')
 const bookmarksRoute = require('./routes/bookmarks')
+const authRoute      = require('./routes/auth')
 app.use('/api/listings',  listingsRoute)
 app.use('/api/bookmarks', bookmarksRoute)
+app.use('/api/auth',      authRoute)
 
 
 app.get('/', (req, res) => {

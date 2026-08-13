@@ -1,0 +1,719 @@
+diff --git a/backend/routes/listings.js b/backend/routes/listings.js
+index 7667329..574c195 100644
+--- a/backend/routes/listings.js
++++ b/backend/routes/listings.js
+@@ -94,7 +94,7 @@ router.post('/', upload.fields([{ name: 'photos', maxCount: 5 }, { name: 'video'
+     floor_plan,
+     walkthrough_link || null,
+     property_type || 'entire_flat',
+-    distance_to_campus || '',
++    distance_to_campus ? parseFloat(distance_to_campus) : null,
+     advance_deposit || '',
+     curfew_time || '',
+     guests_allowed === 'false' ? 0 : 1,
+@@ -120,7 +120,11 @@ router.post('/', upload.fields([{ name: 'photos', maxCount: 5 }, { name: 'video'
+ 
+ // GET /api/listings
+ router.get('/', (req, res) => {
+-  const { available_before, available_after } = req.query
++  const {
++    available_before, available_after, search,
++    min_rent, max_rent, max_distance,
++    furnished, utilities_included, gender_preference, lease_duration
++  } = req.query
+ 
+   let sql = 'SELECT * FROM listings WHERE status = "active"'
+   const params = []
+@@ -135,6 +139,49 @@ router.get('/', (req, res) => {
+     params.push(available_after)
+   }
+ 
++  // search box - matches title, location, area or district
++  if (search) {
++    sql += ' AND (title LIKE ? OR location LIKE ? OR area LIKE ? OR district LIKE ?)'
++    const term = `%${search}%`
++    params.push(term, term, term, term)
++  }
++
++  if (min_rent) {
++    sql += ' AND rent >= ?'
++    params.push(parseInt(min_rent))
++  }
++
++  if (max_rent) {
++    sql += ' AND rent <= ?'
++    params.push(parseInt(max_rent))
++  }
++
++  // distance to campus in km, listings with no distance set are kept too
++  if (max_distance) {
++    sql += ' AND (distance_to_campus <= ? OR distance_to_campus IS NULL)'
++    params.push(parseFloat(max_distance))
++  }
++
++  if (furnished === 'true' || furnished === 'false') {
++    sql += ' AND furnished = ?'
++    params.push(furnished === 'true' ? 1 : 0)
++  }
++
++  if (utilities_included === 'true' || utilities_included === 'false') {
++    sql += ' AND utilities_included = ?'
++    params.push(utilities_included === 'true' ? 1 : 0)
++  }
++
++  if (gender_preference && gender_preference !== 'any') {
++    sql += ' AND gender_preference = ?'
++    params.push(gender_preference)
++  }
++
++  if (lease_duration) {
++    sql += ' AND lease_duration = ?'
++    params.push(lease_duration)
++  }
++
+   sql += ' ORDER BY created_at DESC'
+ 
+   db.query(sql, params, (err, results) => {
+@@ -160,4 +207,4 @@ router.get('/:id', (req, res) => {
+   })
+ })
+ 
+-module.exports = router
++module.exports = router
+\ No newline at end of file
+diff --git a/backend/seed.js b/backend/seed.js
+new file mode 100644
+index 0000000..8441f45
+--- /dev/null
++++ b/backend/seed.js
+@@ -0,0 +1,59 @@
++const db = require('./config/db');
++
++const locations = [
++  "Mirpur 10, Dhaka", "Dhanmondi, Dhaka", "Gulshan 1, Dhaka", "Banani, Dhaka", 
++  "Uttara Sector 4, Dhaka", "Mohammadpur, Dhaka", "Badda, Dhaka", "Khilgaon, Dhaka", 
++  "Malibagh, Dhaka", "Farmgate, Dhaka", "Rampura, Dhaka", "Baily Road, Dhaka", 
++  "Motijheel, Dhaka", "Baridhara, Dhaka", "Jatrabari, Dhaka", "Savar, Dhaka", 
++  "Gazipur, Dhaka", "Tongi, Dhaka", "Narayanganj, Dhaka", "Keraniganj, Dhaka", 
++  "Azimpur, Dhaka", "Shantinagar, Dhaka", "Kakrail, Dhaka"
++];
++
++const genders = ['male', 'female', 'any'];
++const leaseDurations = ['1 month', '3 months', '6 months', '1 year', 'flexible'];
++
++// pick a random move-in date in the next 90 days, or null for "immediate"
++function randomAvailableFrom() {
++  if (Math.random() < 0.4) return null // immediate move-in
++  const daysAhead = Math.floor(Math.random() * 90)
++  const d = new Date()
++  d.setDate(d.getDate() + daysAhead)
++  return d.toISOString().slice(0, 10) // YYYY-MM-DD
++}
++
++let count = 0;
++
++for (let i = 0; i < 23; i++) {
++  const title = `Apartment in ${locations[i].split(',')[0]}`;
++  const rent = 7000 + (Math.floor(Math.random() * 5) * 1000);
++  const distance = (Math.random() * 8).toFixed(1); // 0 - 8 km from campus
++  const availableFrom = randomAvailableFrom();
++  const sql = `
++    INSERT INTO listings (title, rent, location, beds, gender_preference, furnished, utilities_included, lease_duration, distance_to_campus, available_from, status)
++    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'active')
++  `;
++  const values = [
++    title,
++    rent,
++    locations[i],
++    1,
++    genders[Math.floor(Math.random() * genders.length)],
++    Math.random() > 0.5 ? 1 : 0,
++    Math.random() > 0.5 ? 1 : 0,
++    leaseDurations[Math.floor(Math.random() * leaseDurations.length)],
++    distance,
++    availableFrom
++  ];
++
++  db.query(sql, values, (err) => {
++    if (err) {
++      console.log('Error:', err);
++    } else {
++      count++;
++      if (count === 23) {
++        console.log('Inserted 23 listings successfully');
++        process.exit(0);
++      }
++    }
++  });
++}
+\ No newline at end of file
+diff --git a/backend/server.js b/backend/server.js
+index d37ab37..7a5207f 100644
+--- a/backend/server.js
++++ b/backend/server.js
+@@ -31,7 +31,7 @@ app.get('/', (req, res) => {
+   res.send('Flatfolks API is running')
+ })
+ 
+-const PORT = process.env.PORT || 5000
++const PORT = process.env.PORT || 8000
+ app.listen(PORT, () => {
+   console.log(`Server running on port ${PORT}`)
+ })
+diff --git a/database/schema.sql b/database/schema.sql
+index dae09ae..381003d 100644
+--- a/database/schema.sql
++++ b/database/schema.sql
+@@ -22,7 +22,7 @@ CREATE TABLE IF NOT EXISTS listings (
+   floor_plan VARCHAR(255),
+   walkthrough_link VARCHAR(255),
+   property_type ENUM('entire_flat','single_room','shared_room','sublet') DEFAULT 'entire_flat',
+-  distance_to_campus VARCHAR(100),
++  distance_to_campus DECIMAL(4,1),
+   advance_deposit VARCHAR(100),
+   curfew_time VARCHAR(50),
+   guests_allowed TINYINT(1) DEFAULT 1,
+@@ -36,4 +36,4 @@ CREATE TABLE IF NOT EXISTS listings (
+   landlord_phone VARCHAR(20),
+   status ENUM('active', 'pending', 'inactive') DEFAULT 'active',
+   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+-);
++);
+\ No newline at end of file
+diff --git a/frontend/src/pages/ListingDetail.jsx b/frontend/src/pages/ListingDetail.jsx
+index a2c62b6..18eccee 100644
+--- a/frontend/src/pages/ListingDetail.jsx
++++ b/frontend/src/pages/ListingDetail.jsx
+@@ -266,7 +266,7 @@ function ListingDetail() {
+               {listing.distance_to_campus && (
+                 <div className="flex justify-between">
+                   <span className="text-slate-500">To Campus</span>
+-                  <span className="font-medium">{listing.distance_to_campus}</span>
++                  <span className="font-medium">{listing.distance_to_campus} km</span>
+                 </div>
+               )}
+               {listing.advance_deposit && (
+@@ -317,4 +317,4 @@ function ListingDetail() {
+   )
+ }
+ 
+-export default ListingDetail
++export default ListingDetail
+\ No newline at end of file
+diff --git a/frontend/src/pages/Listings.jsx b/frontend/src/pages/Listings.jsx
+index 81e9fba..b66507a 100644
+--- a/frontend/src/pages/Listings.jsx
++++ b/frontend/src/pages/Listings.jsx
+@@ -1,173 +1,336 @@
+ import { useEffect, useState } from 'react'
+ import { Link } from 'react-router-dom'
+ 
++const emptyFilters = {
++  search: '',
++  minRent: '',
++  maxRent: '',
++  maxDistance: '',
++  furnished: '',
++  utilities: '',
++  gender: '',
++  lease: '',
++  availableBefore: ''
++}
++
+ function Listings() {
+   const [listings, setListings] = useState([])
+   const [loading, setLoading] = useState(true)
+   const [error, setError] = useState('')
+-  const [availableBefore, setAvailableBefore] = useState('')
++  const [filters, setFilters] = useState(emptyFilters)
+ 
+-  useEffect(() => {
+-    let url = 'http://localhost:8000/api/listings'
+-    if (availableBefore) {
+-      url += `?available_before=${availableBefore}`
+-    }
+-
+-    setLoading(true)
+-    fetch(url)
+-      .then(res => res.json())
+-      .then(json => {
+-        if (json.success) {
+-          setListings(json.data)
+-        } else {
+-          setError('Failed to load listings')
+-        }
+-        setLoading(false)
+-      })
+-      .catch(err => {
+-        console.log(err)
+-        setError('Could not connect to server')
+-        setLoading(false)
+-      })
+-  }, [availableBefore])
+-
+-  if (loading) {
+-    return (
+-      <div className="min-h-screen flex items-center justify-center pt-16">
+-        <p className="text-slate-500">Loading listings...</p>
+-      </div>
+-    )
++  const updateFilter = (key, value) => {
++    setFilters(prev => ({ ...prev, [key]: value }))
+   }
+ 
++  useEffect(() => {
++    const params = new URLSearchParams()
++    if (filters.search) params.set('search', filters.search)
++    if (filters.minRent) params.set('min_rent', filters.minRent)
++    if (filters.maxRent) params.set('max_rent', filters.maxRent)
++    if (filters.maxDistance) params.set('max_distance', filters.maxDistance)
++    if (filters.furnished) params.set('furnished', filters.furnished)
++    if (filters.utilities) params.set('utilities_included', filters.utilities)
++    if (filters.gender) params.set('gender_preference', filters.gender)
++    if (filters.lease) params.set('lease_duration', filters.lease)
++    if (filters.availableBefore) params.set('available_before', filters.availableBefore)
++
++    const qs = params.toString()
++    const url = 'http://localhost:8000/api/listings' + (qs ? `?${qs}` : '')
++
++    // debounce a bit so we're not firing a request on every keystroke
++    const timer = setTimeout(() => {
++      setLoading(true)
++      fetch(url)
++        .then(res => res.json())
++        .then(json => {
++          if (json.success) {
++            setListings(json.data)
++          } else {
++            setError('Failed to load listings')
++          }
++          setLoading(false)
++        })
++        .catch(err => {
++          console.log(err)
++          setError('Could not connect to server')
++          setLoading(false)
++        })
++    }, 300)
++
++    return () => clearTimeout(timer)
++  }, [filters])
++
++  const hasActiveFilters = Object.values(filters).some(v => v !== '')
++
+   return (
+     <div className="min-h-screen bg-slate-50 pt-20 pb-12">
+       <div className="max-w-6xl mx-auto px-4">
+ 
+-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
++        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
+           <div>
+             <h1 className="text-3xl font-bold text-slate-800">All Listings</h1>
+-            <p className="text-slate-500 mt-1">{listings.length} properties found</p>
++            <p className="text-slate-500 mt-1">{loading ? 'Searching...' : `${listings.length} properties found`}</p>
+           </div>
+-          
+-          <div className="flex flex-wrap items-center gap-4">
+-            <div className="flex items-center gap-2 bg-white px-3 py-2 rounded-xl border border-slate-200 shadow-sm">
+-              <label className="text-sm font-medium text-slate-600">Move-in by:</label>
+-              <input 
+-                type="date" 
+-                className="text-sm text-slate-800 outline-none bg-transparent"
+-                value={availableBefore}
+-                onChange={(e) => setAvailableBefore(e.target.value)}
+-              />
+-              {availableBefore && (
+-                <button 
+-                  onClick={() => setAvailableBefore('')}
+-                  className="text-slate-400 hover:text-red-500 ml-1"
+-                  title="Clear filter"
+-                >
+-                  <i className="fa-solid fa-xmark"></i>
+-                </button>
+-              )}
+-            </div>
+ 
+-            <Link
+-              to="/post-listing"
+-              className="px-4 py-2.5 bg-blue-700 hover:bg-blue-800 text-white text-sm font-semibold rounded-xl transition-colors shadow-sm"
+-            >
+-              + Post a Listing
+-            </Link>
+-          </div>
++          <Link
++            to="/post-listing"
++            className="px-4 py-2.5 bg-blue-700 hover:bg-blue-800 text-white text-sm font-semibold rounded-xl transition-colors shadow-sm w-fit"
++          >
++            + Post a Listing
++          </Link>
+         </div>
+ 
+-        {error && (
+-          <div className="bg-red-50 border border-red-200 text-red-700 text-sm px-4 py-3 rounded-lg mb-6">
+-            {error}
++        {/* Search bar */}
++        <div className="mb-4">
++          <div className="relative">
++            <i className="fa-solid fa-magnifying-glass absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 text-sm"></i>
++            <input
++              type="text"
++              placeholder="Search by title, area, or location..."
++              value={filters.search}
++              onChange={(e) => updateFilter('search', e.target.value)}
++              className="w-full bg-white border border-slate-200 rounded-xl pl-10 pr-4 py-3 text-sm text-slate-800 outline-none focus:border-blue-500 shadow-sm"
++            />
+           </div>
+-        )}
+-
+-        {listings.length === 0 && !error && (
+-          <div className="text-center py-20">
+-            <p className="text-slate-400 text-lg mb-4">No listings yet.</p>
+-            <Link to="/post-listing" className="text-blue-600 font-semibold hover:underline">
+-              Be the first to post one →
+-            </Link>
+-          </div>
+-        )}
+-
+-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+-          {listings.map(listing => (
+-            <div key={listing.id} className="bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden hover:shadow-md transition-shadow">
+-
+-              {/* Photo or placeholder */}
+-              <div className="h-44 bg-gradient-to-br from-blue-100 to-blue-200 relative">
+-                {listing.photos ? (
+-                  <img
+-                    src={`http://localhost:8000/uploads/${listing.photos.split(',')[0]}`}
+-                    alt={listing.title}
+-                    className="w-full h-full object-cover"
+-                    onError={(e) => { e.target.style.display = 'none' }}
++        </div>
++
++        <div className="flex flex-col lg:flex-row gap-6">
++
++          {/* Filters sidebar */}
++          <div className="lg:w-64 shrink-0">
++            <div className="bg-white border border-slate-200 rounded-xl p-4 shadow-sm space-y-4 lg:sticky lg:top-20">
++
++              <div className="flex items-center justify-between">
++                <p className="text-sm font-semibold text-slate-700">Filters</p>
++                {hasActiveFilters && (
++                  <button
++                    onClick={() => setFilters(emptyFilters)}
++                    className="text-xs text-blue-600 hover:underline"
++                  >
++                    Clear all
++                  </button>
++                )}
++              </div>
++
++              <hr className="border-slate-100" />
++
++              {/* Rent range */}
++              <div>
++                <label className="block text-xs font-medium text-slate-500 mb-1">Rent Range (৳/mo)</label>
++                <div className="flex items-center gap-2">
++                  <input
++                    type="number"
++                    placeholder="Min"
++                    value={filters.minRent}
++                    onChange={(e) => updateFilter('minRent', e.target.value)}
++                    className="w-full border border-slate-200 rounded-lg px-2 py-1.5 text-sm outline-none focus:border-blue-500"
+                   />
++                  <span className="text-slate-400 text-sm">–</span>
++                  <input
++                    type="number"
++                    placeholder="Max"
++                    value={filters.maxRent}
++                    onChange={(e) => updateFilter('maxRent', e.target.value)}
++                    className="w-full border border-slate-200 rounded-lg px-2 py-1.5 text-sm outline-none focus:border-blue-500"
++                  />
++                </div>
++              </div>
++
++              {/* Distance from campus */}
++              <div>
++                <label className="block text-xs font-medium text-slate-500 mb-1">Max Distance from Campus (km)</label>
++                <input
++                  type="number"
++                  step="0.5"
++                  placeholder="e.g. 3"
++                  value={filters.maxDistance}
++                  onChange={(e) => updateFilter('maxDistance', e.target.value)}
++                  className="w-full border border-slate-200 rounded-lg px-2 py-1.5 text-sm outline-none focus:border-blue-500"
++                />
++              </div>
++
++              {/* Furnished */}
++              <div>
++                <label className="block text-xs font-medium text-slate-500 mb-1">Furnished</label>
++                <select
++                  value={filters.furnished}
++                  onChange={(e) => updateFilter('furnished', e.target.value)}
++                  className="w-full border border-slate-200 rounded-lg px-2 py-1.5 text-sm outline-none focus:border-blue-500 bg-white"
++                >
++                  <option value="">Any</option>
++                  <option value="true">Furnished</option>
++                  <option value="false">Unfurnished</option>
++                </select>
++              </div>
++
++              {/* Utilities */}
++              <div>
++                <label className="block text-xs font-medium text-slate-500 mb-1">Utilities</label>
++                <select
++                  value={filters.utilities}
++                  onChange={(e) => updateFilter('utilities', e.target.value)}
++                  className="w-full border border-slate-200 rounded-lg px-2 py-1.5 text-sm outline-none focus:border-blue-500 bg-white"
++                >
++                  <option value="">Any</option>
++                  <option value="true">Included</option>
++                  <option value="false">Not Included</option>
++                </select>
++              </div>
++
++              {/* Gender preference */}
++              <div>
++                <label className="block text-xs font-medium text-slate-500 mb-1">Gender Preference</label>
++                <select
++                  value={filters.gender}
++                  onChange={(e) => updateFilter('gender', e.target.value)}
++                  className="w-full border border-slate-200 rounded-lg px-2 py-1.5 text-sm outline-none focus:border-blue-500 bg-white"
++                >
++                  <option value="">Any</option>
++                  <option value="male">Male Only</option>
++                  <option value="female">Female Only</option>
++                  <option value="any">All Welcome</option>
++                </select>
++              </div>
++
++              {/* Lease duration */}
++              <div>
++                <label className="block text-xs font-medium text-slate-500 mb-1">Lease Duration</label>
++                <select
++                  value={filters.lease}
++                  onChange={(e) => updateFilter('lease', e.target.value)}
++                  className="w-full border border-slate-200 rounded-lg px-2 py-1.5 text-sm outline-none focus:border-blue-500 bg-white"
++                >
++                  <option value="">Any</option>
++                  <option value="1 month">1 Month</option>
++                  <option value="3 months">3 Months</option>
++                  <option value="6 months">6 Months</option>
++                  <option value="1 year">1 Year</option>
++                  <option value="flexible">Flexible</option>
++                </select>
++              </div>
++
++              {/* Move-in date */}
++              <div>
++                <label className="block text-xs font-medium text-slate-500 mb-1">Move-in by</label>
++                <input
++                  type="date"
++                  value={filters.availableBefore}
++                  onChange={(e) => updateFilter('availableBefore', e.target.value)}
++                  className="w-full border border-slate-200 rounded-lg px-2 py-1.5 text-sm outline-none focus:border-blue-500"
++                />
++              </div>
++
++            </div>
++          </div>
++
++          {/* Listings grid */}
++          <div className="flex-1">
++
++            {error && (
++              <div className="bg-red-50 border border-red-200 text-red-700 text-sm px-4 py-3 rounded-lg mb-6">
++                {error}
++              </div>
++            )}
++
++            {!loading && listings.length === 0 && !error && (
++              <div className="text-center py-20">
++                <p className="text-slate-400 text-lg mb-4">
++                  {hasActiveFilters ? 'No listings match your filters.' : 'No listings yet.'}
++                </p>
++                {hasActiveFilters ? (
++                  <button onClick={() => setFilters(emptyFilters)} className="text-blue-600 font-semibold hover:underline">
++                    Clear filters
++                  </button>
+                 ) : (
+-                  <div className="w-full h-full flex items-center justify-center">
+-                    <i className="fa-solid fa-building text-4xl text-blue-300"></i>
+-                  </div>
++                  <Link to="/post-listing" className="text-blue-600 font-semibold hover:underline">
++                    Be the first to post one →
++                  </Link>
+                 )}
+-                <span className={`absolute top-3 left-3 text-xs font-semibold px-2 py-1 rounded text-white ${
+-                  listing.gender_preference === 'female' ? 'bg-pink-500' :
+-                  listing.gender_preference === 'male' ? 'bg-blue-600' : 'bg-green-600'
+-                }`}>
+-                  {listing.gender_preference === 'any' ? 'All Welcome' :
+-                   listing.gender_preference === 'female' ? 'Girls Only' : 'Boys Only'}
+-                </span>
+               </div>
++            )}
+ 
+-              <div className="p-4">
+-                <h3 className="font-bold text-slate-800 mb-1 truncate">{listing.title}</h3>
+-                <p className="text-slate-500 text-sm mb-3 flex items-center gap-1">
+-                  <i className="fa-solid fa-location-dot text-blue-500 text-xs"></i>
+-                  {[listing.area, listing.district].filter(Boolean).join(', ') || listing.location}
+-                </p>
+-                
+-                <div className="mb-3">
+-                  {listing.available_from ? (
+-                    <p className="text-xs font-medium text-indigo-700 bg-indigo-50 inline-block px-2 py-1 rounded-md">
+-                      <i className="fa-regular fa-calendar mr-1"></i>
+-                      Available from {new Date(listing.available_from).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+-                    </p>
+-                  ) : (
+-                    <p className="text-xs font-medium text-emerald-700 bg-emerald-50 inline-block px-2 py-1 rounded-md">
+-                      <i className="fa-solid fa-bolt mr-1"></i>
+-                      Immediate Move-in
++            <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-6">
++              {listings.map(listing => (
++                <div key={listing.id} className="bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden hover:shadow-md transition-shadow">
++
++                  {/* Photo or placeholder */}
++                  <div className="h-44 bg-gradient-to-br from-blue-100 to-blue-200 relative">
++                    {listing.photos ? (
++                      <img
++                        src={`http://localhost:8000/uploads/${listing.photos.split(',')[0]}`}
++                        alt={listing.title}
++                        className="w-full h-full object-cover"
++                        onError={(e) => { e.target.style.display = 'none' }}
++                      />
++                    ) : (
++                      <div className="w-full h-full flex items-center justify-center">
++                        <i className="fa-solid fa-building text-4xl text-blue-300"></i>
++                      </div>
++                    )}
++                    <span className={`absolute top-3 left-3 text-xs font-semibold px-2 py-1 rounded text-white ${
++                      listing.gender_preference === 'female' ? 'bg-pink-500' :
++                      listing.gender_preference === 'male' ? 'bg-blue-600' : 'bg-green-600'
++                    }`}>
++                      {listing.gender_preference === 'any' ? 'All Welcome' :
++                       listing.gender_preference === 'female' ? 'Girls Only' : 'Boys Only'}
++                    </span>
++                  </div>
++
++                  <div className="p-4">
++                    <h3 className="font-bold text-slate-800 mb-1 truncate">{listing.title}</h3>
++                    <p className="text-slate-500 text-sm mb-3 flex items-center gap-1">
++                      <i className="fa-solid fa-location-dot text-blue-500 text-xs"></i>
++                      {[listing.area, listing.district].filter(Boolean).join(', ') || listing.location}
+                     </p>
+-                  )}
+-                </div>
+ 
+-                <div className="flex gap-2 flex-wrap mb-3">
+-                  <span className="text-xs bg-blue-50 text-blue-700 px-2 py-0.5 rounded-full">
+-                    {listing.beds} Bed{listing.beds > 1 ? 's' : ''}
+-                  </span>
+-                  {listing.furnished ? (
+-                    <span className="text-xs bg-green-50 text-green-700 px-2 py-0.5 rounded-full">Furnished</span>
+-                  ) : null}
+-                  {listing.utilities_included ? (
+-                    <span className="text-xs bg-purple-50 text-purple-700 px-2 py-0.5 rounded-full">Bills Incl.</span>
+-                  ) : null}
+-                </div>
++                    <div className="mb-3">
++                      {listing.available_from ? (
++                        <p className="text-xs font-medium text-indigo-700 bg-indigo-50 inline-block px-2 py-1 rounded-md">
++                          <i className="fa-regular fa-calendar mr-1"></i>
++                          Available from {new Date(listing.available_from).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
++                        </p>
++                      ) : (
++                        <p className="text-xs font-medium text-emerald-700 bg-emerald-50 inline-block px-2 py-1 rounded-md">
++                          <i className="fa-solid fa-bolt mr-1"></i>
++                          Immediate Move-in
++                        </p>
++                      )}
++                    </div>
+ 
+-                <div className="flex items-center justify-between">
+-                  <span className="text-xl font-black text-blue-800">
+-                    ৳{Number(listing.rent).toLocaleString()}
+-                    <span className="text-slate-400 text-sm font-normal">/mo</span>
+-                  </span>
+-                  <Link
+-                    to={`/listings/${listing.id}`}
+-                    className="text-xs px-3 py-1.5 border border-blue-600 text-blue-700 font-medium rounded-lg hover:bg-blue-600 hover:text-white transition-all"
+-                  >
+-                    View
+-                  </Link>
++                    <div className="flex gap-2 flex-wrap mb-3">
++                      <span className="text-xs bg-blue-50 text-blue-700 px-2 py-0.5 rounded-full">
++                        {listing.beds} Bed{listing.beds > 1 ? 's' : ''}
++                      </span>
++                      {listing.furnished ? (
++                        <span className="text-xs bg-green-50 text-green-700 px-2 py-0.5 rounded-full">Furnished</span>
++                      ) : null}
++                      {listing.utilities_included ? (
++                        <span className="text-xs bg-purple-50 text-purple-700 px-2 py-0.5 rounded-full">Bills Incl.</span>
++                      ) : null}
++                      {listing.distance_to_campus ? (
++                        <span className="text-xs bg-slate-100 text-slate-600 px-2 py-0.5 rounded-full">{listing.distance_to_campus} km to campus</span>
++                      ) : null}
++                    </div>
++
++                    <div className="flex items-center justify-between">
++                      <span className="text-xl font-black text-blue-800">
++                        ৳{Number(listing.rent).toLocaleString()}
++                        <span className="text-slate-400 text-sm font-normal">/mo</span>
++                      </span>
++                      <Link
++                        to={`/listings/${listing.id}`}
++                        className="text-xs px-3 py-1.5 border border-blue-600 text-blue-700 font-medium rounded-lg hover:bg-blue-600 hover:text-white transition-all"
++                      >
++                        View
++                      </Link>
++                    </div>
++                  </div>
+                 </div>
+-              </div>
++              ))}
+             </div>
+-          ))}
++
++          </div>
+         </div>
+ 
+       </div>
+@@ -175,4 +338,4 @@ function Listings() {
+   )
+ }
+ 
+-export default Listings
++export default Listings
+\ No newline at end of file
+diff --git a/frontend/src/pages/PostListing.jsx b/frontend/src/pages/PostListing.jsx
+index b55fd67..e785610 100644
+--- a/frontend/src/pages/PostListing.jsx
++++ b/frontend/src/pages/PostListing.jsx
+@@ -461,13 +461,15 @@ function PostListing() {
+               </select>
+             </div>
+             <div>
+-              <label className="block text-sm font-medium text-slate-700 mb-1">Distance to Campus</label>
++              <label className="block text-sm font-medium text-slate-700 mb-1">Distance to Campus (km)</label>
+               <input
+-                type="text"
++                type="number"
++                step="0.1"
++                min="0"
+                 name="distance_to_campus"
+                 value={form.distance_to_campus}
+                 onChange={handleChange}
+-                placeholder="e.g. 5 mins walk"
++                placeholder="e.g. 1.5"
+                 className="w-full border border-slate-200 rounded-lg px-3 py-2.5 text-sm text-slate-800 outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
+               />
+             </div>
+@@ -662,4 +664,4 @@ function PostListing() {
+   )
+ }
+ 
+-export default PostListing
++export default PostListing
+\ No newline at end of file

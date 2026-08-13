@@ -50,13 +50,13 @@ const Navbar = () => {
               <span className="hidden lg:inline">Watchlist</span>
             </Link>
 
-            <a href="#" className="hidden sm:block px-4 py-2 text-sm font-semibold text-blue-700 hover:bg-blue-50 rounded-lg transition-all">
+            <Link to="/signin" className="hidden sm:block px-4 py-2 text-sm font-semibold text-blue-700 hover:bg-blue-50 rounded-lg transition-all">
               Sign In
-            </a>
-            <a href="#" className="px-4 py-2 text-sm font-semibold text-white bg-blue-700 hover:bg-blue-800 rounded-xl transition-all shadow-md hover:shadow-lg">
+            </Link>
+            <Link to="/get-started" className="px-4 py-2 text-sm font-semibold text-white bg-blue-700 hover:bg-blue-800 rounded-xl transition-all shadow-md hover:shadow-lg">
               <span className="hidden sm:inline">Get Started</span>
               <span className="sm:hidden"><i className="fa-solid fa-arrow-right"></i></span>
-            </a>
+            </Link>
             <button onClick={() => setMobileOpen(!mobileOpen)}
               className="md:hidden p-2 text-slate-600 hover:bg-blue-50 rounded-lg transition-all">
               <i className={`fa-solid ${mobileOpen ? 'fa-xmark' : 'fa-bars'} text-lg`}></i>
@@ -75,6 +75,12 @@ const Navbar = () => {
               {item}
             </a>
           ))}
+          <Link to="/signin" className="block px-4 py-2.5 text-sm font-medium text-slate-700 hover:bg-blue-50 rounded-lg">
+            Sign In
+          </Link>
+          <Link to="/get-started" className="block px-4 py-2.5 text-sm font-medium text-white bg-blue-700 rounded-lg">
+            Get Started
+          </Link>
           <Link to="/watchlist"
             className="block px-4 py-2.5 text-sm font-medium text-blue-700 hover:bg-blue-50 rounded-lg">
             <i className="fa-regular fa-bookmark mr-2"></i>My Watchlist

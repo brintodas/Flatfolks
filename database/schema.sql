@@ -32,7 +32,7 @@ CREATE TABLE `bookmarks` (
   PRIMARY KEY (`id`),
   KEY `listing_id` (`listing_id`),
   CONSTRAINT `bookmarks_ibfk_1` FOREIGN KEY (`listing_id`) REFERENCES `listings` (`id`) ON DELETE CASCADE
-) ENGINE=InnoDB AUTO_INCREMENT=2 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=8 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -78,6 +78,39 @@ CREATE TABLE `listings` (
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB AUTO_INCREMENT=31 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Table structure for table `users`
+--
+
+DROP TABLE IF EXISTS `users`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8 */;
+CREATE TABLE `users` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `role` enum('student','landlord') NOT NULL,
+  `full_name` varchar(150) NOT NULL,
+  `email` varchar(150) NOT NULL,
+  `password` varchar(255) NOT NULL,
+  `phone` varchar(20) DEFAULT NULL,
+  `student_id` varchar(20) DEFAULT NULL,
+  `department` varchar(100) DEFAULT NULL,
+  `semester` varchar(20) DEFAULT NULL,
+  `gender` varchar(30) DEFAULT NULL,
+  `budget_min` int(11) DEFAULT NULL,
+  `budget_max` int(11) DEFAULT NULL,
+  `preferred_district` varchar(100) DEFAULT NULL,
+  `preferred_area` varchar(100) DEFAULT NULL,
+  `is_verified` tinyint(1) DEFAULT 0,
+  `nid` varchar(30) DEFAULT NULL,
+  `current_address` varchar(255) DEFAULT NULL,
+  `num_properties` int(11) DEFAULT 0,
+  `has_badge` tinyint(1) DEFAULT 0,
+  `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `email` (`email`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
 /*!40103 SET TIME_ZONE=@OLD_TIME_ZONE */;
 
 /*!40101 SET SQL_MODE=@OLD_SQL_MODE */;
@@ -88,4 +121,4 @@ CREATE TABLE `listings` (
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
--- Dump completed on 2026-08-13  2:22:23
+-- Dump completed on 2026-08-13 12:38:09

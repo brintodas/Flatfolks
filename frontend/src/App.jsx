@@ -13,10 +13,14 @@ import FeaturesGrid     from './components/FeaturesGrid'
 import LandlordCta      from './components/LandlordCta'
 import Testimonials     from './components/Testimonials'
 
-import PostListing from './pages/PostListing'
-import Listings    from './pages/Listings'
-import Watchlist   from './pages/Watchlist'
-import ListingDetail  from './pages/ListingDetail'
+import PostListing     from './pages/PostListing'
+import Listings        from './pages/Listings'
+import Watchlist       from './pages/Watchlist'
+import ListingDetail   from './pages/ListingDetail'
+import GetStarted      from './pages/GetStarted'
+import StudentSignup   from './pages/StudentSignup'
+import LandlordSignup  from './pages/LandlordSignup'
+import SignIn          from './pages/SignIn'
 
 // Home page - all the sections together
 function Home() {
@@ -42,12 +46,15 @@ function App() {
       <div className="overflow-x-hidden">
         <Navbar />
         <Routes>
-          <Route path="/"             element={<Home />} />
-          <Route path="/listings"     element={<Listings />} />
-          <Route path="/post-listing" element={<PostListing />} />
-          <Route path="/watchlist"    element={<Watchlist />} />
-          
-          <Route path="/listings/:id"   element={<ListingDetail />} />
+          <Route path="/"                  element={<Home />} />
+          <Route path="/listings"           element={<Listings />} />
+          <Route path="/post-listing"       element={<PostListing />} />
+          <Route path="/watchlist"          element={<Watchlist />} />
+          <Route path="/listings/:id"       element={<ListingDetail />} />
+          <Route path="/get-started"        element={<GetStarted />} />
+          <Route path="/signup/student"     element={<StudentSignup />} />
+          <Route path="/signup/landlord"    element={<LandlordSignup />} />
+          <Route path="/signin"             element={<SignIn />} />
         
         </Routes>
         <Footer />

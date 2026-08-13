@@ -4,13 +4,28 @@ import { Link } from 'react-router-dom'
 const Navbar = () => {
   const [scrolled, setScrolled] = useState(false)
   const [mobileOpen, setMobileOpen] = useState(false)
-
+  const [notificationCount, setNotificationCount] = useState(0)
   useEffect(() => {
     const handleScroll = () => setScrolled(window.scrollY > 20)
     window.addEventListener('scroll', handleScroll)
     return () => window.removeEventListener('scroll', handleScroll)
   }, [])
+  useEffect(() => {
+  const userKey = localStorage.getItem('ff_user_key')
+  if (!userKey) return
 
+  fetch(`http://localhost:8000/api/bookmarks?user_key=${userKey}`)
+    .then(res => res.json())
+    .then(json => {
+      if (json.success) {
+        const alerts = json.data.filter(
+          item => item.rent_dropped || item.availability_changed
+        )
+        setNotificationCount(alerts.length)
+      }
+    })
+    .catch(() => {})
+}, [])
   return (
     <nav className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 bg-white/95 border-b border-blue-50 ${scrolled ? 'shadow-md' : 'shadow-sm'}`}
       style={{ backdropFilter: 'blur(12px)' }}>
@@ -49,7 +64,19 @@ const Navbar = () => {
               <i className="fa-regular fa-bookmark"></i>
               <span className="hidden lg:inline">Watchlist</span>
             </Link>
+             <Link
+  to="/watchlist"
+  title="Notifications"
+  className="relative hidden sm:flex items-center justify-center w-10 h-10 text-blue-700 hover:bg-blue-50 rounded-lg transition-all"
+>
+  <i className="fa-regular fa-bell text-lg"></i>
 
+  {notificationCount > 0 && (
+    <span className="absolute top-0 right-0 min-w-5 h-5 px-1 flex items-center justify-center bg-red-500 text-white text-xs font-bold rounded-full">
+      {notificationCount}
+    </span>
+  )}
+</Link>
             <Link to="/signin" className="hidden sm:block px-4 py-2 text-sm font-semibold text-blue-700 hover:bg-blue-50 rounded-lg transition-all">
               Sign In
             </Link>

@@ -18,14 +18,14 @@ const Navbar = () => {
         <div className="flex items-center justify-between h-16">
 
           {/* Logo */}
-          <a href="#" className="flex items-center gap-2.5 group">
+          <Link to="/" className="flex items-center gap-2.5 group">
             <div className="w-9 h-9 bg-blue-800 rounded-xl flex items-center justify-center shadow-md group-hover:bg-blue-900 transition-colors">
               <i className="fa-solid fa-house-chimney text-white text-lg"></i>
             </div>
             <span className="text-xl font-black text-blue-900 tracking-tight">
               Flat<span className="text-blue-600">folks</span>
             </span>
-          </a>
+          </Link>
 
           {/* Desktop Nav */}
           <div className="hidden md:flex items-center gap-1">

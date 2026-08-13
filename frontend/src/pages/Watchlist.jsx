@@ -45,9 +45,11 @@ function Watchlist() {
       .then(json => {
         if (json.success) {
           setWatchlist(json.data)
-          // collect rent-drop alerts
-          const drops = json.data.filter(l => l.rent_dropped)
-          setNotifications(drops)
+          // collect rent-drop and availability-change alerts
+          const alerts = json.data.filter(
+           l => l.rent_dropped || l.availability_changed
+          )
+          setNotifications(alerts)
         }
         setLoading(false)
       })
@@ -101,11 +103,28 @@ function Watchlist() {
               <div key={n.id} className="flex items-center gap-3 bg-green-50 border border-green-200 text-green-800 text-sm px-4 py-3 rounded-xl">
                 <i className="fa-solid fa-arrow-trend-down text-green-600"></i>
                 <span>
-                  <strong>{n.title}</strong> — rent dropped from{' '}
-                  <span className="line-through text-green-600">৳{Number(n.bookmarked_rent).toLocaleString()}</span>{' '}
-                  to <strong>৳{Number(n.rent).toLocaleString()}</strong>{' '}
-                  (saving ৳{Number(n.rent_drop_amount).toLocaleString()}/mo!)
-                </span>
+  <strong>{n.title}</strong>
+  {n.rent_dropped && (
+    <>
+      {' '}— Rent dropped from{' '}
+      <span className="line-through">
+        ৳{Number(n.bookmarked_rent).toLocaleString()}
+      </span>{' '}
+      to <strong>৳{Number(n.rent).toLocaleString()}</strong>.
+    </>
+  )}
+
+  {n.availability_changed && (
+    <>
+      {' '}— Availability has changed.
+      {n.available_from && (
+        <> Now available from <strong>
+          {new Date(n.available_from).toLocaleDateString()}
+        </strong>.</>
+      )}
+    </>
+  )}
+</span>
               </div>
             ))}
           </div>

@@ -27,6 +27,7 @@ CREATE TABLE `bookmarks` (
   `listing_id` int(11) NOT NULL,
   `user_key` varchar(100) NOT NULL,
   `last_rent` int(11) NOT NULL,
+  `last_available_from` date DEFAULT NULL,
   `notified` tinyint(1) DEFAULT 0,
   `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
   PRIMARY KEY (`id`),
@@ -122,3 +123,4 @@ CREATE TABLE `users` (
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
 -- Dump completed on 2026-08-13 12:38:09
+

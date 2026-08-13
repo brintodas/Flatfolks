@@ -16,17 +16,18 @@ router.post('/', (req, res) => {
     if (rows.length > 0) {
       // already bookmarked – remove it
       db.query('DELETE FROM bookmarks WHERE listing_id = ? AND user_key = ?', [listing_id, user_key], (err2) => {
-        if (err2) return res.json({ success: false, message: 'DB error' })
+        if (err2) return res.json({ success: false, message: 'DssB error' })
         res.json({ success: true, bookmarked: false })
       })
     } else {
       // not bookmarked – get current rent then save
-      db.query('SELECT rent FROM listings WHERE id = ?', [listing_id], (err3, listing) => {
+      db.query('SELECT rent, available_from FROM listings WHERE id = ?', [listing_id], (err3, listing) => {
         if (err3 || listing.length === 0) return res.json({ success: false, message: 'Listing not found' })
-        const last_rent = listing[0].rent
+const last_rent = listing[0].rent
+const last_available_from = listing[0].available_from
         db.query(
-          'INSERT INTO bookmarks (listing_id, user_key, last_rent) VALUES (?, ?, ?)',
-          [listing_id, user_key, last_rent],
+          'INSERT INTO bookmarks (listing_id, user_key, last_rent, last_available_from) VALUES (?, ?, ?, ?)',
+           [listing_id, user_key, last_rent, last_available_from],
           (err4) => {
             if (err4) return res.json({ success: false, message: 'DB error' })
             res.json({ success: true, bookmarked: true })
@@ -53,7 +54,13 @@ router.get('/', (req, res) => {
         WHEN l.rent < b.last_rent THEN 1
         ELSE 0
       END AS rent_dropped,
-      (b.last_rent - l.rent) AS rent_drop_amount
+      (b.last_rent - l.rent) AS rent_drop_amount,
+      CASE
+        WHEN b.last_available_from IS NOT NULL
+          AND NOT (l.available_from <=> b.last_available_from)
+          THEN 1
+      ELSE 0
+END AS availability_changed
     FROM bookmarks b
     JOIN listings l ON l.id = b.listing_id
     WHERE b.user_key = ?

@@ -12,6 +12,28 @@ function getUserKey() {
 }
 
 function Watchlist() {
+  const currentUser = JSON.parse(localStorage.getItem('ff_user') || 'null')
+  if (!currentUser) {
+    return (
+      <div className="min-h-screen bg-slate-50 pt-24 pb-16 px-4 flex items-center justify-center">
+        <div className="text-center">
+          <i className="fa-regular fa-bookmark text-slate-300 text-4xl mb-4"></i>
+          <h2 className="text-xl font-bold text-slate-700 mb-2">Sign in to view your Watchlist</h2>
+          <p className="text-slate-500 text-sm mb-6">Save properties you like and track rent changes — but you need an account first.</p>
+          <div className="flex items-center justify-center gap-3">
+            <Link to="/signin" className="px-5 py-2.5 bg-blue-700 text-white text-sm font-semibold rounded-lg hover:bg-blue-800">
+              Sign In
+            </Link>
+            <Link to="/get-started" className="px-5 py-2.5 border border-blue-700 text-blue-700 text-sm font-semibold rounded-lg hover:bg-blue-50">
+              Get Started
+            </Link>
+          </div>
+        </div>
+      </div>
+    )
+  }
+
+
   const [watchlist, setWatchlist]   = useState([])
   const [loading, setLoading]       = useState(true)
   const [notifications, setNotifications] = useState([])

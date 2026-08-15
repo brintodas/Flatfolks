@@ -1,4 +1,4 @@
-import { BrowserRouter, Routes, Route } from 'react-router-dom'
+import { BrowserRouter, Routes, Route, useLocation } from 'react-router-dom'
 
 import Navbar           from './components/Navbar'
 import Footer           from './components/Footer'
@@ -21,6 +21,16 @@ import GetStarted      from './pages/GetStarted'
 import StudentSignup   from './pages/StudentSignup'
 import LandlordSignup  from './pages/LandlordSignup'
 import SignIn          from './pages/SignIn'
+import RoommateProfile       from './pages/RoommateProfile'
+import RoommatePublicProfile from './pages/RoommatePublicProfile'
+import Roommates             from './pages/Roommates'
+import Messages              from './pages/Messages'
+
+function ConditionalFooter() {
+  const location = useLocation()
+  if (location.pathname.startsWith('/messages')) return null
+  return <Footer />
+}
 
 // Home page - all the sections together
 function Home() {
@@ -55,9 +65,15 @@ function App() {
           <Route path="/signup/student"     element={<StudentSignup />} />
           <Route path="/signup/landlord"    element={<LandlordSignup />} />
           <Route path="/signin"             element={<SignIn />} />
+          <Route path="/roommate-profile"   element={<RoommateProfile />} />
+          <Route path="/roommates"          element={<Roommates />} />
+          <Route path="/roommate/:userId"   element={<RoommatePublicProfile />} />
+          
+          <Route path="/messages"           element={<Messages />} />
+          <Route path="/messages/:conversationId" element={<Messages />} />
         
         </Routes>
-        <Footer />
+        <ConditionalFooter />
       </div>
     </BrowserRouter>
   )

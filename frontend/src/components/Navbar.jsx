@@ -144,6 +144,13 @@ const Navbar = () => {
                     My Profile
                   </Link>
                 )}
+                {/* Admin-only: Dashboard */}
+                {currentUser.role === 'admin' && (
+                  <Link to="/admin"
+                    className="hidden sm:block px-4 py-2 text-sm font-semibold text-amber-600 hover:bg-amber-50 rounded-lg transition-all">
+                    <i className="fa-solid fa-shield-halved mr-1"></i>Admin Panel
+                  </Link>
+                )}
                 <span className="hidden sm:block text-sm text-slate-500">Hi, {firstName}</span>
                 <button
                   onClick={handleLogout}
@@ -205,6 +212,11 @@ const Navbar = () => {
               {currentUser.role === 'landlord' && (
                 <Link to="/post-listing" className="block px-4 py-2.5 text-sm font-medium text-slate-700 hover:bg-blue-50 rounded-lg">
                   Post Listing
+                </Link>
+              )}
+              {currentUser.role === 'admin' && (
+                <Link to="/admin" className="block px-4 py-2.5 text-sm font-medium text-amber-600 hover:bg-amber-50 rounded-lg">
+                  <i className="fa-solid fa-shield-halved mr-2"></i>Admin Panel
                 </Link>
               )}
               <button onClick={handleLogout}

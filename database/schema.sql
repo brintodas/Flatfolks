@@ -76,6 +76,7 @@ CREATE TABLE `listings` (
   `has_cctv` tinyint(1) DEFAULT 0,
   `has_lift` tinyint(1) DEFAULT 0,
   `has_fridge` tinyint(1) DEFAULT 0,
+  `is_verified` tinyint(1) DEFAULT 0,
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB AUTO_INCREMENT=31 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
@@ -89,7 +90,7 @@ DROP TABLE IF EXISTS `users`;
 /*!40101 SET character_set_client = utf8 */;
 CREATE TABLE `users` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
-  `role` enum('student','landlord') NOT NULL,
+  `role` enum('student','landlord','admin') NOT NULL,
   `full_name` varchar(150) NOT NULL,
   `email` varchar(150) NOT NULL,
   `password` varchar(255) NOT NULL,

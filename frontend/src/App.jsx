@@ -25,6 +25,7 @@ import RoommateProfile       from './pages/RoommateProfile'
 import RoommatePublicProfile from './pages/RoommatePublicProfile'
 import Roommates             from './pages/Roommates'
 import Messages              from './pages/Messages'
+import AdminDashboard        from './pages/AdminDashboard'
 
 function ConditionalFooter() {
   const location = useLocation()
@@ -71,6 +72,7 @@ function App() {
           
           <Route path="/messages"           element={<Messages />} />
           <Route path="/messages/:conversationId" element={<Messages />} />
+          <Route path="/admin"              element={<AdminDashboard />} />
         
         </Routes>
         <ConditionalFooter />

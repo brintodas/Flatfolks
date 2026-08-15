@@ -25,7 +25,7 @@ function SignIn() {
       const data = await res.json()
       if (data.success) {
         localStorage.setItem('ff_user', JSON.stringify(data.user))
-        navigate(role === 'landlord' ? '/post-listing' : '/listings')
+        navigate(data.user.role === 'admin' ? '/admin' : role === 'landlord' ? '/post-listing' : '/listings')
       } else {
         setError(data.message)
       }
@@ -62,6 +62,14 @@ function SignIn() {
           >
             <i className="fa-solid fa-building mr-2"></i>Landlord
           </button>
+          <button
+            onClick={() => { setRole('admin'); setError('') }}
+            className={`flex-1 py-2.5 text-sm font-medium transition-colors ${
+              role === 'admin' ? 'bg-amber-600 text-white' : 'text-slate-600 hover:bg-slate-50'
+            }`}
+          >
+            <i className="fa-solid fa-shield-halved mr-2"></i>Admin
+          </button>
         </div>
 
         {error && (
@@ -94,7 +102,7 @@ function SignIn() {
             disabled={loading}
             className="w-full bg-blue-700 hover:bg-blue-800 text-white font-semibold py-2.5 rounded-lg text-sm transition-colors disabled:opacity-60 mt-2"
           >
-            {loading ? 'Signing in...' : `Sign In as ${role === 'student' ? 'Student' : 'Landlord'}`}
+            {loading ? 'Signing in...' : `Sign In as ${role === 'student' ? 'Student' : role === 'admin' ? 'Admin' : 'Landlord'}`}
           </button>
 
           <p className="text-xs text-slate-400 text-center pt-1">

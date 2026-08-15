@@ -193,6 +193,33 @@ router.get('/', (req, res) => {
   })
 })
 
+// GET /api/listings/featured
+router.get('/featured', (req, res) => {
+  const { area } = req.query
+  
+  const handleResponse = (err, results) => {
+    if (err) {
+      console.log('Error fetching featured listings:', err)
+      return res.json({ success: false, message: 'Failed to fetch featured listings' })
+    }
+    res.json({ success: true, data: results })
+  }
+
+  if (area) {
+    db.query('SELECT * FROM listings WHERE status = "active" AND (area = ? OR district = ?) ORDER BY RAND() LIMIT 4', [area, area], (err, results) => {
+      if (err) return handleResponse(err, results)
+      
+      if (results.length === 0) {
+        db.query('SELECT * FROM listings WHERE status = "active" ORDER BY RAND() LIMIT 4', handleResponse)
+      } else {
+        handleResponse(null, results)
+      }
+    })
+  } else {
+    db.query('SELECT * FROM listings WHERE status = "active" ORDER BY RAND() LIMIT 4', handleResponse)
+  }
+})
+
 // GET /api/listings/:id
 router.get('/:id', (req, res) => {
   db.query('SELECT * FROM listings WHERE id = ?', [req.params.id], (err, results) => {

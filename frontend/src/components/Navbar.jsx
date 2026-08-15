@@ -71,9 +71,6 @@ const Navbar = () => {
 
           {/* Logo */}
           <Link to="/" className="flex items-center gap-2.5 group">
-            <div className="w-9 h-9 bg-blue-800 rounded-xl flex items-center justify-center shadow-md group-hover:bg-blue-900 transition-colors">
-              <i className="fa-solid fa-house-chimney text-white text-lg"></i>
-            </div>
             <span className="text-xl font-black text-blue-900 tracking-tight">
               Flat<span className="text-blue-600">folks</span>
             </span>
@@ -87,12 +84,6 @@ const Navbar = () => {
             <Link to="/roommates" className="px-4 py-2 text-sm font-medium text-slate-600 hover:text-blue-700 hover:bg-blue-50 rounded-lg transition-all">
               Find Roommates
             </Link>
-            {['How It Works', 'For Landlords'].map((item, i) => (
-              <a key={i} href={`#${item.toLowerCase().replace(/ /g, '-')}`}
-                className="px-4 py-2 text-sm font-medium text-slate-600 hover:text-blue-700 hover:bg-blue-50 rounded-lg transition-all">
-                {item}
-              </a>
-            ))}
           </div>
 
           {/* Right side */}
@@ -151,7 +142,6 @@ const Navbar = () => {
                     <i className="fa-solid fa-shield-halved mr-1"></i>Admin Panel
                   </Link>
                 )}
-                <span className="hidden sm:block text-sm text-slate-500">Hi, {firstName}</span>
                 <button
                   onClick={handleLogout}
                   className="px-4 py-2 text-sm font-semibold text-white bg-blue-700 hover:bg-blue-800 rounded-xl transition-all">
@@ -188,12 +178,6 @@ const Navbar = () => {
           <Link to="/roommates" className="block px-4 py-2.5 text-sm font-medium text-slate-700 hover:bg-blue-50 hover:text-blue-700 rounded-lg">
             Find Roommates
           </Link>
-          {['How It Works', 'For Landlords'].map((item, i) => (
-            <a key={i} href={`#${item.toLowerCase().replace(/ /g, '-')}`}
-              className="block px-4 py-2.5 text-sm font-medium text-slate-700 hover:bg-blue-50 hover:text-blue-700 rounded-lg">
-              {item}
-            </a>
-          ))}
           <Link to="/watchlist"
             className="block px-4 py-2.5 text-sm font-medium text-blue-700 hover:bg-blue-50 rounded-lg">
             <i className="fa-regular fa-bookmark mr-2"></i>My Watchlist

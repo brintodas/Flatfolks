@@ -36,7 +36,15 @@ function Listings() {
   const [listings, setListings] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
-  const [filters, setFilters] = useState(emptyFilters)
+  const [filters, setFilters] = useState(() => {
+    const params = new URLSearchParams(window.location.search)
+    return {
+      ...emptyFilters,
+      search: params.get('search') || '',
+      maxRent: params.get('max_rent') || '',
+      availableBefore: params.get('available_before') || ''
+    }
+  })
   const [bookmarked, setBookmarked] = useState(new Set()) // set of bookmarked listing IDs
   const [viewMode, setViewMode] = useState('list') // 'list' or 'map'
   const userKey = getUserKey()
@@ -144,22 +152,22 @@ function Listings() {
             bookmarked.has(listing.id) ? 'fa-solid' : 'fa-regular'
           }`}></i>
         </button>
-
-        <span className={`absolute top-3 left-3 text-xs font-semibold px-2 py-1 rounded text-white ${
-          listing.gender_preference === 'female' ? 'bg-pink-500' :
-          listing.gender_preference === 'male' ? 'bg-blue-600' : 'bg-green-600'
-        }`}>
-          {listing.gender_preference === 'any' ? 'All Welcome' :
-           listing.gender_preference === 'female' ? 'Girls Only' : 'Boys Only'}
-        </span>
       </div>
 
       <div className="p-4">
         <h3 className="font-bold text-slate-800 mb-1 truncate">{listing.title}</h3>
-        <p className="text-slate-500 text-sm mb-3 flex items-center gap-1">
+        <p className="text-slate-500 text-sm mb-2 flex items-center gap-1">
           <i className="fa-solid fa-location-dot text-blue-500 text-xs"></i>
           {[listing.area, listing.district].filter(Boolean).join(', ') || listing.location}
         </p>
+
+        {listing.gender_preference && listing.gender_preference !== 'any' && (
+          <div className="mb-2">
+            <span className={`text-xs px-2 py-0.5 rounded-full ${listing.gender_preference === 'female' ? 'bg-pink-50 text-pink-700' : 'bg-blue-50 text-blue-700'}`}>
+              {listing.gender_preference === 'female' ? 'Girls Only' : 'Boys Only'}
+            </span>
+          </div>
+        )}
 
         <div className="mb-3">
           {listing.available_from ? (

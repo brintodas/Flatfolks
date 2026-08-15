@@ -27,13 +27,32 @@ CREATE TABLE `bookmarks` (
   `listing_id` int(11) NOT NULL,
   `user_key` varchar(100) NOT NULL,
   `last_rent` int(11) NOT NULL,
-  `last_available_from` date DEFAULT NULL,
   `notified` tinyint(1) DEFAULT 0,
   `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
   PRIMARY KEY (`id`),
   KEY `listing_id` (`listing_id`),
   CONSTRAINT `bookmarks_ibfk_1` FOREIGN KEY (`listing_id`) REFERENCES `listings` (`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB AUTO_INCREMENT=8 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Table structure for table `conversations`
+--
+
+DROP TABLE IF EXISTS `conversations`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8 */;
+CREATE TABLE `conversations` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `user1_id` int(11) NOT NULL,
+  `user2_id` int(11) NOT NULL,
+  `updated_at` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `unique_conv` (`user1_id`,`user2_id`),
+  KEY `user2_id` (`user2_id`),
+  CONSTRAINT `conversations_ibfk_1` FOREIGN KEY (`user1_id`) REFERENCES `users` (`id`) ON DELETE CASCADE,
+  CONSTRAINT `conversations_ibfk_2` FOREIGN KEY (`user2_id`) REFERENCES `users` (`id`) ON DELETE CASCADE
+) ENGINE=InnoDB AUTO_INCREMENT=3 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -82,6 +101,64 @@ CREATE TABLE `listings` (
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
+-- Table structure for table `messages`
+--
+
+DROP TABLE IF EXISTS `messages`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8 */;
+CREATE TABLE `messages` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `conversation_id` int(11) NOT NULL,
+  `sender_id` int(11) NOT NULL,
+  `content` text NOT NULL,
+  `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
+  `is_read` tinyint(1) DEFAULT 0,
+  PRIMARY KEY (`id`),
+  KEY `conversation_id` (`conversation_id`),
+  KEY `sender_id` (`sender_id`),
+  CONSTRAINT `messages_ibfk_1` FOREIGN KEY (`conversation_id`) REFERENCES `conversations` (`id`) ON DELETE CASCADE,
+  CONSTRAINT `messages_ibfk_2` FOREIGN KEY (`sender_id`) REFERENCES `users` (`id`) ON DELETE CASCADE
+) ENGINE=InnoDB AUTO_INCREMENT=8 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Table structure for table `student_profiles`
+--
+
+DROP TABLE IF EXISTS `student_profiles`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8 */;
+CREATE TABLE `student_profiles` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `user_id` int(11) NOT NULL,
+  `course` varchar(100) DEFAULT NULL,
+  `year_of_study` enum('1st','2nd','3rd','4th','Masters') DEFAULT NULL,
+  `bio` text DEFAULT NULL,
+  `profile_photo` varchar(255) DEFAULT NULL,
+  `budget_min` int(11) DEFAULT NULL,
+  `budget_max` int(11) DEFAULT NULL,
+  `preferred_district` varchar(100) DEFAULT NULL,
+  `preferred_area` varchar(100) DEFAULT NULL,
+  `move_in_timeframe` varchar(100) DEFAULT NULL,
+  `room_type` enum('single','shared','either') DEFAULT 'either',
+  `personality_tags` varchar(500) DEFAULT NULL,
+  `sleep_schedule` tinyint(4) DEFAULT NULL COMMENT '1=Early bird, 2=Flexible, 3=Night owl',
+  `cleanliness` tinyint(4) DEFAULT NULL COMMENT '1=Messy, 2=Average, 3=Neat freak',
+  `noise_tolerance` tinyint(4) DEFAULT NULL COMMENT '1=Quiet, 2=Moderate, 3=Loud ok',
+  `guests_pref` tinyint(4) DEFAULT NULL COMMENT '1=Never, 2=Occasionally, 3=Frequently',
+  `smoking_pref` tinyint(4) DEFAULT NULL COMMENT '1=Non-smoker, 2=Don care, 3=Smoker',
+  `study_habits` tinyint(4) DEFAULT NULL COMMENT '1=Home, 2=Mixed, 3=Library',
+  `quiz_completed` tinyint(1) DEFAULT 0,
+  `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
+  `updated_at` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `user_id` (`user_id`),
+  CONSTRAINT `student_profiles_ibfk_1` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE
+) ENGINE=InnoDB AUTO_INCREMENT=31 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
 -- Table structure for table `users`
 --
 
@@ -95,7 +172,7 @@ CREATE TABLE `users` (
   `email` varchar(150) NOT NULL,
   `password` varchar(255) NOT NULL,
   `phone` varchar(20) DEFAULT NULL,
-  `student_id` varchar(20) DEFAULT NULL,
+  `student_id` varchar(100) DEFAULT NULL,
   `department` varchar(100) DEFAULT NULL,
   `semester` varchar(20) DEFAULT NULL,
   `gender` varchar(30) DEFAULT NULL,
@@ -111,7 +188,7 @@ CREATE TABLE `users` (
   `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
   PRIMARY KEY (`id`),
   UNIQUE KEY `email` (`email`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=36 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 /*!40103 SET TIME_ZONE=@OLD_TIME_ZONE */;
 
@@ -123,5 +200,4 @@ CREATE TABLE `users` (
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
--- Dump completed on 2026-08-13 12:38:09
-
+-- Dump completed on 2026-08-16  1:37:35

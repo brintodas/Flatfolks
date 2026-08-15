@@ -27,9 +27,13 @@ app.get('/api/ping', (req, res) => {
 const listingsRoute  = require('./routes/listings')
 const bookmarksRoute = require('./routes/bookmarks')
 const authRoute      = require('./routes/auth')
+const profileRoute   = require('./routes/profile')
+const messagesRoute  = require('./routes/messages')
 app.use('/api/listings',  listingsRoute)
 app.use('/api/bookmarks', bookmarksRoute)
 app.use('/api/auth',      authRoute)
+app.use('/api/profile',   profileRoute)
+app.use('/api/messages',  messagesRoute)
 
 
 app.get('/', (req, res) => {

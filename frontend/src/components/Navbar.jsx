@@ -66,13 +66,16 @@ const Navbar = () => {
   return (
     <nav className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 bg-white/95 border-b border-blue-50 ${scrolled ? 'shadow-md' : 'shadow-sm'}`}
       style={{ backdropFilter: 'blur(12px)' }}>
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div className="w-full px-4 sm:px-6 lg:px-10">
         <div className="flex items-center justify-between h-16">
 
           {/* Logo */}
           <Link to="/" className="flex items-center gap-2.5 group">
-            <span className="text-xl font-black text-blue-900 tracking-tight">
-              Flat<span className="text-blue-600">folks</span>
+            <div className="w-7 h-7 bg-blue-700 text-white rounded-xl flex items-center justify-center shadow-sm shadow-blue-700/20 group-hover:scale-105 transition-transform">
+              <i className="fa-solid fa-house-chimney text-xs"></i>
+            </div>
+            <span className="text-lg font-bold text-blue-800 tracking-tight">
+              flatfolks
             </span>
           </Link>
 

@@ -48,6 +48,7 @@ function Listings() {
   const [bookmarked, setBookmarked] = useState(new Set()) // set of bookmarked listing IDs
   const [viewMode, setViewMode] = useState('list') // 'list' or 'map'
   const userKey = getUserKey()
+  const currentUser = JSON.parse(localStorage.getItem('ff_user') || 'null')
 
   const updateFilter = (key, value) => {
     setFilters(prev => ({ ...prev, [key]: value }))
@@ -245,39 +246,25 @@ function Listings() {
     <div className="min-h-screen bg-slate-50 pt-20 pb-12">
       <div className="max-w-6xl mx-auto px-4">
 
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
-          <div>
-            <h1 className="text-3xl font-bold text-slate-800">All Listings</h1>
-            <p className="text-slate-500 mt-1">{loading ? 'Searching...' : `${listings.length} properties found`}</p>
-          </div>
 
-          <Link
-            to="/post-listing"
-            className="px-4 py-2.5 bg-blue-700 hover:bg-blue-800 text-white text-sm font-semibold rounded-xl transition-colors shadow-sm w-fit"
-          >
-            + Post a Listing
-          </Link>
-        </div>
-
-        {/* Search bar & View Toggle */}
-        <div className="mb-6 flex flex-col md:flex-row gap-4 items-center bg-white p-2 rounded-2xl border border-slate-200 shadow-sm">
-          <div className="relative flex-1 w-full">
-            <i className="fa-solid fa-magnifying-glass absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 text-sm"></i>
+        <div className="mb-6 flex flex-col md:flex-row gap-2 items-center bg-white p-1.5 pl-4 rounded-full border border-slate-200 shadow-sm">
+          <div className="relative flex-1 w-full flex items-center">
+            <i className="fa-solid fa-magnifying-glass text-slate-400 text-sm"></i>
             <input
               type="text"
               placeholder="Search by title, area, or location..."
               value={filters.search}
               onChange={(e) => updateFilter('search', e.target.value)}
-              className="w-full bg-transparent pl-10 pr-4 py-2 text-sm text-slate-800 outline-none"
+              className="w-full bg-transparent pl-3 pr-4 py-1.5 text-sm text-slate-800 outline-none"
             />
           </div>
           
-          <div className="flex bg-slate-100 p-1.5 rounded-xl shrink-0 w-full md:w-auto">
+          <div className="flex bg-slate-100 p-1 rounded-full shrink-0 w-full md:w-auto">
             <button
               onClick={() => setViewMode('list')}
-              className={`flex-1 md:w-28 flex items-center justify-center gap-2 px-4 py-2 text-sm font-bold rounded-lg transition-all ${
+              className={`flex-1 md:w-24 flex items-center justify-center gap-1.5 px-3 py-1.5 text-xs font-bold rounded-full transition-all ${
                 viewMode === 'list' 
-                  ? 'bg-white text-blue-700 shadow-md ring-1 ring-slate-200/50' 
+                  ? 'bg-white text-blue-700 shadow-sm ring-1 ring-slate-200/50' 
                   : 'text-slate-500 hover:text-slate-800 hover:bg-slate-200/50'
               }`}
             >
@@ -285,9 +272,9 @@ function Listings() {
             </button>
             <button
               onClick={() => setViewMode('map')}
-              className={`flex-1 md:w-28 flex items-center justify-center gap-2 px-4 py-2 text-sm font-bold rounded-lg transition-all ${
+              className={`flex-1 md:w-24 flex items-center justify-center gap-1.5 px-3 py-1.5 text-xs font-bold rounded-full transition-all ${
                 viewMode === 'map' 
-                  ? 'bg-white text-blue-700 shadow-md ring-1 ring-slate-200/50' 
+                  ? 'bg-white text-blue-700 shadow-sm ring-1 ring-slate-200/50' 
                   : 'text-slate-500 hover:text-slate-800 hover:bg-slate-200/50'
               }`}
             >
@@ -296,7 +283,22 @@ function Listings() {
           </div>
         </div>
 
-        <div className="flex flex-col lg:flex-row gap-6">
+        {/* Results summary & Post Listing (Landlords) */}
+        <div className="flex items-center justify-between mb-4">
+          <p className="text-sm font-bold text-slate-800">
+            {loading ? 'Searching...' : `${listings.length} properties found`}
+          </p>
+          {currentUser?.role === 'landlord' && (
+            <Link
+              to="/post-listing"
+              className="px-4 py-2 bg-blue-700 hover:bg-blue-800 text-white text-sm font-semibold rounded-xl transition-colors shadow-sm"
+            >
+              + Post a Listing
+            </Link>
+          )}
+        </div>
+
+        <div className="flex flex-col lg:flex-row gap-8">
 
           {/* Filters sidebar */}
           <div className="lg:w-64 shrink-0">

@@ -72,13 +72,11 @@ function RoommatePublicProfile() {
 
   return (
     <div className="min-h-screen bg-slate-50 pt-20 pb-16">
-      <div className="max-w-3xl mx-auto px-4 pt-8">
+      <div className="max-w-5xl mx-auto px-4">
 
         {/* ── Top Card ── */}
         <div className="bg-white border border-slate-200 rounded-2xl overflow-hidden mb-5">
 
-          {/* Thin accent strip at top */}
-          <div className="h-2 bg-blue-700 w-full"></div>
 
           <div className="p-6 sm:p-8">
             <div className="flex flex-col sm:flex-row items-start gap-6">

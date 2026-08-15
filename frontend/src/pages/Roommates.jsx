@@ -104,11 +104,20 @@ function StudentCard({ p }) {
 }
 
 function Roommates() {
+  const getInitialFilters = () => {
+    const params = new URLSearchParams(window.location.search)
+    return {
+      ...emptyFilters,
+      search: params.get('search') || '',
+      budget_max: params.get('max_rent') || ''
+    }
+  }
+
   const [students, setStudents]  = useState([])
   const [loading, setLoading]    = useState(true)
   const [error, setError]        = useState('')
-  const [filters, setFilters]    = useState(emptyFilters)
-  const [applied, setApplied]    = useState(emptyFilters)
+  const [filters, setFilters]    = useState(getInitialFilters)
+  const [applied, setApplied]    = useState(getInitialFilters)
   const [sidebarOpen, setSidebarOpen] = useState(false)
 
   const currentUser = JSON.parse(localStorage.getItem('ff_user') || 'null')

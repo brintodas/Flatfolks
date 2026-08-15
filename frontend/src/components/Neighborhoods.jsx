@@ -1,12 +1,16 @@
 const neighborhoods = [
-  { name: 'Dhanmondi', avg: '৳13,500/mo', rating: 4.7, img: 'https://images.unsplash.com/photo-1480714378408-67cf0d13bc1b?w=400&q=70' },
-  { name: 'Mirpur',    avg: '৳7,500/mo',  rating: 4.5, img: 'https://images.unsplash.com/photo-1449824913935-59a10b8d2000?w=400&q=70' },
-  { name: 'Uttara',    avg: '৳9,200/mo',  rating: 4.6, img: 'https://images.unsplash.com/photo-1444723121867-7a241cacace9?w=400&q=70' },
-  { name: 'Bashundhara', avg: '৳12,000/mo', rating: 4.8, img: 'https://images.unsplash.com/photo-1494522855154-9297ac14b55f?w=400&q=70' },
-  { name: 'Mohammadpur', avg: '৳8,800/mo', rating: 4.4, img: 'https://images.unsplash.com/photo-1486325212027-8081e485255e?w=400&q=70' },
+  { name: 'Dhanmondi', avg: '৳13,500/mo', img: 'https://images.unsplash.com/photo-1480714378408-67cf0d13bc1b?w=400&q=70' },
+  { name: 'Mirpur',    avg: '৳7,500/mo',  img: 'https://images.unsplash.com/photo-1449824913935-59a10b8d2000?w=400&q=70' },
+  { name: 'Uttara',    avg: '৳9,200/mo',  img: 'https://images.unsplash.com/photo-1444723121867-7a241cacace9?w=400&q=70' },
+  { name: 'Bashundhara', avg: '৳12,000/mo', img: 'https://images.unsplash.com/photo-1494522855154-9297ac14b55f?w=400&q=70' },
+  { name: 'Mohammadpur', avg: '৳8,800/mo', img: 'https://images.unsplash.com/photo-1486325212027-8081e485255e?w=400&q=70' },
 ]
 
+import { useNavigate } from 'react-router-dom'
+
 const Neighborhoods = () => {
+  const navigate = useNavigate()
+
   return (
     <section className="py-24 bg-slate-50">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -19,7 +23,9 @@ const Neighborhoods = () => {
 
         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4">
           {neighborhoods.map((nbr, i) => (
-            <div key={i} className="relative rounded-2xl overflow-hidden cursor-pointer shadow-md group"
+            <div key={i} 
+              onClick={() => navigate(`/listings?search=${nbr.name}`)}
+              className="relative rounded-2xl overflow-hidden cursor-pointer shadow-md group"
               style={{ aspectRatio: '3/4' }}>
               <img src={nbr.img} alt={nbr.name}
                 className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
@@ -33,10 +39,6 @@ const Neighborhoods = () => {
               <div className="absolute bottom-0 left-0 right-0 p-3">
                 <h3 className="text-white font-bold text-sm mb-0.5">{nbr.name}</h3>
                 <p className="text-blue-200 text-xs">Avg {nbr.avg}</p>
-                <div className="flex items-center gap-1 mt-1">
-                  <i className="fa-solid fa-star text-yellow-400 text-xs"></i>
-                  <span className="text-white text-xs font-medium">{nbr.rating}</span>
-                </div>
               </div>
             </div>
           ))}

@@ -156,11 +156,7 @@ function Roommates() {
     <div className="min-h-screen bg-slate-50 pt-16">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
 
-        {/* Page header */}
-        <div className="mb-6">
-          <h1 className="text-2xl font-bold text-slate-800">Find a Roommate</h1>
-          <p className="text-slate-500 text-sm mt-1">Browse students looking for flatmates near BRACU.</p>
-        </div>
+
 
         <div className="flex gap-6">
 
@@ -259,27 +255,14 @@ function Roommates() {
           {/* ── Main content ── */}
           <div className="flex-1 min-w-0">
 
-            {/* Top bar */}
-            <div className="flex items-center justify-between mb-4">
-              <div className="flex items-center gap-3">
-                <button
-                  onClick={() => setSidebarOpen(true)}
-                  className="lg:hidden flex items-center gap-2 px-3 py-2 border border-slate-200 text-slate-600 text-sm font-medium rounded-lg hover:bg-slate-50">
-                  <i className="fa-solid fa-sliders"></i> Filters
-                  {hasFilters && <span className="w-2 h-2 bg-blue-600 rounded-full"></span>}
-                </button>
-                {!loading && (
-                  <p className="text-sm text-slate-500">
-                    {visibleStudents.length} {visibleStudents.length === 1 ? 'student' : 'students'} found
-                  </p>
-                )}
-              </div>
-              {currentUser?.role === 'student' && (
-                <Link to="/roommate-profile"
-                  className="px-4 py-2 text-sm font-semibold border border-blue-700 text-blue-700 rounded-lg hover:bg-blue-50 transition-colors">
-                  <i className="fa-regular fa-user mr-1.5"></i>My Profile
-                </Link>
-              )}
+            {/* Mobile filter toggle */}
+            <div className="flex items-center mb-4 lg:hidden">
+              <button
+                onClick={() => setSidebarOpen(true)}
+                className="flex items-center gap-2 px-3 py-2 border border-slate-200 text-slate-600 text-sm font-medium rounded-lg hover:bg-slate-50">
+                <i className="fa-solid fa-sliders"></i> Filters
+                {hasFilters && <span className="w-2 h-2 bg-blue-600 rounded-full"></span>}
+              </button>
             </div>
 
             {/* Active filter pills */}

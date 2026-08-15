@@ -16,3 +16,6 @@ backend/uploads/
 
 # OS files
 .DS_Store
+
+# Agent rules
+.agents/

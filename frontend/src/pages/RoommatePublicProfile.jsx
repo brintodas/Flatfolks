@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { useParams, Link } from 'react-router-dom'
+import { useParams, Link, useNavigate } from 'react-router-dom'
 
 const QUIZ_META = {
   sleep_schedule:  { label: 'Sleep Schedule', icon: 'fa-moon',        options: ['Early bird', 'Flexible', 'Night owl'] },
@@ -24,8 +24,38 @@ function RoommatePublicProfile() {
   const [loading, setLoading] = useState(true)
   const [notFound, setNotFound] = useState(false)
 
+  const navigate    = useNavigate()
   const currentUser = JSON.parse(localStorage.getItem('ff_user') || 'null')
   const isOwnProfile = currentUser && String(currentUser.id) === String(userId)
+
+  // ── Roommate request state ──────────────────────────────────────────────────
+  const [reqStatus, setReqStatus] = useState('idle') // idle | sending | sent | error
+  const [reqMsg, setReqMsg]       = useState('')
+
+  async function sendRoommateRequest() {
+    if (!currentUser) { navigate('/signin'); return }
+    if (currentUser.role !== 'student') return
+    setReqStatus('sending')
+    setReqMsg('')
+    try {
+      const r = await fetch('http://localhost:8000/api/roommates/invite', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ inviter_id: currentUser.id, invitee_id: Number(userId) }),
+      })
+      const j = await r.json()
+      if (j.success) {
+        setReqStatus('sent')
+        setReqMsg('Request sent! They will see it in their notifications.')
+      } else {
+        setReqStatus('error')
+        setReqMsg(j.message || 'Could not send request.')
+      }
+    } catch {
+      setReqStatus('error')
+      setReqMsg('Network error. Try again.')
+    }
+  }
 
   useEffect(() => {
     // Fetch profile
@@ -113,9 +143,22 @@ function RoommatePublicProfile() {
                     </Link>
                   ) : (
                     <>
-                      <button className="px-5 py-2 text-sm font-semibold text-white bg-blue-700 hover:bg-blue-800 rounded-lg transition-colors">
-                        Send Roommate Request
-                      </button>
+                      <div>
+                        <button
+                          onClick={sendRoommateRequest}
+                          disabled={reqStatus === 'sending' || reqStatus === 'sent'}
+                          className="px-5 py-2 text-sm font-semibold text-white bg-blue-700 hover:bg-blue-800 rounded-lg transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
+                        >
+                          {reqStatus === 'sending' && <><i className="fa-solid fa-circle-notch fa-spin mr-2"></i>Sending…</>}
+                          {reqStatus === 'sent'    && <><i className="fa-solid fa-check mr-2"></i>Request Sent</>}
+                          {(reqStatus === 'idle' || reqStatus === 'error') && <><i className="fa-solid fa-user-plus mr-2"></i>Send Roommate Request</>}
+                        </button>
+                        {reqMsg && (
+                          <p className={`text-xs mt-1.5 ${reqStatus === 'sent' ? 'text-green-600' : 'text-red-500'}`}>
+                            {reqMsg}
+                          </p>
+                        )}
+                      </div>
                       <Link to={`/messages/new?to=${userId}`} className="px-4 py-2 text-sm font-medium border border-slate-200 text-slate-600 hover:bg-slate-50 rounded-lg transition-colors inline-flex items-center">
                         <i className="fa-regular fa-message mr-1.5"></i>Message
                       </Link>

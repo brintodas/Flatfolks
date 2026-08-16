@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
+import RoommateGroupPanel from '../components/RoommateGroupPanel'
 
 const DISTRICTS = ['Dhaka', 'Gazipur', 'Narayanganj', 'Chittagong', 'Sylhet', 'Rajshahi', 'Khulna', 'Comilla']
 
@@ -196,6 +197,16 @@ function RoommateProfile() {
           </p>
         </div>
 
+        {/* ── Roommate Group Panel ─────────────────────────────── */}
+        <div className="mb-8">
+          <h2 className="text-base font-semibold text-slate-700 mb-3 flex items-center gap-2">
+            <i className="fa-solid fa-people-group text-blue-600"></i>
+            My Roommate Group
+          </h2>
+          <RoommateGroupPanel userId={currentUser.id} userName={currentUser.full_name} />
+        </div>
+
+        {/* ── Profile Edit Form ────────────────────────────────── */}
         <form onSubmit={handleSubmit} className="space-y-8">
 
           {/* Profile Photo */}

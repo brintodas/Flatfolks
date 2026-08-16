@@ -3,6 +3,7 @@ const router = express.Router()
 const db = require('../config/db')
 const multer = require('multer')
 const path = require('path')
+const attachGroupContext = require('../middleware/roommateContext')
 
 // multer v2 disk storage
 const storage = multer.diskStorage({
@@ -122,7 +123,8 @@ router.post('/', upload.fields([{ name: 'photos', maxCount: 5 }, { name: 'video'
 
 
 // GET /api/listings
-router.get('/', (req, res) => {
+// Accepts optional ?user_id= to attach group context (budget/bed aggregates)
+router.get('/', attachGroupContext, (req, res) => {
   const {
     available_before, available_after, search,
     min_rent, max_rent, max_distance,
@@ -131,6 +133,12 @@ router.get('/', (req, res) => {
 
   let sql = 'SELECT * FROM listings WHERE status = "active"'
   const params = []
+
+  // If a group context exists, auto-apply aggregate budget and bed filters
+  // (only when no explicit filter was passed by the user)
+  const gc = req.groupContext
+  const effectiveMaxRent  = max_rent  || (gc ? gc.maxBudget  : null)
+  const effectiveMinBeds  = gc && !req.query.beds ? gc.minBeds : null
 
   if (available_before) {
     sql += ' AND (available_from <= ? OR available_from IS NULL)'
@@ -154,15 +162,21 @@ router.get('/', (req, res) => {
     params.push(parseInt(min_rent))
   }
 
-  if (max_rent) {
+  if (effectiveMaxRent) {
     sql += ' AND rent <= ?'
-    params.push(parseInt(max_rent))
+    params.push(parseInt(effectiveMaxRent))
   }
 
   // distance to campus in km, listings with no distance set are kept too
   if (max_distance) {
     sql += ' AND (distance_to_campus <= ? OR distance_to_campus IS NULL)'
     params.push(parseFloat(max_distance))
+  }
+
+  // Auto-filter by minimum beds needed for the whole group
+  if (effectiveMinBeds) {
+    sql += ' AND beds >= ?'
+    params.push(effectiveMinBeds)
   }
 
   if (furnished === 'true' || furnished === 'false') {
@@ -192,7 +206,9 @@ router.get('/', (req, res) => {
       console.log('Error fetching listings:', err)
       return res.json({ success: false, message: 'Failed to fetch listings' })
     }
-    res.json({ success: true, data: results })
+    // Surface group context metadata so frontend can show a hint like
+    // "Showing flats for your 3-person group (budget ৳45,000 combined)"
+    res.json({ success: true, data: results, groupContext: req.groupContext || null })
   })
 })
 

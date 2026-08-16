@@ -45,9 +45,10 @@ function Listings() {
       availableBefore: params.get('available_before') || ''
     }
   })
-  const [bookmarked, setBookmarked] = useState(new Set()) // set of bookmarked listing IDs
-  const [viewMode, setViewMode] = useState('list') // 'list' or 'map'
-  const userKey = getUserKey()
+  const [bookmarked, setBookmarked]   = useState(new Set()) // set of bookmarked listing IDs
+  const [viewMode, setViewMode]       = useState('list')    // 'list' or 'map'
+  const [groupContext, setGroupContext] = useState(null)     // group search context from API
+  const userKey    = getUserKey()
   const currentUser = JSON.parse(localStorage.getItem('ff_user') || 'null')
 
   const updateFilter = (key, value) => {
@@ -66,27 +67,32 @@ function Listings() {
     if (filters.lease) params.set('lease_duration', filters.lease)
     if (filters.availableBefore) params.set('available_before', filters.availableBefore)
 
+    // Pass user_id so the backend can activate group-context filtering
+    if (currentUser?.role === 'student') params.set('user_id', currentUser.id)
+
     const qs = params.toString()
     const url = 'http://localhost:8000/api/listings' + (qs ? `?${qs}` : '')
 
     const timer = setTimeout(() => {
       setLoading(true)
+      setError('')
       fetch(url)
         .then(res => res.json())
         .then(json => {
-          if (json.success && json.data && json.data.length > 0) {
-            setListings(json.data)
+          if (json.success) {
+            setListings(json.data || [])
+            setGroupContext(json.groupContext || null)
           } else {
-            // Fallback to mock data if empty or unsuccessful
             setListings(generateMockListings())
-            if (!json.success) setError('Failed to load listings. Showing mock data.')
+            setGroupContext(null)
+            setError('Could not load listings. Showing mock data.')
           }
           setLoading(false)
         })
-        .catch(err => {
-          console.log(err)
+        .catch(() => {
           setError('Could not connect to server. Showing mock data.')
           setListings(generateMockListings())
+          setGroupContext(null)
           setLoading(false)
         })
     }, 300)
@@ -282,6 +288,27 @@ function Listings() {
             </button>
           </div>
         </div>
+
+        {/* ── Group search banner ───────────────────────────────────────────── */}
+        {groupContext && (
+          <div className="flex items-center gap-3 bg-blue-50 border border-blue-200 rounded-xl px-4 py-3 mb-4">
+            <div className="w-8 h-8 rounded-full bg-blue-700 flex items-center justify-center flex-shrink-0">
+              <i className="fa-solid fa-people-group text-white text-xs"></i>
+            </div>
+            <div className="flex-1 min-w-0">
+              <p className="text-sm font-semibold text-blue-900">
+                Searching as a group · {groupContext.memberCount} {groupContext.memberCount === 1 ? 'member' : 'members'}
+              </p>
+              <p className="text-xs text-blue-700 mt-0.5">
+                Combined budget ৳{Number(groupContext.maxBudget).toLocaleString()}/mo
+                &nbsp;·&nbsp;Minimum {groupContext.minBeds} bed{groupContext.minBeds !== 1 ? 's' : ''} needed
+              </p>
+            </div>
+            <span className="text-xs bg-blue-700 text-white px-2.5 py-1 rounded-full font-semibold flex-shrink-0">
+              Group Mode
+            </span>
+          </div>
+        )}
 
         {/* Results summary & Post Listing (Landlords) */}
         <div className="flex items-center justify-between mb-4">

@@ -1,5 +1,7 @@
 import { useEffect, useState } from 'react'
 import { useParams, Link } from 'react-router-dom'
+import FraudReportForm from '../components/FraudReportForm'
+
 
 function ListingDetail() {
   const { id } = useParams()
@@ -8,6 +10,9 @@ function ListingDetail() {
   const [error, setError] = useState('')
   const [activePhoto, setActivePhoto] = useState(0)
   const [showAllPhotos, setShowAllPhotos] = useState(false)
+  const [showFraudReportForm, setShowFraudReportForm] = useState(false)
+  const [verifiedReports, setVerifiedReports] = useState([])
+
 
   useEffect(() => {
     fetch(`http://localhost:8000/api/listings/${id}`)
@@ -20,6 +25,19 @@ function ListingDetail() {
       .catch(() => { setError('Could not connect to server'); setLoading(false) })
   }, [id])
 
+
+  useEffect(() => {
+    fetch(`http://localhost:8000/api/reports/listing/${id}`)
+      .then(res => res.json())
+      .then(json => {
+         if (json.success) {
+           setVerifiedReports(json.reports || [])
+         }
+       })
+      .catch(() => {
+        setVerifiedReports([])
+      })
+ }, [id])
   if (loading) return (
     <div className="min-h-screen flex items-center justify-center pt-16">
       <div className="flex flex-col items-center gap-3">
@@ -137,6 +155,107 @@ function ListingDetail() {
 
           {/* ── Left ─────────────────────────────────────── */}
           <div className="flex-1 min-w-0">
+            {/* Admin-verified fraud warnings */}
+{verifiedReports.length > 0 && (
+  <div className="mb-6 space-y-4">
+    {verifiedReports.map(report => (
+      <div
+        key={report.id}
+        className="border border-red-300 bg-red-50 rounded-2xl p-5"
+      >
+        <div className="flex items-start gap-3">
+          <div className="w-10 h-10 rounded-full bg-red-100 flex items-center justify-center shrink-0">
+            <i className="fa-solid fa-triangle-exclamation text-red-600"></i>
+          </div>
+
+          <div className="flex-1">
+            <div className="flex flex-wrap items-center gap-2 mb-2">
+              <h2 className="font-bold text-red-800">
+                Verified Fraud Report
+              </h2>
+
+              <span className="text-xs font-bold bg-red-600 text-white px-2.5 py-1 rounded-full">
+                VERIFIED SCAM
+              </span>
+            </div>
+
+            <p className="text-sm text-red-900 font-medium capitalize mb-2">
+              {report.category.replaceAll('_', ' ')}
+            </p>
+
+            <p className="text-sm text-slate-700 whitespace-pre-line">
+              {report.description}
+            </p>
+
+            {Number(report.visit_confirmed) === 1 && (
+              <p className="text-xs font-medium text-slate-600 mt-3">
+                <i className="fa-solid fa-location-dot mr-1"></i>
+                Reporter confirmed visiting this property.
+              </p>
+            )}
+
+            {report.admin_note && (
+              <div className="mt-4 bg-white border border-red-100 rounded-xl p-3">
+                <p className="text-xs font-semibold text-slate-500 mb-1">
+                  Admin verification
+                </p>
+                <p className="text-sm text-slate-700">
+                  {report.admin_note}
+                </p>
+              </div>
+            )}
+
+            {report.evidence?.length > 0 && (
+              <div className="mt-4">
+                <p className="text-xs font-semibold text-slate-500 mb-2">
+                  Verified evidence
+                </p>
+
+                <div className="flex flex-wrap gap-2">
+                  {report.evidence.map(item => (
+                    <a
+                      key={item.id}
+                      href={`http://localhost:8000${item.file_path}`}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="inline-flex items-center gap-2 text-xs font-medium border border-red-200 bg-white text-red-700 px-3 py-2 rounded-lg hover:bg-red-50"
+                    >
+                      <i
+                        className={
+                          item.evidence_type === 'video'
+                            ? 'fa-solid fa-circle-play'
+                            : 'fa-solid fa-image'
+                        }
+                      ></i>
+
+                      {item.evidence_type === 'video'
+                        ? 'View Video Proof'
+                        : 'View Photo Proof'}
+                    </a>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            <div className="mt-4 flex flex-wrap gap-3 text-xs text-slate-500">
+              <span>
+                Automated risk: {report.risk_level} ({report.risk_score}/100)
+              </span>
+
+              {report.reviewed_at && (
+                <span>
+                  Admin verified:{' '}
+                  {new Date(report.reviewed_at).toLocaleDateString()}
+                </span>
+              )}
+            </div>
+          </div>
+        </div>
+      </div>
+    ))}
+  </div>
+)}
+
 
             {/* Title row */}
             <div className="flex items-start justify-between gap-4 pb-6 border-b border-slate-100">
@@ -312,6 +431,30 @@ function ListingDetail() {
                   )}
                 </div>
               </div>
+              {/* Student fraud reporting */}
+<div className="mt-4 mb-5 pt-4 border-t border-slate-100">
+  <button
+    type="button"
+    onClick={() => setShowFraudReportForm(prev => !prev)}
+    className="w-full flex items-center justify-center gap-2 border border-red-300 text-red-700 hover:bg-red-50 font-semibold py-3 rounded-xl transition-colors"
+  >
+    <i className="fa-solid fa-flag"></i>
+    {showFraudReportForm
+      ? 'Close Report Form'
+      : 'Report Listing / Landlord'}
+  </button>
+
+  {showFraudReportForm && (
+    <div className="mt-4">
+      <FraudReportForm
+        listingId={listing.id}
+        onSubmitted={() => setShowFraudReportForm(false)}
+      />
+    </div>
+  )}
+</div>
+
+
 
               {/* Property Details card */}
               <div className="border border-slate-200 rounded-2xl p-5">

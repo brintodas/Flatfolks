@@ -38,18 +38,17 @@ function AdminDashboard() {
 
   useEffect(() => {
     setLoading(true)
-    if (activeTab === 'users') {
-      fetch('http://localhost:8000/api/admin/users', { headers })
-        .then(r => r.json())
-        .then(json => { if (json.success) setUsers(json.data); setLoading(false) })
-        .catch(() => setLoading(false))
-    } else {
-      fetch('http://localhost:8000/api/admin/listings', { headers })
-        .then(r => r.json())
-        .then(json => { if (json.success) setListings(json.data); setLoading(false) })
-        .catch(() => setLoading(false))
-    }
-  }, [activeTab])
+    Promise.all([
+      fetch('http://localhost:8000/api/admin/users', { headers }).then(r => r.json()),
+      fetch('http://localhost:8000/api/admin/listings', { headers }).then(r => r.json())
+    ])
+      .then(([usersJson, listingsJson]) => {
+        if (usersJson.success) setUsers(usersJson.data)
+        if (listingsJson.success) setListings(listingsJson.data)
+        setLoading(false)
+      })
+      .catch(() => setLoading(false))
+  }, [])
 
   const toggleVerifyUser = (id) => {
     fetch(`http://localhost:8000/api/admin/verify-user/${id}`, { method: 'PUT', headers })

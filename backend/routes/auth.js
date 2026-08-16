@@ -71,34 +71,18 @@ router.post('/signup', (req, res) => {
 
 // POST /api/auth/signin
 router.post('/signin', (req, res) => {
-  const { email, password, role } = req.body
-
-  // admin login — match by email + password only (role is always 'admin' in DB)
-  if (role === 'admin') {
-    db.query(
-      'SELECT * FROM users WHERE email = ? AND password = ? AND role = ?',
-      [email, password, 'admin'],
-      (err, rows) => {
-        if (err) return res.json({ success: false, message: 'Something went wrong.' })
-        if (rows.length === 0) return res.json({ success: false, message: 'Invalid admin credentials.' })
-        const user = rows[0]
-        delete user.password
-        res.json({ success: true, user })
-      }
-    )
-    return
-  }
+  const { email, password } = req.body
 
   db.query(
-    'SELECT * FROM users WHERE email = ? AND password = ? AND role = ?',
-    [email, password, role],
+    'SELECT * FROM users WHERE email = ? AND password = ?',
+    [email, password],
     (err, rows) => {
       if (err) {
         console.log('Signin error:', err)
         return res.json({ success: false, message: 'Something went wrong.' })
       }
       if (rows.length === 0) {
-        return res.json({ success: false, message: 'Incorrect email, password, or role.' })
+        return res.json({ success: false, message: 'Incorrect email or password.' })
       }
       const user = rows[0]
       delete user.password

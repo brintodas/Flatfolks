@@ -59,44 +59,6 @@ const RoommateMatch = () => {
             </a>
           </div>
 
-          {/* Right: Roommate Cards */}
-          <div className="space-y-4">
-            {roommates.map((r, i) => (
-              <div key={i}
-                className="rounded-2xl p-5 flex items-center gap-4 transition-all duration-300 hover:-translate-y-1"
-                style={{ background: 'rgba(255,255,255,0.1)', border: '1px solid rgba(255,255,255,0.1)', backdropFilter: 'blur(8px)' }}>
-                <div className={`w-14 h-14 rounded-2xl flex-shrink-0 bg-gradient-to-br ${r.gradient} flex items-center justify-center`}>
-                  <span className="text-2xl font-black text-white">{r.initial}</span>
-                </div>
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-2 mb-1">
-                    <p className="font-bold text-white text-sm">{r.name}</p>
-                    <span className="text-xs px-2 py-0.5 rounded-full text-blue-300"
-                      style={{ background: 'rgba(59,130,246,0.3)' }}>{r.dept}</span>
-                  </div>
-                  <p className="text-blue-300 text-xs mb-2.5">{r.desc}</p>
-                  <div className="flex items-center gap-2">
-                    <div className="flex-1 h-1.5 rounded-full overflow-hidden" style={{ background: 'rgba(255,255,255,0.1)' }}>
-                      <div className="h-full rounded-full bg-gradient-to-r from-blue-400 to-emerald-400 transition-all duration-1000"
-                        style={{ width: `${r.match}%` }}></div>
-                    </div>
-                    <span className="text-xs font-black text-emerald-400 flex-shrink-0">{r.match}% Match</span>
-                  </div>
-                </div>
-                <button className={`flex-shrink-0 px-3 py-1.5 text-white text-xs font-semibold rounded-lg transition-all ${
-                  r.connected ? 'bg-blue-500 hover:bg-blue-600' : 'hover:bg-blue-500 border border-white/20'
-                }`} style={!r.connected ? { background: 'rgba(255,255,255,0.15)' } : {}}>
-                  Connect
-                </button>
-              </div>
-            ))}
-            <div className="text-center pt-2">
-              <a href="#" className="text-blue-300 text-sm font-semibold hover:text-blue-200 transition-colors">
-                View all compatible roommates →
-              </a>
-            </div>
-          </div>
-
         </div>
       </div>
     </section>

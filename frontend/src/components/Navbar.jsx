@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
+import { Link, NavLink, useNavigate } from 'react-router-dom'
 
 const Navbar = () => {
   const navigate = useNavigate()
@@ -96,9 +96,8 @@ const Navbar = () => {
   })()
 
   return (
-    <nav className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 bg-white/95 border-b border-blue-50 ${scrolled ? 'shadow-md' : 'shadow-sm'}`}
-      style={{ backdropFilter: 'blur(12px)' }}>
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+    <nav className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 bg-white border-b border-slate-100 ${scrolled ? 'shadow-md' : 'shadow-sm'}`}>
+      <div className="w-full px-4 sm:px-6 lg:px-10">
         <div className="flex items-center justify-between h-16">
 
           {/* Logo */}
@@ -106,75 +105,71 @@ const Navbar = () => {
             <div className="w-9 h-9 bg-blue-800 rounded-xl flex items-center justify-center shadow-md group-hover:bg-blue-900 transition-colors">
               <i className="fa-solid fa-house-chimney text-white text-lg"></i>
             </div>
-            <span className="text-xl font-black text-blue-900 tracking-tight">
-              Flat<span className="text-blue-600">folks</span>
+            <span className="text-lg font-bold text-blue-800 tracking-tight">
+              flatfolks
             </span>
           </Link>
 
           {/* Desktop Nav */}
-          <div className="hidden md:flex items-center gap-1">
-            <Link to="/listings" className="px-4 py-2 text-sm font-medium text-slate-600 hover:text-blue-700 hover:bg-blue-50 rounded-lg transition-all">
+          <div className="hidden md:flex items-center gap-2 ml-8">
+            <NavLink 
+              to="/listings" 
+              className={({isActive}) => `px-4 py-2 text-[14px] font-semibold rounded-lg transition-all ${isActive ? 'bg-blue-800 text-white shadow-sm' : 'text-blue-800 hover:text-blue-900 hover:bg-blue-50'}`}
+            >
               Browse Listings
-            </Link>
-            <Link to="/roommates" className="px-4 py-2 text-sm font-medium text-slate-600 hover:text-blue-700 hover:bg-blue-50 rounded-lg transition-all">
+            </NavLink>
+            <NavLink 
+              to="/roommates" 
+              className={({isActive}) => `px-4 py-2 text-[14px] font-semibold rounded-lg transition-all ${isActive ? 'bg-blue-800 text-white shadow-sm' : 'text-blue-800 hover:text-blue-900 hover:bg-blue-50'}`}
+            >
               Find Roommates
-            </Link>
-            <a href="#how-it-works"
-              className="px-4 py-2 text-sm font-medium text-slate-600 hover:text-blue-700 hover:bg-blue-50 rounded-lg transition-all">
-              How It Works
-            </a>
-            {currentUser?.role !== 'landlord' && (
-              <a href="#for-landlords"
-                className="px-4 py-2 text-sm font-medium text-slate-600 hover:text-blue-700 hover:bg-blue-50 rounded-lg transition-all">
-                For Landlords
-              </a>
-            )}
+            </NavLink>
           </div>
 
           {/* Right side */}
           <div className="flex items-center gap-1 sm:gap-1.5">
 
-            {/* Icon cluster: Watchlist, Messages, Notifications */}
-            <div className="hidden sm:flex items-center gap-0.5 pr-2 mr-1 border-r border-slate-100">
-              <Link to="/watchlist" title="My Watchlist"
-                className="relative flex items-center justify-center w-10 h-10 text-slate-500 hover:text-blue-700 hover:bg-blue-50 rounded-lg transition-all">
-                <i className="fa-regular fa-bookmark text-lg"></i>
-              </Link>
+            {/* Watchlist */}
+            <NavLink to="/watchlist" title="My Watchlist"
+              className={({isActive}) => `hidden sm:flex items-center gap-1.5 px-3 py-2 text-sm font-semibold rounded-lg transition-all ${isActive ? 'bg-blue-800 text-white shadow-sm' : 'text-blue-800 hover:text-blue-900 hover:bg-blue-50'}`}>
+              <i className="fa-regular fa-bookmark"></i>
+              <span className="hidden lg:inline">Watchlist</span>
+            </NavLink>
 
-              <Link to="/messages" title="Messages"
-                className="relative flex items-center justify-center w-10 h-10 text-slate-500 hover:text-blue-700 hover:bg-blue-50 rounded-lg transition-all">
-                <i className="fa-regular fa-message text-lg"></i>
-                {unreadMessageCount > 0 && (
-                  <span className="absolute top-1 right-1 min-w-[18px] h-[18px] px-1 flex items-center justify-center bg-red-500 text-white text-[10px] font-bold rounded-full">
-                    {unreadMessageCount}
+            {/* Messages */}
+            <NavLink to="/messages" title="Messages"
+              className={({isActive}) => `relative hidden sm:flex items-center justify-center w-10 h-10 rounded-lg transition-all ${isActive ? 'bg-blue-800 text-white shadow-sm' : 'text-blue-800 hover:text-blue-900 hover:bg-blue-50'}`}>
+              <i className="fa-regular fa-message text-lg"></i>
+              {unreadMessageCount > 0 && (
+                <span className="absolute top-0 right-0 min-w-5 h-5 px-1 flex items-center justify-center bg-red-500 text-white text-xs font-bold rounded-full">
+                  {unreadMessageCount}
+                </span>
+              )}
+            </NavLink>
+
+            {/* Notification bell */}
+            {currentUser?.role !== 'landlord' && (
+              <NavLink to="/watchlist" title="Notifications"
+                className={({isActive}) => `relative hidden sm:flex items-center justify-center w-10 h-10 rounded-lg transition-all ${isActive ? 'bg-blue-800 text-white shadow-sm' : 'text-blue-800 hover:text-blue-900 hover:bg-blue-50'}`}>
+                <i className="fa-regular fa-bell text-lg"></i>
+                {notificationCount > 0 && (
+                  <span className="absolute top-0 right-0 min-w-5 h-5 px-1 flex items-center justify-center bg-red-500 text-white text-xs font-bold rounded-full">
+                    {notificationCount}
                   </span>
                 )}
-              </Link>
-
-              {/* Notification bell — students & guests only (watchlist alerts) */}
-              {currentUser?.role !== 'landlord' && (
-                <Link to="/watchlist" title="Notifications"
-                  className="relative flex items-center justify-center w-10 h-10 text-slate-500 hover:text-blue-700 hover:bg-blue-50 rounded-lg transition-all">
-                  <i className="fa-regular fa-bell text-lg"></i>
-                  {notificationCount > 0 && (
-                    <span className="absolute top-1 right-1 min-w-[18px] h-[18px] px-1 flex items-center justify-center bg-red-500 text-white text-[10px] font-bold rounded-full">
-                      {notificationCount}
-                    </span>
-                  )}
-                </Link>
-              )}
-            </div>
+              </NavLink>
+            )}
 
             {/* Auth area */}
             {currentUser ? (
               <div className="relative" ref={menuRef}>
                 <button
                   onClick={() => setMenuOpen(o => !o)}
-                  className={`flex items-center gap-2 pl-1.5 pr-2.5 py-1.5 rounded-full border transition-all ${
+                  className={`flex items-center gap-2 pl-1.5 pr-2.5 py-1.5 ml-2 rounded-full border transition-all ${
                     menuOpen ? 'bg-blue-50 border-blue-100' : 'border-transparent hover:bg-slate-50'
                   }`}
                 >
-                  <span className="w-8 h-8 rounded-full bg-blue-700 text-white text-xs font-bold flex items-center justify-center shrink-0">
+                  <span className="w-8 h-8 rounded-full bg-blue-800 text-white text-xs font-bold flex items-center justify-center shrink-0">
                     {initials}
                   </span>
                   <span className="hidden sm:block text-sm font-medium text-slate-700">{firstName}</span>
@@ -202,21 +197,6 @@ const Navbar = () => {
                       </Link>
                     ))}
 
-                    {/* Watchlist/Messages fallback inside menu for narrow screens where the icon cluster is hidden */}
-                    <div className="sm:hidden">
-                      <div className="my-1.5 border-t border-slate-50"></div>
-                      <Link to="/watchlist" onClick={() => setMenuOpen(false)}
-                        className="flex items-center gap-2.5 px-3.5 py-2 text-sm font-medium text-slate-600 hover:bg-blue-50 hover:text-blue-700">
-                        <i className="fa-regular fa-bookmark w-4 text-center text-[13px]"></i>
-                        Watchlist
-                      </Link>
-                      <Link to="/messages" onClick={() => setMenuOpen(false)}
-                        className="flex items-center gap-2.5 px-3.5 py-2 text-sm font-medium text-slate-600 hover:bg-blue-50 hover:text-blue-700">
-                        <i className="fa-regular fa-message w-4 text-center text-[13px]"></i>
-                        Messages
-                      </Link>
-                    </div>
-
                     <div className="my-1.5 border-t border-slate-50"></div>
 
                     <button
@@ -231,10 +211,10 @@ const Navbar = () => {
               </div>
             ) : (
               <>
-                <Link to="/signin" className="hidden sm:block px-4 py-2 text-sm font-semibold text-blue-700 hover:bg-blue-50 rounded-lg transition-all">
+                <NavLink to="/signin" className={({isActive}) => `hidden sm:block px-4 py-2 text-sm font-semibold rounded-lg transition-all ${isActive ? 'bg-blue-800 text-white shadow-sm' : 'text-blue-800 hover:text-blue-900 hover:bg-blue-50'}`}>
                   Sign In
-                </Link>
-                <Link to="/get-started" className="px-4 py-2 text-sm font-semibold text-white bg-blue-700 hover:bg-blue-800 rounded-xl transition-all shadow-md hover:shadow-lg">
+                </NavLink>
+                <Link to="/get-started" className="px-4 py-2 text-sm font-semibold text-white bg-blue-800 hover:bg-blue-900 rounded-xl transition-all shadow-md hover:shadow-lg">
                   <span className="hidden sm:inline">Get Started</span>
                   <span className="sm:hidden"><i className="fa-solid fa-arrow-right"></i></span>
                 </Link>
@@ -259,16 +239,6 @@ const Navbar = () => {
           <Link to="/roommates" className="block px-4 py-2.5 text-sm font-medium text-slate-700 hover:bg-blue-50 hover:text-blue-700 rounded-lg">
             Find Roommates
           </Link>
-          <a href="#how-it-works"
-            className="block px-4 py-2.5 text-sm font-medium text-slate-700 hover:bg-blue-50 hover:text-blue-700 rounded-lg">
-            How It Works
-          </a>
-          {currentUser?.role !== 'landlord' && (
-            <a href="#for-landlords"
-              className="block px-4 py-2.5 text-sm font-medium text-slate-700 hover:bg-blue-50 hover:text-blue-700 rounded-lg">
-              For Landlords
-            </a>
-          )}
 
           <div className="my-2 border-t border-slate-100"></div>
 
@@ -307,7 +277,7 @@ const Navbar = () => {
               <Link to="/signin" className="block px-4 py-2.5 text-sm font-medium text-slate-700 hover:bg-blue-50 rounded-lg">
                 Sign In
               </Link>
-              <Link to="/get-started" className="block px-4 py-2.5 text-sm font-medium text-white bg-blue-700 rounded-lg">
+              <Link to="/get-started" className="block px-4 py-2.5 text-sm font-medium text-white bg-blue-800 hover:bg-blue-900 rounded-lg">
                 Get Started
               </Link>
             </>

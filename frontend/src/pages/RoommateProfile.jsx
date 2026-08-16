@@ -1,6 +1,9 @@
 import { useState, useEffect } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import RoommateGroupPanel from '../components/RoommateGroupPanel'
+import { universitiesInBD } from '../utils/universities'
+import { commonMajorsInBD } from '../utils/majors'
+import Autocomplete from '../components/Autocomplete'
 
 const DISTRICTS = ['Dhaka', 'Gazipur', 'Narayanganj', 'Chittagong', 'Sylhet', 'Rajshahi', 'Khulna', 'Comilla']
 
@@ -65,6 +68,7 @@ function RoommateProfile() {
   }
 
   const [form, setForm] = useState({
+    university: '',
     course: '',
     year_of_study: '',
     bio: '',
@@ -93,6 +97,7 @@ function RoommateProfile() {
       .then(data => {
         if (!data.error) {
           setForm({
+            university:         data.university         || '',
             course:             data.course             || '',
             year_of_study:      data.year_of_study      || '',
             bio:                data.bio                || '',
@@ -187,15 +192,8 @@ function RoommateProfile() {
 
   return (
     <div className="min-h-screen bg-slate-50 pt-20 pb-16">
-      <div className="max-w-2xl mx-auto px-4">
+      <div className="max-w-4xl mx-auto px-4">
 
-        {/* Header */}
-        <div className="mb-8 pt-6">
-          <h1 className="text-2xl font-bold text-slate-800">My Roommate Profile</h1>
-          <p className="text-slate-500 text-sm mt-1">
-            Fill this out so other students can find and match with you.
-          </p>
-        </div>
 
         {/* ── Roommate Group Panel ─────────────────────────────── */}
         <div className="mb-8">
@@ -245,16 +243,51 @@ function RoommateProfile() {
               The Basics
             </h2>
 
-            {/* Name — read-only from account */}
+            {/* Account Details — read-only from account */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="md:col-span-2">
+                <label className="block text-sm font-medium text-slate-700 mb-1">Full Name</label>
+                <input
+                  type="text"
+                  value={currentUser.full_name || currentUser.name || ''}
+                  disabled
+                  className="w-full border border-slate-200 rounded-lg px-3 py-2.5 text-sm text-slate-400 bg-slate-50 cursor-not-allowed"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-slate-700 mb-1">Email Address</label>
+                <input
+                  type="email"
+                  value={currentUser.email || ''}
+                  disabled
+                  className="w-full border border-slate-200 rounded-lg px-3 py-2.5 text-sm text-slate-400 bg-slate-50 cursor-not-allowed"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-slate-700 mb-1">Phone Number</label>
+                <input
+                  type="tel"
+                  value={currentUser.phone || ''}
+                  disabled
+                  className="w-full border border-slate-200 rounded-lg px-3 py-2.5 text-sm text-slate-400 bg-slate-50 cursor-not-allowed"
+                  placeholder="No phone number added"
+                />
+              </div>
+              <p className="text-xs text-slate-400 mt-1 md:col-span-2">Pulled from your account — edit in settings.</p>
+            </div>
+
             <div>
-              <label className="block text-sm font-medium text-slate-700 mb-1">Full Name</label>
-              <input
-                type="text"
-                value={currentUser.full_name || currentUser.name || ''}
-                disabled
-                className="w-full border border-slate-200 rounded-lg px-3 py-2.5 text-sm text-slate-400 bg-slate-50 cursor-not-allowed"
+              <label className="block text-sm font-medium text-slate-700 mb-1">
+                University <span className="text-red-500">*</span>
+              </label>
+              <Autocomplete
+                options={universitiesInBD}
+                name="university"
+                value={form.university}
+                onChange={handleChange}
+                placeholder="Type to search your university..."
+                required
               />
-              <p className="text-xs text-slate-400 mt-1">Pulled from your account — edit in settings.</p>
             </div>
 
             <div className="grid grid-cols-2 gap-4">
@@ -262,14 +295,13 @@ function RoommateProfile() {
                 <label className="block text-sm font-medium text-slate-700 mb-1">
                   Course / Major <span className="text-red-500">*</span>
                 </label>
-                <input
-                  type="text"
+                <Autocomplete
+                  options={commonMajorsInBD}
                   name="course"
                   value={form.course}
                   onChange={handleChange}
                   placeholder="e.g. CSE, EEE, BBA"
                   required
-                  className="w-full border border-slate-200 rounded-lg px-3 py-2.5 text-sm text-slate-800 outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
                 />
               </div>
               <div>

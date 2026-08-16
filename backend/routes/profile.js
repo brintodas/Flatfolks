@@ -37,7 +37,7 @@ router.get('/', (req, res) => {
       u.budget_min AS user_budget_min, u.budget_max AS user_budget_max,
       u.preferred_district AS user_preferred_district,
       u.preferred_area     AS user_preferred_area,
-      sp.course, sp.year_of_study, sp.bio, sp.profile_photo,
+      sp.university, sp.course, sp.year_of_study, sp.bio, sp.profile_photo,
       sp.budget_min, sp.budget_max,
       sp.preferred_district, sp.preferred_area,
       sp.move_in_timeframe, sp.room_type, sp.personality_tags,
@@ -130,7 +130,7 @@ router.get('/:userId', (req, res) => {
 // POST /api/profile — create or update a student's profile (upsert)
 router.post('/', (req, res) => {
   const {
-    user_id, course, year_of_study, bio,
+    user_id, university, course, year_of_study, bio,
     budget_min, budget_max,
     preferred_district, preferred_area,
     move_in_timeframe, room_type, personality_tags
@@ -147,10 +147,11 @@ router.post('/', (req, res) => {
 
     const sql = `
       INSERT INTO student_profiles
-        (user_id, course, year_of_study, bio, budget_min, budget_max,
+        (user_id, university, course, year_of_study, bio, budget_min, budget_max,
          preferred_district, preferred_area, move_in_timeframe, room_type, personality_tags)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
       ON DUPLICATE KEY UPDATE
+        university         = VALUES(university),
         course             = VALUES(course),
         year_of_study      = VALUES(year_of_study),
         bio                = VALUES(bio),
@@ -162,7 +163,7 @@ router.post('/', (req, res) => {
         room_type          = VALUES(room_type),
         personality_tags   = VALUES(personality_tags)`
 
-    db.query(sql, [user_id, course, year_of_study, bio, budget_min, budget_max,
+    db.query(sql, [user_id, university, course, year_of_study, bio, budget_min, budget_max,
       preferred_district, preferred_area, move_in_timeframe, room_type, tags], (err2) => {
       if (err2) { console.error(err2); return res.status(500).json({ error: 'Server error' }) }
 

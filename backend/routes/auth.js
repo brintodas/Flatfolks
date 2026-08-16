@@ -39,15 +39,19 @@ router.post('/signup', (req, res) => {
     })
 
   } else if (role === 'landlord') {
-    const { full_name, email, password, phone, nid, current_address, num_properties } = req.body
+    const {
+      full_name, email, password, phone, nid, current_address, num_properties,
+      business_name, business_type
+    } = req.body
 
     const sql = `
-      INSERT INTO users (role, full_name, email, password, phone, nid, current_address, num_properties)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+      INSERT INTO users (role, full_name, email, password, phone, nid, current_address, num_properties, business_name, business_type)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `
     db.query(sql, [
       'landlord', full_name, email, password, phone,
-      nid, current_address, num_properties || 0
+      nid, current_address, num_properties || 0,
+      business_name || null, business_type || 'individual'
     ], (err, result) => {
       if (err) {
         if (err.code === 'ER_DUP_ENTRY') {

@@ -203,10 +203,21 @@ function ListingDetail() {
               <p className="text-sm font-semibold text-slate-700 mb-3">Contact Landlord</p>
 
               {listing.landlord_name && (
-                <p className="text-sm text-slate-600 mb-1 flex items-center gap-2">
-                  <i className="fa-solid fa-user text-slate-400 text-xs w-4"></i>
-                  {listing.landlord_name}
-                </p>
+                listing.landlord_id ? (
+                  <Link
+                    to={`/landlord/${listing.landlord_id}`}
+                    className="text-sm text-slate-600 hover:text-blue-700 mb-1 flex items-center gap-2 group"
+                  >
+                    <i className="fa-solid fa-user text-slate-400 text-xs w-4"></i>
+                    <span className="group-hover:underline">{listing.landlord_name}</span>
+                    <i className="fa-solid fa-arrow-up-right-from-square text-[10px] text-slate-300 group-hover:text-blue-500"></i>
+                  </Link>
+                ) : (
+                  <p className="text-sm text-slate-600 mb-1 flex items-center gap-2">
+                    <i className="fa-solid fa-user text-slate-400 text-xs w-4"></i>
+                    {listing.landlord_name}
+                  </p>
+                )
               )}
 
               {listing.landlord_phone && (
@@ -235,6 +246,15 @@ function ListingDetail() {
                 >
                   WhatsApp
                 </a>
+              )}
+
+              {listing.landlord_id && (
+                <Link
+                  to={`/landlord/${listing.landlord_id}`}
+                  className="block w-full border border-slate-200 text-slate-600 hover:bg-slate-50 hover:text-blue-700 text-sm font-semibold text-center py-2.5 rounded-lg transition-colors mt-2"
+                >
+                  View Landlord Profile
+                </Link>
               )}
             </div>
 

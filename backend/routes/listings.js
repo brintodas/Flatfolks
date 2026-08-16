@@ -45,7 +45,8 @@ router.post('/', upload.fields([{ name: 'photos', maxCount: 5 }, { name: 'video'
     available_from, landlord_name, landlord_phone, walkthrough_link,
     property_type, distance_to_campus, advance_deposit, curfew_time,
     guests_allowed, smoking_allowed,
-    has_wifi, has_generator, has_cctv, has_lift, has_fridge
+    has_wifi, has_generator, has_cctv, has_lift, has_fridge,
+    landlord_id, property_group
   } = req.body
 
   if (!title || !rent || !location) {
@@ -72,8 +73,8 @@ router.post('/', upload.fields([{ name: 'photos', maxCount: 5 }, { name: 'video'
      utilities_included, lease_duration, available_from, photos, video, floor_plan, walkthrough_link,
      property_type, distance_to_campus, advance_deposit, curfew_time,
      guests_allowed, smoking_allowed, has_wifi, has_generator, has_cctv, has_lift, has_fridge,
-     landlord_name, landlord_phone)
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+     landlord_name, landlord_phone, landlord_id, property_group)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
   `
 
   const values = [
@@ -105,7 +106,9 @@ router.post('/', upload.fields([{ name: 'photos', maxCount: 5 }, { name: 'video'
     has_lift === 'true' ? 1 : 0,
     has_fridge === 'true' ? 1 : 0,
     landlord_name || '',
-    landlord_phone || ''
+    landlord_phone || '',
+    landlord_id || null,
+    property_group || null
   ]
 
   db.query(sql, values, (err, result) => {

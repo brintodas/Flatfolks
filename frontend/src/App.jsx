@@ -26,6 +26,9 @@ import RoommatePublicProfile from './pages/RoommatePublicProfile'
 import Roommates             from './pages/Roommates'
 import Messages              from './pages/Messages'
 import AdminDashboard        from './pages/AdminDashboard'
+import LandlordProfileSetup  from './pages/LandlordProfileSetup'
+import PublicLandlordProfile from './pages/PublicLandlordProfile'
+import LandlordDashboard     from './pages/LandlordDashboard'
 
 function ConditionalFooter() {
   const location = useLocation()
@@ -73,6 +76,11 @@ function App() {
           <Route path="/messages"           element={<Messages />} />
           <Route path="/messages/:conversationId" element={<Messages />} />
           <Route path="/admin"              element={<AdminDashboard />} />
+
+          {/* Landlord Profile / Business Account / Multi-Property Dashboard */}
+          <Route path="/landlord/profile-setup"   element={<LandlordProfileSetup />} />
+          <Route path="/landlord/:id"             element={<PublicLandlordProfile />} />
+          <Route path="/landlord/:id/dashboard"   element={<LandlordDashboard />} />
         
         </Routes>
         <ConditionalFooter />

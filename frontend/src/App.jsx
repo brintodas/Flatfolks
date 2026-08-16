@@ -3,7 +3,6 @@ import { BrowserRouter, Routes, Route, useLocation } from 'react-router-dom'
 import Navbar           from './components/Navbar'
 import Footer           from './components/Footer'
 import HeroSection      from './components/HeroSection'
-import StatsBar         from './components/StatsBar'
 import CategoryFilter   from './components/CategoryFilter'
 import FeaturedListings from './components/FeaturedListings'
 import HowItWorks       from './components/HowItWorks'
@@ -11,7 +10,7 @@ import RoommateMatch    from './components/RoommateMatch'
 import Neighborhoods    from './components/Neighborhoods'
 import FeaturesGrid     from './components/FeaturesGrid'
 import LandlordCta      from './components/LandlordCta'
-import Testimonials     from './components/Testimonials'
+
 
 import PostListing     from './pages/PostListing'
 import Listings        from './pages/Listings'
@@ -26,6 +25,9 @@ import RoommatePublicProfile from './pages/RoommatePublicProfile'
 import Roommates             from './pages/Roommates'
 import Messages              from './pages/Messages'
 import AdminDashboard        from './pages/AdminDashboard'
+import LandlordProfileSetup  from './pages/LandlordProfileSetup'
+import PublicLandlordProfile from './pages/PublicLandlordProfile'
+import LandlordDashboard     from './pages/LandlordDashboard'
 
 function ConditionalFooter() {
   const location = useLocation()
@@ -38,7 +40,6 @@ function Home() {
   return (
     <>
       <HeroSection />
-      <StatsBar />
       <CategoryFilter />
       <FeaturedListings />
       <HowItWorks />
@@ -46,7 +47,7 @@ function Home() {
       <Neighborhoods />
       <FeaturesGrid />
       <LandlordCta />
-      <Testimonials />
+
     </>
   )
 }
@@ -73,6 +74,11 @@ function App() {
           <Route path="/messages"           element={<Messages />} />
           <Route path="/messages/:conversationId" element={<Messages />} />
           <Route path="/admin"              element={<AdminDashboard />} />
+
+          {/* Landlord Profile / Business Account / Multi-Property Dashboard */}
+          <Route path="/landlord/profile-setup"   element={<LandlordProfileSetup />} />
+          <Route path="/landlord/:id"             element={<PublicLandlordProfile />} />
+          <Route path="/landlord/:id/dashboard"   element={<LandlordDashboard />} />
         
         </Routes>
         <ConditionalFooter />

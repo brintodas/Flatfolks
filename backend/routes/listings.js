@@ -45,7 +45,8 @@ router.post('/', upload.fields([{ name: 'photos', maxCount: 5 }, { name: 'video'
     available_from, landlord_name, landlord_phone, walkthrough_link,
     property_type, distance_to_campus, advance_deposit, curfew_time,
     guests_allowed, smoking_allowed,
-    has_wifi, has_generator, has_cctv, has_lift, has_fridge
+    has_wifi, has_generator, has_cctv, has_lift, has_fridge,
+    landlord_id, property_group
   } = req.body
 
   if (!title || !rent || !location) {
@@ -72,8 +73,8 @@ router.post('/', upload.fields([{ name: 'photos', maxCount: 5 }, { name: 'video'
      utilities_included, lease_duration, available_from, photos, video, floor_plan, walkthrough_link,
      property_type, distance_to_campus, advance_deposit, curfew_time,
      guests_allowed, smoking_allowed, has_wifi, has_generator, has_cctv, has_lift, has_fridge,
-     landlord_name, landlord_phone)
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+     landlord_name, landlord_phone, landlord_id, property_group)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
   `
 
   const values = [
@@ -105,7 +106,9 @@ router.post('/', upload.fields([{ name: 'photos', maxCount: 5 }, { name: 'video'
     has_lift === 'true' ? 1 : 0,
     has_fridge === 'true' ? 1 : 0,
     landlord_name || '',
-    landlord_phone || ''
+    landlord_phone || '',
+    landlord_id || null,
+    property_group || null
   ]
 
   db.query(sql, values, (err, result) => {
@@ -191,6 +194,33 @@ router.get('/', (req, res) => {
     }
     res.json({ success: true, data: results })
   })
+})
+
+// GET /api/listings/featured
+router.get('/featured', (req, res) => {
+  const { area } = req.query
+  
+  const handleResponse = (err, results) => {
+    if (err) {
+      console.log('Error fetching featured listings:', err)
+      return res.json({ success: false, message: 'Failed to fetch featured listings' })
+    }
+    res.json({ success: true, data: results })
+  }
+
+  if (area) {
+    db.query('SELECT * FROM listings WHERE status = "active" AND (area = ? OR district = ?) ORDER BY RAND() LIMIT 4', [area, area], (err, results) => {
+      if (err) return handleResponse(err, results)
+      
+      if (results.length === 0) {
+        db.query('SELECT * FROM listings WHERE status = "active" ORDER BY RAND() LIMIT 4', handleResponse)
+      } else {
+        handleResponse(null, results)
+      }
+    })
+  } else {
+    db.query('SELECT * FROM listings WHERE status = "active" ORDER BY RAND() LIMIT 4', handleResponse)
+  }
 })
 
 // GET /api/listings/:id

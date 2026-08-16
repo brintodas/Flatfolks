@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
+import FraudReportsAdmin from '../components/FraudReportsAdmin'
 
 const ADMIN_KEY = 'flatfolks-admin-2024'
 
@@ -38,18 +39,17 @@ function AdminDashboard() {
 
   useEffect(() => {
     setLoading(true)
-    if (activeTab === 'users') {
-      fetch('http://localhost:8000/api/admin/users', { headers })
-        .then(r => r.json())
-        .then(json => { if (json.success) setUsers(json.data); setLoading(false) })
-        .catch(() => setLoading(false))
-    } else {
-      fetch('http://localhost:8000/api/admin/listings', { headers })
-        .then(r => r.json())
-        .then(json => { if (json.success) setListings(json.data); setLoading(false) })
-        .catch(() => setLoading(false))
-    }
-  }, [activeTab])
+    Promise.all([
+      fetch('http://localhost:8000/api/admin/users', { headers }).then(r => r.json()),
+      fetch('http://localhost:8000/api/admin/listings', { headers }).then(r => r.json())
+    ])
+      .then(([usersJson, listingsJson]) => {
+        if (usersJson.success) setUsers(usersJson.data)
+        if (listingsJson.success) setListings(listingsJson.data)
+        setLoading(false)
+      })
+      .catch(() => setLoading(false))
+  }, [])
 
   const toggleVerifyUser = (id) => {
     fetch(`http://localhost:8000/api/admin/verify-user/${id}`, { method: 'PUT', headers })
@@ -152,7 +152,20 @@ function AdminDashboard() {
           >
             <i className="fa-solid fa-building mr-2"></i>Listings
           </button>
-
+           <button
+  onClick={() => {
+    setActiveTab('fraud')
+    setSearch('')
+  }}
+  className={`px-5 py-2.5 rounded-xl text-sm font-semibold transition-all ${
+    activeTab === 'fraud'
+      ? 'bg-red-600 text-white shadow-lg shadow-red-500/20'
+      : 'bg-slate-800 text-slate-400 hover:text-white border border-slate-700'
+  }`}
+>
+  <i className="fa-solid fa-shield-halved mr-2"></i>
+  Fraud Reports
+</button>
           {/* Search */}
           <div className="ml-auto relative">
             <i className="fa-solid fa-magnifying-glass absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-sm"></i>
@@ -167,6 +180,9 @@ function AdminDashboard() {
         </div>
 
         {/* Table */}
+        {activeTab === 'fraud' ? (
+           <FraudReportsAdmin />
+        ) : (
         <div className="bg-white rounded-lg border border-slate-200 overflow-hidden">
           {loading ? (
             <div className="flex items-center justify-center py-20">
@@ -309,6 +325,7 @@ function AdminDashboard() {
             </table>
           )}
         </div>
+        )}
       </div>
     </div>
   )

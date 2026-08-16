@@ -1,5 +1,7 @@
 import { useEffect, useState } from 'react'
 import { useParams, Link } from 'react-router-dom'
+import FraudReportForm from '../components/FraudReportForm'
+
 
 function ListingDetail() {
   const { id } = useParams()
@@ -7,310 +9,509 @@ function ListingDetail() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
   const [activePhoto, setActivePhoto] = useState(0)
+  const [showAllPhotos, setShowAllPhotos] = useState(false)
+  const [showFraudReportForm, setShowFraudReportForm] = useState(false)
+  const [verifiedReports, setVerifiedReports] = useState([])
+
 
   useEffect(() => {
     fetch(`http://localhost:8000/api/listings/${id}`)
       .then(res => res.json())
       .then(json => {
-        if (json.success) {
-          setListing(json.data)
-        } else {
-          setError('Listing not found')
-        }
+        if (json.success) setListing(json.data)
+        else setError('Listing not found')
         setLoading(false)
       })
-      .catch(() => {
-        setError('Could not connect to server')
-        setLoading(false)
-      })
+      .catch(() => { setError('Could not connect to server'); setLoading(false) })
   }, [id])
 
-  if (loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center pt-16">
-        <p className="text-slate-500">Loading...</p>
-      </div>
-    )
-  }
 
-  if (error || !listing) {
-    return (
-      <div className="min-h-screen flex flex-col items-center justify-center pt-16 gap-4">
-        <p className="text-slate-600">{error || 'Something went wrong.'}</p>
-        <Link to="/listings" className="text-blue-600 hover:underline text-sm">← Back to listings</Link>
+  useEffect(() => {
+    fetch(`http://localhost:8000/api/reports/listing/${id}`)
+      .then(res => res.json())
+      .then(json => {
+         if (json.success) {
+           setVerifiedReports(json.reports || [])
+         }
+       })
+      .catch(() => {
+        setVerifiedReports([])
+      })
+ }, [id])
+  if (loading) return (
+    <div className="min-h-screen flex items-center justify-center pt-16">
+      <div className="flex flex-col items-center gap-3">
+        <div className="w-8 h-8 border-4 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
+        <p className="text-slate-500 text-sm">Loading listing...</p>
       </div>
-    )
-  }
+    </div>
+  )
+
+  if (error || !listing) return (
+    <div className="min-h-screen flex flex-col items-center justify-center pt-16 gap-4">
+      <i className="fa-solid fa-triangle-exclamation text-3xl text-slate-300"></i>
+      <p className="text-slate-600">{error || 'Something went wrong.'}</p>
+      <Link to="/listings" className="text-blue-600 hover:underline text-sm">← Back to listings</Link>
+    </div>
+  )
 
   const photos = listing.photos ? listing.photos.split(',').filter(p => p.trim()) : []
   const BASE = 'http://localhost:8000/uploads'
 
-  return (
-    <div className="min-h-screen bg-slate-50 pt-20 pb-16">
-      <div className="max-w-5xl mx-auto px-4">
+  const genderColor = listing.gender_preference === 'female' ? '#db2777' :
+                      listing.gender_preference === 'male'   ? '#2563eb' : '#16a34a'
+  const genderLabel = listing.gender_preference === 'any'    ? 'All Welcome' :
+                      listing.gender_preference === 'female' ? 'Girls Only' : 'Boys Only'
 
-        {/* Back link */}
-        <Link to="/listings" className="text-sm text-slate-500 hover:text-blue-600 flex items-center gap-1 mb-5">
+  const amenities = [
+    { key: 'has_wifi',      icon: 'fa-wifi',           label: 'WiFi'      },
+    { key: 'has_generator', icon: 'fa-bolt',           label: 'Generator' },
+    { key: 'has_cctv',      icon: 'fa-video',          label: 'CCTV'      },
+    { key: 'has_lift',      icon: 'fa-elevator',       label: 'Lift'      },
+    { key: 'has_fridge',    icon: 'fa-temperature-low',label: 'Fridge'    },
+  ].filter(a => listing[a.key])
+
+  return (
+    <div className="min-h-screen bg-white pt-16">
+
+      {/* ── Photo Section ────────────────────────────────── */}
+      <div className="max-w-6xl mx-auto px-4 sm:px-6 pt-6 pb-0">
+        <Link to="/listings" className="inline-flex items-center gap-1.5 text-sm text-slate-500 hover:text-blue-600 mb-4 transition-colors">
           <i className="fa-solid fa-arrow-left text-xs"></i> Back to listings
         </Link>
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-
-          {/* Left column — media + details */}
-          <div className="lg:col-span-2 space-y-6">
-
-            {/* Photo gallery */}
-            {photos.length > 0 && (
-              <div>
-                <img
-                  src={`${BASE}/${photos[activePhoto]}`}
-                  alt={listing.title}
-                  className="w-full h-72 object-cover rounded-xl"
-                  onError={e => { e.target.style.display = 'none' }}
-                />
-                {photos.length > 1 && (
-                  <div className="flex gap-2 mt-2 overflow-x-auto">
-                    {photos.map((photo, i) => (
-                      <img
-                        key={i}
-                        src={`${BASE}/${photo}`}
-                        alt=""
-                        onClick={() => setActivePhoto(i)}
-                        className={`h-16 w-24 object-cover rounded-lg cursor-pointer shrink-0 border-2 transition-all ${i === activePhoto ? 'border-blue-600' : 'border-transparent opacity-70 hover:opacity-100'}`}
-                      />
-                    ))}
-                  </div>
-                )}
+        {/* Airbnb-style photo grid */}
+        {photos.length > 0 ? (
+          <div className="relative rounded-2xl overflow-hidden" style={{ height: 480 }}>
+            {photos.length === 1 ? (
+              <img src={`${BASE}/${photos[0]}`} alt={listing.title}
+                className="w-full h-full object-cover" />
+            ) : (
+              <div className="grid h-full gap-2"
+                style={{ gridTemplateColumns: '1fr 1fr', gridTemplateRows: '1fr 1fr' }}>
+                {/* Big left photo */}
+                <img src={`${BASE}/${photos[0]}`} alt={listing.title}
+                  onClick={() => { setActivePhoto(0); setShowAllPhotos(true) }}
+                  className="row-span-2 w-full h-full object-cover cursor-pointer hover:brightness-90 transition-all" />
+                {/* Two right thumbnails */}
+                {photos.slice(1, 3).map((p, i) => (
+                  <img key={i} src={`${BASE}/${p}`} alt=""
+                    onClick={() => { setActivePhoto(i + 1); setShowAllPhotos(true) }}
+                    className="w-full h-full object-cover cursor-pointer hover:brightness-90 transition-all" />
+                ))}
               </div>
             )}
-
-            {/* No photos fallback */}
-            {photos.length === 0 && (
-              <div className="w-full h-72 bg-blue-50 rounded-xl flex items-center justify-center">
-                <i className="fa-solid fa-building text-5xl text-blue-200"></i>
-              </div>
+            {/* Show all photos button */}
+            {photos.length > 3 && (
+              <button onClick={() => setShowAllPhotos(true)}
+                className="absolute bottom-4 right-4 bg-white text-slate-800 text-sm font-semibold px-4 py-2 rounded-xl border border-slate-200 shadow-sm hover:bg-slate-50 flex items-center gap-2 transition-all">
+                <i className="fa-regular fa-images"></i> Show all {photos.length} photos
+              </button>
             )}
+          </div>
+        ) : (
+          <div className="w-full rounded-2xl bg-slate-100 flex items-center justify-center" style={{ height: 480 }}>
+            <i className="fa-solid fa-building text-6xl text-slate-300"></i>
+          </div>
+        )}
+      </div>
 
-            {/* Title + basic info */}
-            <div>
-              <div className="flex items-start justify-between gap-4 mb-2">
-                <h1 className="text-2xl font-bold text-slate-800 leading-snug">{listing.title}</h1>
-                <span className={`shrink-0 text-xs font-semibold px-2.5 py-1 rounded text-white ${
-                  listing.gender_preference === 'female' ? 'bg-pink-500' :
-                  listing.gender_preference === 'male' ? 'bg-blue-600' : 'bg-green-600'
-                }`}>
-                  {listing.gender_preference === 'any' ? 'All Welcome' :
-                   listing.gender_preference === 'female' ? 'Girls Only' : 'Boys Only'}
-                </span>
-              </div>
+      {/* ── Lightbox ─────────────────────────────────────── */}
+      {showAllPhotos && (
+        <div className="fixed inset-0 bg-black/90 z-50 flex flex-col">
+          <div className="flex items-center justify-between px-6 py-4">
+            <span className="text-white text-sm font-medium">{activePhoto + 1} / {photos.length}</span>
+            <button onClick={() => setShowAllPhotos(false)}
+              className="text-white hover:text-slate-300 text-xl transition-colors">
+              <i className="fa-solid fa-xmark"></i>
+            </button>
+          </div>
+          <div className="flex-1 flex items-center justify-center px-4 relative">
+            <button onClick={() => setActivePhoto(p => (p - 1 + photos.length) % photos.length)}
+              className="absolute left-4 w-10 h-10 rounded-full bg-white/10 hover:bg-white/20 text-white flex items-center justify-center transition-all">
+              <i className="fa-solid fa-chevron-left"></i>
+            </button>
+            <img src={`${BASE}/${photos[activePhoto]}`} alt=""
+              className="max-h-[80vh] max-w-full object-contain rounded-lg" />
+            <button onClick={() => setActivePhoto(p => (p + 1) % photos.length)}
+              className="absolute right-4 w-10 h-10 rounded-full bg-white/10 hover:bg-white/20 text-white flex items-center justify-center transition-all">
+              <i className="fa-solid fa-chevron-right"></i>
+            </button>
+          </div>
+          {/* Thumbnail strip */}
+          <div className="flex gap-2 px-6 py-4 overflow-x-auto">
+            {photos.map((p, i) => (
+              <img key={i} src={`${BASE}/${p}`} alt=""
+                onClick={() => setActivePhoto(i)}
+                className={`h-14 w-20 object-cover rounded-lg cursor-pointer shrink-0 transition-all ${i === activePhoto ? 'ring-2 ring-white' : 'opacity-50 hover:opacity-80'}`} />
+            ))}
+          </div>
+        </div>
+      )}
 
-              <p className="text-slate-500 text-sm flex items-center gap-1 mb-4">
-                <i className="fa-solid fa-location-dot text-blue-500"></i>
-                {[listing.location, listing.area, listing.district].filter(Boolean).join(', ')}
+      {/* ── Main Content ──────────────────────────────────── */}
+      <div className="max-w-6xl mx-auto px-4 sm:px-6 py-8">
+        <div className="flex flex-col lg:flex-row gap-12">
+
+          {/* ── Left ─────────────────────────────────────── */}
+          <div className="flex-1 min-w-0">
+            {/* Admin-verified fraud warnings */}
+{verifiedReports.length > 0 && (
+  <div className="mb-6 space-y-4">
+    {verifiedReports.map(report => (
+      <div
+        key={report.id}
+        className="border border-red-300 bg-red-50 rounded-2xl p-5"
+      >
+        <div className="flex items-start gap-3">
+          <div className="w-10 h-10 rounded-full bg-red-100 flex items-center justify-center shrink-0">
+            <i className="fa-solid fa-triangle-exclamation text-red-600"></i>
+          </div>
+
+          <div className="flex-1">
+            <div className="flex flex-wrap items-center gap-2 mb-2">
+              <h2 className="font-bold text-red-800">
+                Verified Fraud Report
+              </h2>
+
+              <span className="text-xs font-bold bg-red-600 text-white px-2.5 py-1 rounded-full">
+                VERIFIED SCAM
+              </span>
+            </div>
+
+            <p className="text-sm text-red-900 font-medium capitalize mb-2">
+              {report.category.replaceAll('_', ' ')}
+            </p>
+
+            <p className="text-sm text-slate-700 whitespace-pre-line">
+              {report.description}
+            </p>
+
+            {Number(report.visit_confirmed) === 1 && (
+              <p className="text-xs font-medium text-slate-600 mt-3">
+                <i className="fa-solid fa-location-dot mr-1"></i>
+                Reporter confirmed visiting this property.
               </p>
+            )}
 
-              <div className="flex flex-wrap gap-2 mb-4">
-                <span className="text-xs bg-blue-50 text-blue-700 px-2.5 py-1 rounded-full">
-                  {listing.beds} Bed{listing.beds > 1 ? 's' : ''}
-                </span>
-                {listing.furnished ? (
-                  <span className="text-xs bg-green-50 text-green-700 px-2.5 py-1 rounded-full">Furnished</span>
-                ) : (
-                  <span className="text-xs bg-slate-100 text-slate-600 px-2.5 py-1 rounded-full">Unfurnished</span>
-                )}
-                {listing.utilities_included ? (
-                  <span className="text-xs bg-purple-50 text-purple-700 px-2.5 py-1 rounded-full">Bills Included</span>
-                ) : null}
-                {listing.lease_duration ? (
-                  <span className="text-xs bg-orange-50 text-orange-700 px-2.5 py-1 rounded-full">{listing.lease_duration}</span>
-                ) : null}
+            {report.admin_note && (
+              <div className="mt-4 bg-white border border-red-100 rounded-xl p-3">
+                <p className="text-xs font-semibold text-slate-500 mb-1">
+                  Admin verification
+                </p>
+                <p className="text-sm text-slate-700">
+                  {report.admin_note}
+                </p>
               </div>
+            )}
 
-              {listing.description && (
-                <p className="text-slate-600 text-sm leading-relaxed">{listing.description}</p>
+            {report.evidence?.length > 0 && (
+              <div className="mt-4">
+                <p className="text-xs font-semibold text-slate-500 mb-2">
+                  Verified evidence
+                </p>
+
+                <div className="flex flex-wrap gap-2">
+                  {report.evidence.map(item => (
+                    <a
+                      key={item.id}
+                      href={`http://localhost:8000${item.file_path}`}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="inline-flex items-center gap-2 text-xs font-medium border border-red-200 bg-white text-red-700 px-3 py-2 rounded-lg hover:bg-red-50"
+                    >
+                      <i
+                        className={
+                          item.evidence_type === 'video'
+                            ? 'fa-solid fa-circle-play'
+                            : 'fa-solid fa-image'
+                        }
+                      ></i>
+
+                      {item.evidence_type === 'video'
+                        ? 'View Video Proof'
+                        : 'View Photo Proof'}
+                    </a>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            <div className="mt-4 flex flex-wrap gap-3 text-xs text-slate-500">
+              <span>
+                Automated risk: {report.risk_level} ({report.risk_score}/100)
+              </span>
+
+              {report.reviewed_at && (
+                <span>
+                  Admin verified:{' '}
+                  {new Date(report.reviewed_at).toLocaleDateString()}
+                </span>
               )}
+            </div>
+          </div>
+        </div>
+      </div>
+    ))}
+  </div>
+)}
+
+
+            {/* Title row */}
+            <div className="flex items-start justify-between gap-4 pb-6 border-b border-slate-100">
+              <div>
+                <h1 className="text-2xl sm:text-3xl font-bold text-slate-900 leading-snug mb-2">
+                  {listing.title}
+                </h1>
+                <p className="text-slate-500 flex items-center gap-1.5">
+                  <i className="fa-solid fa-location-dot text-blue-500 text-sm"></i>
+                  {[listing.location, listing.area, listing.district].filter(Boolean).join(', ')}
+                </p>
+              </div>
+              <span className="shrink-0 text-xs font-bold px-3 py-1.5 rounded-full text-white"
+                style={{ background: genderColor }}>
+                {genderLabel}
+              </span>
+            </div>
+
+            {/* Quick stats — Airbnb-style */}
+            <div className="flex flex-wrap gap-6 py-6 border-b border-slate-100">
+              <div className="flex items-center gap-2">
+                <i className="fa-solid fa-bed text-slate-400"></i>
+                <span className="text-slate-700 font-medium">{listing.beds} Bedroom{listing.beds > 1 ? 's' : ''}</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <i className={`fa-solid fa-couch text-slate-400`}></i>
+                <span className="text-slate-700 font-medium">{listing.furnished ? 'Furnished' : 'Unfurnished'}</span>
+              </div>
+              {listing.utilities_included && (
+                <div className="flex items-center gap-2">
+                  <i className="fa-solid fa-bolt text-slate-400"></i>
+                  <span className="text-slate-700 font-medium">Bills Included</span>
+                </div>
+              )}
+              {listing.lease_duration && (
+                <div className="flex items-center gap-2">
+                  <i className="fa-solid fa-file-contract text-slate-400"></i>
+                  <span className="text-slate-700 font-medium">{listing.lease_duration} lease</span>
+                </div>
+              )}
+              {listing.distance_to_campus && (
+                <div className="flex items-center gap-2">
+                  <i className="fa-solid fa-school text-slate-400"></i>
+                  <span className="text-slate-700 font-medium">{listing.distance_to_campus} km to campus</span>
+                </div>
+              )}
+            </div>
+
+            {/* Description */}
+            {listing.description && (
+              <div className="py-6 border-b border-slate-100">
+                <h2 className="text-lg font-semibold text-slate-900 mb-3">About this place</h2>
+                <p className="text-slate-600 leading-relaxed">{listing.description}</p>
+              </div>
+            )}
+
+            {/* Amenities */}
+            {amenities.length > 0 && (
+              <div className="py-6 border-b border-slate-100">
+                <h2 className="text-lg font-semibold text-slate-900 mb-4">What this place offers</h2>
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                  {amenities.map(a => (
+                    <div key={a.key} className="flex items-center gap-3 py-3 px-4 bg-slate-50 rounded-xl">
+                      <i className={`fa-solid ${a.icon} text-blue-600 w-5 text-center`}></i>
+                      <span className="text-slate-700 text-sm font-medium">{a.label}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Property rules */}
+            <div className="py-6 border-b border-slate-100">
+              <h2 className="text-lg font-semibold text-slate-900 mb-4">House rules</h2>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                {[
+                  { icon: 'fa-user-group', label: 'Guests', value: listing.guests_allowed ? 'Allowed' : 'Not allowed' },
+                  { icon: 'fa-smoking',    label: 'Smoking', value: listing.smoking_allowed ? 'Allowed' : 'Not allowed' },
+                  { icon: 'fa-clock',      label: 'Curfew',  value: listing.curfew_time || 'None' },
+                  { icon: 'fa-money-bill', label: 'Advance', value: listing.advance_deposit ? listing.advance_deposit : '—' },
+                ].map((rule, i) => (
+                  <div key={i} className="flex items-center gap-3">
+                    <i className={`fa-solid ${rule.icon} text-slate-400 w-5 text-center`}></i>
+                    <div>
+                      <p className="text-xs text-slate-400">{rule.label}</p>
+                      <p className="text-sm font-medium text-slate-700">{rule.value}</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
             </div>
 
             {/* Video Tour */}
             {listing.video && (
-              <div>
-                <h2 className="text-base font-semibold text-slate-800 mb-2">Video Tour</h2>
-                <video
-                  controls
-                  className="w-full rounded-xl bg-black"
-                  style={{ maxHeight: '320px' }}
-                >
+              <div className="py-6 border-b border-slate-100">
+                <h2 className="text-lg font-semibold text-slate-900 mb-3">Video Tour</h2>
+                <video controls className="w-full rounded-2xl bg-black" style={{ maxHeight: 360 }}>
                   <source src={`${BASE}/${listing.video}`} type="video/mp4" />
                   <source src={`${BASE}/${listing.video}`} type="video/webm" />
-                  Your browser doesn't support video playback.
                 </video>
               </div>
             )}
 
             {/* Floor Plan */}
             {listing.floor_plan && (
-              <div>
-                <h2 className="text-base font-semibold text-slate-800 mb-2">Floor Plan</h2>
-                <img
-                  src={`${BASE}/${listing.floor_plan}`}
-                  alt="Floor plan"
-                  className="w-full rounded-xl border border-slate-100"
-                  onError={e => { e.target.style.display = 'none' }}
-                />
+              <div className="py-6">
+                <h2 className="text-lg font-semibold text-slate-900 mb-3">Floor Plan</h2>
+                <img src={`${BASE}/${listing.floor_plan}`} alt="Floor plan"
+                  className="w-full rounded-2xl border border-slate-100"
+                  onError={e => { e.target.style.display = 'none' }} />
               </div>
             )}
-
-            {/* 360 Walkthrough */}
-            {listing.walkthrough_link && (
-              <div>
-                <h2 className="text-base font-semibold text-slate-800 mb-2">360° Walkthrough</h2>
-                <a
-                  href={listing.walkthrough_link}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="inline-flex items-center gap-2 text-sm text-blue-600 hover:underline"
-                >
-                  <i className="fa-solid fa-vr-cardboard"></i>
-                  View 360° Tour →
-                </a>
-              </div>
-            )}
-
           </div>
 
-          {/* Right column — price + contact */}
-          <div className="space-y-4">
+          {/* ── Right — Sticky Booking Card ───────────────── */}
+          <div className="lg:w-[360px] shrink-0">
+            <div className="sticky top-24 space-y-4">
+              <div className="border border-slate-200 rounded-2xl shadow-lg overflow-hidden">
 
-            <div className="bg-white border border-slate-100 rounded-xl p-5 shadow-sm">
-              <p className="text-3xl font-black text-blue-800">
-                ৳{Number(listing.rent).toLocaleString()}
-                <span className="text-slate-400 text-base font-normal"> /month</span>
-              </p>
+                {/* Price header */}
+                <div className="p-6 border-b border-slate-100">
+                  <div className="flex items-baseline gap-2 mb-1">
+                    <span className="text-3xl font-black text-slate-900">
+                      ৳{Number(listing.rent).toLocaleString()}
+                    </span>
+                    <span className="text-slate-400 font-normal">/ month</span>
+                  </div>
+                  {listing.available_from && (
+                    <p className="text-sm text-slate-500 mt-1">
+                      Available from{' '}
+                      <span className="font-semibold text-slate-800">
+                        {new Date(listing.available_from).toLocaleDateString('en-GB', {
+                          day: 'numeric', month: 'short', year: 'numeric'
+                        })}
+                      </span>
+                    </p>
+                  )}
+                </div>
 
-              {listing.available_from && (
-                <p className="text-sm text-slate-500 mt-2">
-                  Available from{' '}
-                  <span className="font-medium text-slate-700">
-                    {new Date(listing.available_from).toLocaleDateString('en-GB', {
-                      day: 'numeric', month: 'short', year: 'numeric'
-                    })}
-                  </span>
-                </p>
-              )}
+                {/* Contact info */}
+                <div className="px-6 py-5">
+                  {listing.landlord_name && (
+                    <div className="flex items-center gap-3 mb-4">
+                      <div className="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center shrink-0">
+                        <i className="fa-solid fa-user text-blue-600 text-sm"></i>
+                      </div>
+                      <div>
+                        <p className="text-xs text-slate-400">Hosted by</p>
+                        <p className="text-sm font-semibold text-slate-800">{listing.landlord_name}</p>
+                      </div>
+                    </div>
+                  )}
 
-              <hr className="my-4 border-slate-100" />
+                  {listing.landlord_phone && (
+                    <a href={`tel:${listing.landlord_phone}`}
+                      className="flex items-center gap-2 text-sm text-blue-600 hover:underline mb-5">
+                      <i className="fa-solid fa-phone text-slate-400 text-xs"></i>
+                      {listing.landlord_phone}
+                    </a>
+                  )}
 
-              <p className="text-sm font-semibold text-slate-700 mb-3">Contact Landlord</p>
+                  <a href={`tel:${listing.landlord_phone}`}
+                    className="flex items-center justify-center gap-2 w-full bg-blue-700 hover:bg-blue-800 text-white font-semibold py-3.5 rounded-xl transition-colors mb-3">
+                    <i className="fa-solid fa-phone"></i> Call Now
+                  </a>
 
               {listing.landlord_name && (
-                <p className="text-sm text-slate-600 mb-1 flex items-center gap-2">
-                  <i className="fa-solid fa-user text-slate-400 text-xs w-4"></i>
-                  {listing.landlord_name}
-                </p>
+                listing.landlord_id ? (
+                  <Link
+                    to={`/landlord/${listing.landlord_id}`}
+                    className="text-sm text-slate-600 hover:text-blue-700 mb-1 flex items-center gap-2 group"
+                  >
+                    <i className="fa-solid fa-user text-slate-400 text-xs w-4"></i>
+                    <span className="group-hover:underline">{listing.landlord_name}</span>
+                    <i className="fa-solid fa-arrow-up-right-from-square text-[10px] text-slate-300 group-hover:text-blue-500"></i>
+                  </Link>
+                ) : (
+                  <p className="text-sm text-slate-600 mb-1 flex items-center gap-2">
+                    <i className="fa-solid fa-user text-slate-400 text-xs w-4"></i>
+                    {listing.landlord_name}
+                  </p>
+                )
               )}
+                  {listing.landlord_phone && (
+                    <a href={`https://wa.me/880${listing.landlord_phone.replace(/^0/, '')}`}
+                      target="_blank" rel="noreferrer"
+                      className="flex items-center justify-center gap-2 w-full border border-green-500 text-green-700 hover:bg-green-50 font-semibold py-3.5 rounded-xl transition-colors">
+                      <i className="fa-brands fa-whatsapp text-lg"></i> WhatsApp
+                    </a>
+                  )}
+                </div>
+              </div>
+              {/* Student fraud reporting */}
+<div className="mt-4 mb-5 pt-4 border-t border-slate-100">
+  <button
+    type="button"
+    onClick={() => setShowFraudReportForm(prev => !prev)}
+    className="w-full flex items-center justify-center gap-2 border border-red-300 text-red-700 hover:bg-red-50 font-semibold py-3 rounded-xl transition-colors"
+  >
+    <i className="fa-solid fa-flag"></i>
+    {showFraudReportForm
+      ? 'Close Report Form'
+      : 'Report Listing / Landlord'}
+  </button>
 
-              {listing.landlord_phone && (
-                <a
-                  href={`tel:${listing.landlord_phone}`}
-                  className="flex items-center gap-2 text-sm text-blue-600 hover:underline mb-4"
-                >
-                  <i className="fa-solid fa-phone text-slate-400 text-xs w-4"></i>
-                  {listing.landlord_phone}
+  {showFraudReportForm && (
+    <div className="mt-4">
+      <FraudReportForm
+        listingId={listing.id}
+        onSubmitted={() => setShowFraudReportForm(false)}
+      />
+    </div>
+  )}
+</div>
+
+
+
+              {/* Property Details card */}
+              <div className="border border-slate-200 rounded-2xl p-5">
+                <h3 className="font-semibold text-slate-900 mb-4">Property details</h3>
+                <div className="space-y-3 text-sm">
+                  {[
+                    { label: 'Type',      value: listing.property_type ? listing.property_type.replace('_', ' ') : 'Entire Flat' },
+                    { label: 'Bedrooms',  value: listing.beds },
+                    { label: 'Furnished', value: listing.furnished ? 'Yes' : 'No' },
+                    { label: 'Utilities', value: listing.utilities_included ? 'Included' : 'Not included' },
+                    ...(listing.lease_duration ? [{ label: 'Lease', value: listing.lease_duration }] : []),
+                    { label: 'For',       value: listing.gender_preference === 'any' ? 'All genders' : listing.gender_preference === 'female' ? 'Girls only' : 'Boys only' },
+                  ].map((row, i) => (
+                    <div key={i} className="flex justify-between">
+                      <span className="text-slate-400">{row.label}</span>
+                      <span className="font-medium text-slate-800 capitalize">{row.value}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* 360 walkthrough */}
+              {listing.walkthrough_link && (
+                <a href={listing.walkthrough_link} target="_blank" rel="noreferrer"
+                  className="flex items-center gap-2 justify-center w-full border border-slate-200 text-slate-700 hover:bg-slate-50 font-medium py-3 rounded-xl text-sm transition-colors">
+                  <i className="fa-solid fa-vr-cardboard"></i> View 360° Walkthrough
                 </a>
               )}
 
-              <a
-                href={`tel:${listing.landlord_phone}`}
-                className="block w-full bg-blue-700 hover:bg-blue-800 text-white text-sm font-semibold text-center py-2.5 rounded-lg transition-colors"
-              >
-                Call Now
-              </a>
-
-              {listing.landlord_phone && (
-                <a
-                  href={`https://wa.me/880${listing.landlord_phone.replace(/^0/, '')}`}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="block w-full border border-green-500 text-green-700 hover:bg-green-50 text-sm font-semibold text-center py-2.5 rounded-lg transition-colors mt-2"
+              {listing.landlord_id && (
+                <Link
+                  to={`/landlord/${listing.landlord_id}`}
+                  className="block w-full border border-slate-200 text-slate-600 hover:bg-slate-50 hover:text-blue-700 text-sm font-semibold text-center py-2.5 rounded-lg transition-colors mt-2"
                 >
-                  WhatsApp
-                </a>
+                  View Landlord Profile
+                </Link>
               )}
             </div>
-
-            {/* Quick info panel */}
-            <div className="bg-white border border-slate-100 rounded-xl p-5 shadow-sm text-sm text-slate-600 space-y-2">
-              <p className="font-semibold text-slate-800 mb-3">Property Details</p>
-              <div className="flex justify-between">
-                <span className="text-slate-500">Type</span>
-                <span className="font-medium capitalize">{listing.property_type ? listing.property_type.replace('_', ' ') : 'Entire Flat'}</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-slate-500">Beds</span>
-                <span className="font-medium">{listing.beds}</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-slate-500">Furnished</span>
-                <span className="font-medium">{listing.furnished ? 'Yes' : 'No'}</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-slate-500">Utilities</span>
-                <span className="font-medium">{listing.utilities_included ? 'Included' : 'Not included'}</span>
-              </div>
-              {listing.lease_duration && (
-                <div className="flex justify-between">
-                  <span className="text-slate-500">Lease</span>
-                  <span className="font-medium">{listing.lease_duration}</span>
-                </div>
-              )}
-              {listing.distance_to_campus && (
-                <div className="flex justify-between">
-                  <span className="text-slate-500">To Campus</span>
-                  <span className="font-medium">{listing.distance_to_campus} km</span>
-                </div>
-              )}
-              {listing.advance_deposit && (
-                <div className="flex justify-between">
-                  <span className="text-slate-500">Advance</span>
-                  <span className="font-medium">{listing.advance_deposit}</span>
-                </div>
-              )}
-              {listing.curfew_time && (
-                <div className="flex justify-between">
-                  <span className="text-slate-500">Curfew</span>
-                  <span className="font-medium">{listing.curfew_time}</span>
-                </div>
-              )}
-              <div className="flex justify-between">
-                <span className="text-slate-500">Guests</span>
-                <span className="font-medium">{listing.guests_allowed ? 'Allowed' : 'Not allowed'}</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-slate-500">Smoking</span>
-                <span className="font-medium">{listing.smoking_allowed ? 'Allowed' : 'Not allowed'}</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-slate-500">For</span>
-                <span className="font-medium capitalize">{listing.gender_preference === 'any' ? 'All' : listing.gender_preference}</span>
-              </div>
-            </div>
-
-            {/* Amenities */}
-            {(listing.has_wifi || listing.has_generator || listing.has_cctv || listing.has_lift || listing.has_fridge) ? (
-              <div className="bg-white border border-slate-100 rounded-xl p-5 shadow-sm">
-                <p className="font-semibold text-slate-800 mb-3 text-sm">Amenities</p>
-                <div className="flex flex-wrap gap-2">
-                  {listing.has_wifi ? <span className="text-xs bg-blue-50 text-blue-700 px-2.5 py-1 rounded-full">WiFi</span> : null}
-                  {listing.has_generator ? <span className="text-xs bg-yellow-50 text-yellow-700 px-2.5 py-1 rounded-full">Generator</span> : null}
-                  {listing.has_cctv ? <span className="text-xs bg-slate-100 text-slate-600 px-2.5 py-1 rounded-full">CCTV</span> : null}
-                  {listing.has_lift ? <span className="text-xs bg-green-50 text-green-700 px-2.5 py-1 rounded-full">Lift</span> : null}
-                  {listing.has_fridge ? <span className="text-xs bg-purple-50 text-purple-700 px-2.5 py-1 rounded-full">Fridge</span> : null}
-                </div>
-              </div>
-            ) : null}
-
-
           </div>
+
         </div>
       </div>
     </div>

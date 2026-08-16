@@ -104,6 +104,9 @@ function PostListing() {
       data.append(key, form[key])
     })
 
+    // link this listing to the signed-in landlord's account
+    data.append('landlord_id', currentUser.id)
+
     // append photos
     for (let i = 0; i < photos.length; i++) {
       data.append('photos', photos[i])

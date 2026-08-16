@@ -1,15 +1,17 @@
-import { useState, useEffect } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
+import { useState, useEffect, useRef } from 'react'
+import { Link, NavLink, useNavigate } from 'react-router-dom'
 
 const Navbar = () => {
   const navigate = useNavigate()
   const [scrolled, setScrolled]           = useState(false)
   const [mobileOpen, setMobileOpen]       = useState(false)
+  const [menuOpen, setMenuOpen]           = useState(false)
   const [notificationCount, setNotificationCount] = useState(0)
   const [unreadMessageCount, setUnreadMessageCount] = useState(0)
   const [currentUser, setCurrentUser]     = useState(() =>
     JSON.parse(localStorage.getItem('ff_user') || 'null')
   )
+  const menuRef = useRef(null)
 
   useEffect(() => {
     const handleScroll = () => setScrolled(window.scrollY > 20)
@@ -23,6 +25,15 @@ const Navbar = () => {
     window.addEventListener('focus', sync)
     window.addEventListener('storage', sync)
     return () => { window.removeEventListener('focus', sync); window.removeEventListener('storage', sync) }
+  }, [])
+
+  // close the account dropdown on outside click
+  useEffect(() => {
+    const handleClick = (e) => {
+      if (menuRef.current && !menuRef.current.contains(e.target)) setMenuOpen(false)
+    }
+    document.addEventListener('mousedown', handleClick)
+    return () => document.removeEventListener('mousedown', handleClick)
   }, [])
 
   useEffect(() => {
@@ -57,113 +68,153 @@ const Navbar = () => {
   const handleLogout = () => {
     localStorage.removeItem('ff_user')
     setCurrentUser(null)
+    setMenuOpen(false)
     navigate('/')
   }
 
-  // first name only for greeting
   const firstName = currentUser?.full_name?.split(' ')[0] || 'You'
+  const initials = currentUser?.full_name
+    ?.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase() || '?'
+
+  // role-specific dropdown links, defined once and reused for desktop + mobile
+  const accountLinks = (() => {
+    if (!currentUser) return []
+    if (currentUser.role === 'landlord') {
+      return [
+        { to: '/post-listing', icon: 'fa-square-plus', label: 'Post Listing' },
+        { to: `/landlord/${currentUser.id}/dashboard`, icon: 'fa-chart-line', label: 'Dashboard' },
+        { to: `/landlord/${currentUser.id}`, icon: 'fa-id-card', label: 'My Profile' },
+      ]
+    }
+    if (currentUser.role === 'student') {
+      return [{ to: '/roommate-profile', icon: 'fa-id-card', label: 'My Profile' }]
+    }
+    if (currentUser.role === 'admin') {
+      return [{ to: '/admin', icon: 'fa-shield-halved', label: 'Admin Panel', accent: true }]
+    }
+    return []
+  })()
 
   return (
-    <nav className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 bg-white/95 border-b border-blue-50 ${scrolled ? 'shadow-md' : 'shadow-sm'}`}
-      style={{ backdropFilter: 'blur(12px)' }}>
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+    <nav className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 bg-white border-b border-slate-100 ${scrolled ? 'shadow-md' : 'shadow-sm'}`}>
+      <div className="w-full px-4 sm:px-6 lg:px-10">
         <div className="flex items-center justify-between h-16">
 
           {/* Logo */}
-          <Link to="/" className="flex items-center gap-2.5 group">
+          <Link to="/" className="flex items-center gap-2.5 group shrink-0">
             <div className="w-9 h-9 bg-blue-800 rounded-xl flex items-center justify-center shadow-md group-hover:bg-blue-900 transition-colors">
               <i className="fa-solid fa-house-chimney text-white text-lg"></i>
             </div>
-            <span className="text-xl font-black text-blue-900 tracking-tight">
-              Flat<span className="text-blue-600">folks</span>
+            <span className="text-lg font-bold text-blue-800 tracking-tight">
+              flatfolks
             </span>
           </Link>
 
           {/* Desktop Nav */}
-          <div className="hidden md:flex items-center gap-1">
-            <Link to="/listings" className="px-4 py-2 text-sm font-medium text-slate-600 hover:text-blue-700 hover:bg-blue-50 rounded-lg transition-all">
+          <div className="hidden md:flex items-center gap-2 ml-8">
+            <NavLink 
+              to="/listings" 
+              className={({isActive}) => `px-4 py-2 text-[14px] font-semibold rounded-lg transition-all ${isActive ? 'bg-blue-800 text-white shadow-sm' : 'text-blue-800 hover:text-blue-900 hover:bg-blue-50'}`}
+            >
               Browse Listings
-            </Link>
-            <Link to="/roommates" className="px-4 py-2 text-sm font-medium text-slate-600 hover:text-blue-700 hover:bg-blue-50 rounded-lg transition-all">
+            </NavLink>
+            <NavLink 
+              to="/roommates" 
+              className={({isActive}) => `px-4 py-2 text-[14px] font-semibold rounded-lg transition-all ${isActive ? 'bg-blue-800 text-white shadow-sm' : 'text-blue-800 hover:text-blue-900 hover:bg-blue-50'}`}
+            >
               Find Roommates
-            </Link>
-            {['How It Works', 'For Landlords'].map((item, i) => (
-              <a key={i} href={`#${item.toLowerCase().replace(/ /g, '-')}`}
-                className="px-4 py-2 text-sm font-medium text-slate-600 hover:text-blue-700 hover:bg-blue-50 rounded-lg transition-all">
-                {item}
-              </a>
-            ))}
+            </NavLink>
           </div>
 
           {/* Right side */}
-          <div className="flex items-center gap-2.5">
+          <div className="flex items-center gap-1 sm:gap-1.5">
 
             {/* Watchlist */}
-            <Link to="/watchlist" title="My Watchlist"
-              className="hidden sm:flex items-center gap-1.5 px-3 py-2 text-sm font-semibold text-blue-700 hover:bg-blue-50 rounded-lg transition-all">
+            <NavLink to="/watchlist" title="My Watchlist"
+              className={({isActive}) => `hidden sm:flex items-center gap-1.5 px-3 py-2 text-sm font-semibold rounded-lg transition-all ${isActive ? 'bg-blue-800 text-white shadow-sm' : 'text-blue-800 hover:text-blue-900 hover:bg-blue-50'}`}>
               <i className="fa-regular fa-bookmark"></i>
               <span className="hidden lg:inline">Watchlist</span>
-            </Link>
+            </NavLink>
 
             {/* Messages */}
-            <Link to="/messages" title="Messages"
-              className="relative hidden sm:flex items-center justify-center w-10 h-10 text-blue-700 hover:bg-blue-50 rounded-lg transition-all">
+            <NavLink to="/messages" title="Messages"
+              className={({isActive}) => `relative hidden sm:flex items-center justify-center w-10 h-10 rounded-lg transition-all ${isActive ? 'bg-blue-800 text-white shadow-sm' : 'text-blue-800 hover:text-blue-900 hover:bg-blue-50'}`}>
               <i className="fa-regular fa-message text-lg"></i>
               {unreadMessageCount > 0 && (
                 <span className="absolute top-0 right-0 min-w-5 h-5 px-1 flex items-center justify-center bg-red-500 text-white text-xs font-bold rounded-full">
                   {unreadMessageCount}
                 </span>
               )}
-            </Link>
+            </NavLink>
 
             {/* Notification bell */}
-            <Link to="/watchlist" title="Notifications"
-              className="relative hidden sm:flex items-center justify-center w-10 h-10 text-blue-700 hover:bg-blue-50 rounded-lg transition-all">
-              <i className="fa-regular fa-bell text-lg"></i>
-              {notificationCount > 0 && (
-                <span className="absolute top-0 right-0 min-w-5 h-5 px-1 flex items-center justify-center bg-red-500 text-white text-xs font-bold rounded-full">
-                  {notificationCount}
-                </span>
-              )}
-            </Link>
+            {currentUser?.role !== 'landlord' && (
+              <NavLink to="/watchlist" title="Notifications"
+                className={({isActive}) => `relative hidden sm:flex items-center justify-center w-10 h-10 rounded-lg transition-all ${isActive ? 'bg-blue-800 text-white shadow-sm' : 'text-blue-800 hover:text-blue-900 hover:bg-blue-50'}`}>
+                <i className="fa-regular fa-bell text-lg"></i>
+                {notificationCount > 0 && (
+                  <span className="absolute top-0 right-0 min-w-5 h-5 px-1 flex items-center justify-center bg-red-500 text-white text-xs font-bold rounded-full">
+                    {notificationCount}
+                  </span>
+                )}
+              </NavLink>
+            )}
 
-            {/* Auth area — changes based on login state */}
+            {/* Auth area */}
             {currentUser ? (
-              <>
-                {/* Landlord-only: Post Listing */}
-                {currentUser.role === 'landlord' && (
-                  <Link to="/post-listing"
-                    className="hidden sm:block px-4 py-2 text-sm font-semibold text-blue-700 hover:bg-blue-50 rounded-lg transition-all">
-                    Post Listing
-                  </Link>
-                )}
-                {/* Student-only: My Profile */}
-                {currentUser.role === 'student' && (
-                  <Link to="/roommate-profile"
-                    className="hidden sm:block px-4 py-2 text-sm font-semibold text-blue-700 hover:bg-blue-50 rounded-lg transition-all">
-                    My Profile
-                  </Link>
-                )}
-                {/* Admin-only: Dashboard */}
-                {currentUser.role === 'admin' && (
-                  <Link to="/admin"
-                    className="hidden sm:block px-4 py-2 text-sm font-semibold text-amber-600 hover:bg-amber-50 rounded-lg transition-all">
-                    <i className="fa-solid fa-shield-halved mr-1"></i>Admin Panel
-                  </Link>
-                )}
-                <span className="hidden sm:block text-sm text-slate-500">Hi, {firstName}</span>
+              <div className="relative" ref={menuRef}>
                 <button
-                  onClick={handleLogout}
-                  className="px-4 py-2 text-sm font-semibold text-white bg-blue-700 hover:bg-blue-800 rounded-xl transition-all">
-                  Log Out
+                  onClick={() => setMenuOpen(o => !o)}
+                  className={`flex items-center gap-2 pl-1.5 pr-2.5 py-1.5 ml-2 rounded-full border transition-all ${
+                    menuOpen ? 'bg-blue-50 border-blue-100' : 'border-transparent hover:bg-slate-50'
+                  }`}
+                >
+                  <span className="w-8 h-8 rounded-full bg-blue-800 text-white text-xs font-bold flex items-center justify-center shrink-0">
+                    {initials}
+                  </span>
+                  <span className="hidden sm:block text-sm font-medium text-slate-700">{firstName}</span>
+                  <i className={`fa-solid fa-chevron-down text-[10px] text-slate-400 transition-transform ${menuOpen ? 'rotate-180' : ''}`}></i>
                 </button>
-              </>
+
+                {menuOpen && (
+                  <div className="absolute right-0 top-full mt-2 w-56 bg-white border border-slate-100 rounded-xl shadow-lg py-1.5 overflow-hidden">
+                    <div className="px-3.5 py-2 mb-1 border-b border-slate-50">
+                      <p className="text-sm font-semibold text-slate-800 truncate">{currentUser.full_name}</p>
+                      <p className="text-xs text-slate-400 capitalize">{currentUser.role} account</p>
+                    </div>
+
+                    {accountLinks.map(link => (
+                      <Link
+                        key={link.to}
+                        to={link.to}
+                        onClick={() => setMenuOpen(false)}
+                        className={`flex items-center gap-2.5 px-3.5 py-2 text-sm font-medium transition-colors ${
+                          link.accent ? 'text-amber-600 hover:bg-amber-50' : 'text-slate-600 hover:bg-blue-50 hover:text-blue-700'
+                        }`}
+                      >
+                        <i className={`fa-solid ${link.icon} w-4 text-center text-[13px]`}></i>
+                        {link.label}
+                      </Link>
+                    ))}
+
+                    <div className="my-1.5 border-t border-slate-50"></div>
+
+                    <button
+                      onClick={handleLogout}
+                      className="w-full flex items-center gap-2.5 px-3.5 py-2 text-sm font-medium text-red-600 hover:bg-red-50 transition-colors"
+                    >
+                      <i className="fa-solid fa-arrow-right-from-bracket w-4 text-center text-[13px]"></i>
+                      Log Out
+                    </button>
+                  </div>
+                )}
+              </div>
             ) : (
               <>
-                <Link to="/signin" className="hidden sm:block px-4 py-2 text-sm font-semibold text-blue-700 hover:bg-blue-50 rounded-lg transition-all">
+                <NavLink to="/signin" className={({isActive}) => `hidden sm:block px-4 py-2 text-sm font-semibold rounded-lg transition-all ${isActive ? 'bg-blue-800 text-white shadow-sm' : 'text-blue-800 hover:text-blue-900 hover:bg-blue-50'}`}>
                   Sign In
-                </Link>
-                <Link to="/get-started" className="px-4 py-2 text-sm font-semibold text-white bg-blue-700 hover:bg-blue-800 rounded-xl transition-all shadow-md hover:shadow-lg">
+                </NavLink>
+                <Link to="/get-started" className="px-4 py-2 text-sm font-semibold text-white bg-blue-800 hover:bg-blue-900 rounded-xl transition-all shadow-md hover:shadow-lg">
                   <span className="hidden sm:inline">Get Started</span>
                   <span className="sm:hidden"><i className="fa-solid fa-arrow-right"></i></span>
                 </Link>
@@ -188,12 +239,9 @@ const Navbar = () => {
           <Link to="/roommates" className="block px-4 py-2.5 text-sm font-medium text-slate-700 hover:bg-blue-50 hover:text-blue-700 rounded-lg">
             Find Roommates
           </Link>
-          {['How It Works', 'For Landlords'].map((item, i) => (
-            <a key={i} href={`#${item.toLowerCase().replace(/ /g, '-')}`}
-              className="block px-4 py-2.5 text-sm font-medium text-slate-700 hover:bg-blue-50 hover:text-blue-700 rounded-lg">
-              {item}
-            </a>
-          ))}
+
+          <div className="my-2 border-t border-slate-100"></div>
+
           <Link to="/watchlist"
             className="block px-4 py-2.5 text-sm font-medium text-blue-700 hover:bg-blue-50 rounded-lg">
             <i className="fa-regular fa-bookmark mr-2"></i>My Watchlist
@@ -202,34 +250,34 @@ const Navbar = () => {
             className="block px-4 py-2.5 text-sm font-medium text-blue-700 hover:bg-blue-50 rounded-lg">
             <i className="fa-regular fa-message mr-2"></i>Messages
           </Link>
+
           {currentUser ? (
             <>
-              {currentUser.role === 'student' && (
-                <Link to="/roommate-profile" className="block px-4 py-2.5 text-sm font-medium text-slate-700 hover:bg-blue-50 rounded-lg">
-                  My Profile
+              <div className="my-2 border-t border-slate-100"></div>
+              <div className="px-4 py-1.5">
+                <p className="text-sm font-semibold text-slate-800">{currentUser.full_name}</p>
+                <p className="text-xs text-slate-400 capitalize">{currentUser.role} account</p>
+              </div>
+              {accountLinks.map(link => (
+                <Link key={link.to} to={link.to}
+                  className={`block px-4 py-2.5 text-sm font-medium rounded-lg ${
+                    link.accent ? 'text-amber-600 hover:bg-amber-50' : 'text-slate-700 hover:bg-blue-50'
+                  }`}>
+                  <i className={`fa-solid ${link.icon} mr-2`}></i>{link.label}
                 </Link>
-              )}
-              {currentUser.role === 'landlord' && (
-                <Link to="/post-listing" className="block px-4 py-2.5 text-sm font-medium text-slate-700 hover:bg-blue-50 rounded-lg">
-                  Post Listing
-                </Link>
-              )}
-              {currentUser.role === 'admin' && (
-                <Link to="/admin" className="block px-4 py-2.5 text-sm font-medium text-amber-600 hover:bg-amber-50 rounded-lg">
-                  <i className="fa-solid fa-shield-halved mr-2"></i>Admin Panel
-                </Link>
-              )}
+              ))}
               <button onClick={handleLogout}
                 className="block w-full text-left px-4 py-2.5 text-sm font-medium text-red-600 hover:bg-red-50 rounded-lg">
-                Log Out
+                <i className="fa-solid fa-arrow-right-from-bracket mr-2"></i>Log Out
               </button>
             </>
           ) : (
             <>
+              <div className="my-2 border-t border-slate-100"></div>
               <Link to="/signin" className="block px-4 py-2.5 text-sm font-medium text-slate-700 hover:bg-blue-50 rounded-lg">
                 Sign In
               </Link>
-              <Link to="/get-started" className="block px-4 py-2.5 text-sm font-medium text-white bg-blue-700 rounded-lg">
+              <Link to="/get-started" className="block px-4 py-2.5 text-sm font-medium text-white bg-blue-800 hover:bg-blue-900 rounded-lg">
                 Get Started
               </Link>
             </>
@@ -241,4 +289,3 @@ const Navbar = () => {
 }
 
 export default Navbar
-

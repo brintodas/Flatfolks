@@ -291,7 +291,7 @@ function Listings() {
           {currentUser?.role === 'landlord' && (
             <Link
               to="/post-listing"
-              className="px-4 py-2 bg-blue-700 hover:bg-blue-800 text-white text-sm font-semibold rounded-xl transition-colors shadow-sm"
+              className="px-4 py-2 bg-blue-800 hover:bg-blue-900 text-white text-sm font-semibold rounded-xl transition-colors shadow-sm"
             >
               + Post a Listing
             </Link>

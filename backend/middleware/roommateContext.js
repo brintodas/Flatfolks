@@ -14,7 +14,7 @@
 const db = require('../config/db')
 
 function attachGroupContext(req, res, next) {
-  const userId = req.query.user_id || req.body.user_id
+  const userId = req.query.user_id || req.body?.user_id
   if (!userId) return next() // anonymous / landlord search — skip
 
   // Find the user's current group membership

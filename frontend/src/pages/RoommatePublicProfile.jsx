@@ -46,7 +46,6 @@ function RoommatePublicProfile() {
       const j = await r.json()
       if (j.success) {
         setReqStatus('sent')
-        setReqMsg('Request sent! They will see it in their notifications.')
       } else {
         setReqStatus('error')
         setReqMsg(j.message || 'Could not send request.')

@@ -399,52 +399,35 @@ function ListingDetail() {
                 <div className="px-6 py-5">
                   {listing.landlord_name && (
                     <div className="flex items-center gap-3 mb-4">
-                      <div className="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center shrink-0">
-                        <i className="fa-solid fa-user text-blue-600 text-sm"></i>
-                      </div>
+                      {listing.landlord_id ? (
+                        <Link to={`/landlord/${listing.landlord_id}`} className="w-10 h-10 rounded-full bg-blue-100 hover:bg-blue-200 flex items-center justify-center shrink-0 transition-colors">
+                          <i className="fa-solid fa-user text-blue-600 text-sm"></i>
+                        </Link>
+                      ) : (
+                        <div className="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center shrink-0">
+                          <i className="fa-solid fa-user text-blue-600 text-sm"></i>
+                        </div>
+                      )}
                       <div>
                         <p className="text-xs text-slate-400">Hosted by</p>
-                        <p className="text-sm font-semibold text-slate-800">{listing.landlord_name}</p>
+                        {listing.landlord_id ? (
+                          <Link to={`/landlord/${listing.landlord_id}`} className="text-sm font-semibold text-slate-800 hover:text-blue-700 hover:underline group flex items-center gap-1.5">
+                            {listing.landlord_name}
+                            <i className="fa-solid fa-arrow-up-right-from-square text-[10px] text-slate-300 opacity-0 group-hover:opacity-100 transition-opacity"></i>
+                          </Link>
+                        ) : (
+                          <p className="text-sm font-semibold text-slate-800">{listing.landlord_name}</p>
+                        )}
                       </div>
                     </div>
                   )}
 
-                  {listing.landlord_phone && (
-                    <a href={`tel:${listing.landlord_phone}`}
-                      className="flex items-center gap-2 text-sm text-blue-600 hover:underline mb-5">
-                      <i className="fa-solid fa-phone text-slate-400 text-xs"></i>
-                      {listing.landlord_phone}
-                    </a>
-                  )}
 
-                  <a href={`tel:${listing.landlord_phone}`}
-                    className="flex items-center justify-center gap-2 w-full bg-blue-700 hover:bg-blue-800 text-white font-semibold py-3.5 rounded-xl transition-colors mb-3">
-                    <i className="fa-solid fa-phone"></i> Call Now
-                  </a>
-
-              {listing.landlord_name && (
-                listing.landlord_id ? (
-                  <Link
-                    to={`/landlord/${listing.landlord_id}`}
-                    className="text-sm text-slate-600 hover:text-blue-700 mb-1 flex items-center gap-2 group"
-                  >
-                    <i className="fa-solid fa-user text-slate-400 text-xs w-4"></i>
-                    <span className="group-hover:underline">{listing.landlord_name}</span>
-                    <i className="fa-solid fa-arrow-up-right-from-square text-[10px] text-slate-300 group-hover:text-blue-500"></i>
-                  </Link>
-                ) : (
-                  <p className="text-sm text-slate-600 mb-1 flex items-center gap-2">
-                    <i className="fa-solid fa-user text-slate-400 text-xs w-4"></i>
-                    {listing.landlord_name}
-                  </p>
-                )
-              )}
-                  {listing.landlord_phone && (
-                    <a href={`https://wa.me/880${listing.landlord_phone.replace(/^0/, '')}`}
-                      target="_blank" rel="noreferrer"
-                      className="flex items-center justify-center gap-2 w-full border border-green-500 text-green-700 hover:bg-green-50 font-semibold py-3.5 rounded-xl transition-colors">
-                      <i className="fa-brands fa-whatsapp text-lg"></i> WhatsApp
-                    </a>
+                  {listing.landlord_id && (
+                    <Link to={`/messages/new?to=${listing.landlord_id}`}
+                      className="flex items-center justify-center gap-2 w-full border border-blue-200 text-blue-700 hover:bg-blue-50 font-semibold py-3.5 rounded-xl transition-colors">
+                      <i className="fa-regular fa-message text-lg"></i> Message
+                    </Link>
                   )}
                 </div>
               </div>

@@ -175,8 +175,13 @@ function Messages() {
                       {/* Text */}
                       <div className="flex-1 min-w-0 pr-2">
                         <div className="flex items-center justify-between mb-0.5">
-                          <h3 className={`text-sm truncate font-semibold ${isActive ? 'text-white' : 'text-slate-800'}`}>
+                          <h3 className={`text-sm truncate font-semibold flex items-center gap-1.5 ${isActive ? 'text-white' : 'text-slate-800'}`}>
                             {conv.full_name}
+                            {conv.role === 'landlord' && (
+                              <span className={`text-[9px] px-1.5 py-0.5 rounded flex-shrink-0 font-bold ${isActive ? 'bg-white/20 text-white' : 'bg-slate-200 text-slate-600'}`}>
+                                L
+                              </span>
+                            )}
                           </h3>
                           {/* Fake timestamp for mockup looks */}
                           <span className={`text-[10px] shrink-0 ${isActive ? 'text-blue-200' : 'text-slate-400 group-hover:text-slate-500'}`}>
@@ -234,9 +239,14 @@ function Messages() {
                       </div>
                     )}
                     
-                    <Link to={activeChat ? `/roommate/${activeChat.other_user_id}` : '#'} className="hover:underline">
-                      <div className="font-bold text-slate-900 leading-tight">
+                    <Link to={activeChat ? (activeChat.role === 'landlord' ? `/landlord/${activeChat.other_user_id}` : `/roommate/${activeChat.other_user_id}`) : '#'} className="hover:underline">
+                      <div className="font-bold text-slate-900 leading-tight flex items-center gap-1.5">
                         {activeChat ? activeChat.full_name : 'Chat'}
+                        {activeChat?.role === 'landlord' && (
+                          <span className="text-[10px] px-1.5 py-0.5 rounded bg-slate-200 text-slate-600 font-bold">
+                            L
+                          </span>
+                        )}
                       </div>
                       <div className="text-[11px] font-medium text-green-600 flex items-center gap-1.5 mt-0.5">
                         <span className="w-1.5 h-1.5 bg-green-500 rounded-full animate-pulse"></span> Active now

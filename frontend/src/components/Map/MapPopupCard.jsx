@@ -5,8 +5,10 @@ function MapPopupCard({ listing }) {
     ? `http://localhost:8000/uploads/${listing.photos.split(',')[0]}`
     : null
 
+  const currentUser = JSON.parse(localStorage.getItem('ff_user') || 'null')
+
   return (
-    <div className="w-56 -m-3 overflow-hidden rounded-xl">
+    <div className="w-56 overflow-hidden rounded-xl">
       <div className="h-32 bg-slate-200 relative">
         {photoUrl ? (
           <img src={photoUrl} className="w-full h-full object-cover" alt={listing.title} />
@@ -17,12 +19,30 @@ function MapPopupCard({ listing }) {
           </div>
         )}
       </div>
-      <div className="p-3 bg-white">
+      <div className="p-4 bg-white">
         <h4 className="font-bold text-slate-800 text-sm truncate mb-1">{listing.title}</h4>
         <p className="text-xs text-slate-500 mb-2 truncate">
           <i className="fa-solid fa-location-dot text-blue-500 mr-1"></i>
           {[listing.area, listing.district].filter(Boolean).join(', ') || listing.location}
         </p>
+        <div className="text-[10px] text-slate-500 space-y-1 mb-3">
+          <p>
+            <i className="fa-solid fa-person-walking w-3 text-center text-slate-400 mr-1"></i>
+            Distance to campus: {currentUser?.quiz_completed ? `${listing.distance_to_campus || '?'} km` : 'N/A'}
+          </p>
+          {listing.bus_stops && (
+            <p className="truncate" title={listing.bus_stops}>
+              <i className="fa-solid fa-bus w-3 text-center text-slate-400 mr-1"></i>
+              {listing.bus_stops}
+            </p>
+          )}
+          {listing.nearby_amenities && (
+            <p className="truncate" title={listing.nearby_amenities}>
+              <i className="fa-solid fa-basket-shopping w-3 text-center text-slate-400 mr-1"></i>
+              {listing.nearby_amenities}
+            </p>
+          )}
+        </div>
         <div className="flex justify-between items-center">
           <span className="font-bold text-blue-800 text-sm">
             ৳{Number(listing.rent).toLocaleString()}

@@ -147,11 +147,7 @@ function PublicLandlordProfile() {
                     </Link>
                   ) : (
                     <>
-                      {data.phone && (
-                        <a href={`tel:${data.phone}`} className="px-5 py-2 text-sm font-semibold text-white bg-blue-700 hover:bg-blue-800 rounded-lg transition-colors">
-                          <i className="fa-solid fa-phone mr-1.5"></i>Call
-                        </a>
-                      )}
+
                       {currentUser && (
                         <Link to={`/messages/new?to=${id}`} className="px-4 py-2 text-sm font-medium border border-slate-200 text-slate-600 hover:bg-slate-50 rounded-lg transition-colors inline-flex items-center">
                           <i className="fa-regular fa-message mr-1.5"></i>Message

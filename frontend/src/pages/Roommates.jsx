@@ -83,7 +83,7 @@ function StudentCard({ p, topPick = false }) {
               )}
             </div>
             <p className="text-xs text-slate-500 mt-0.5">
-              {[p.department, p.year_of_study ? `${p.year_of_study} year` : null].filter(Boolean).join(' · ') || 'BRACU Student'}
+              {[p.university, p.department, p.year_of_study ? `${p.year_of_study} year` : null].filter(Boolean).join(' · ') || 'Student'}
             </p>
           </div>
         </div>

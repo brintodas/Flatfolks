@@ -150,6 +150,7 @@ function RoommatePublicProfile() {
                 </div>
 
                 <div className="flex flex-wrap gap-x-4 gap-y-1 text-sm text-slate-500 mb-4">
+                  {profile.university && <span><i className="fa-solid fa-building-columns mr-1.5 text-slate-400"></i>{profile.university}</span>}
                   {profile.department && <span><i className="fa-solid fa-graduation-cap mr-1.5 text-slate-400"></i>{profile.department}</span>}
                   {profile.semester   && <span><i className="fa-solid fa-layer-group mr-1.5 text-slate-400"></i>{profile.semester} semester</span>}
                   {profile.gender     && <span><i className="fa-solid fa-person mr-1.5 text-slate-400"></i>{profile.gender}</span>}

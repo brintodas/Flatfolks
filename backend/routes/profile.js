@@ -161,7 +161,7 @@ router.get('/:userId', (req, res) => {
       u.preferred_district AS user_preferred_district,
       u.preferred_area     AS user_preferred_area,
       sp.id AS profile_id,
-      sp.course, sp.year_of_study, sp.bio, sp.profile_photo,
+      sp.university, sp.course, sp.year_of_study, sp.bio, sp.profile_photo,
       sp.budget_min, sp.budget_max,
       sp.preferred_district, sp.preferred_area,
       sp.move_in_timeframe, sp.room_type, sp.personality_tags,

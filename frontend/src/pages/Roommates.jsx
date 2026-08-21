@@ -77,7 +77,9 @@ function StudentCard({ p, topPick = false }) {
               }
             </div>
             {topPick && (
-              <span className="absolute -top-1 -right-1 w-5 h-5 bg-yellow-400 rounded-full flex items-center justify-center text-[10px]" title="Top Pick">⭐</span>
+              <span className="absolute -top-1 -right-1 w-5 h-5 bg-yellow-400 rounded-full flex items-center justify-center" title="Top Pick">
+                <i className="fa-solid fa-star text-white text-[8px]"></i>
+              </span>
             )}
           </div>
           <div className="flex-1 min-w-0">
@@ -344,11 +346,12 @@ function Roommates() {
 
               {myQuiz && (
                 <div className="flex items-center gap-1 bg-white border border-slate-200 rounded-lg p-1 ml-auto">
-                  {[['match', '⭐ Best Match'], ['newest', '🕐 Newest']].map(([mode, label]) => (
+                  {[['match', 'Best Match', 'fa-star'], ['newest', 'Newest', 'fa-clock']].map(([mode, label, icon]) => (
                     <button key={mode} onClick={() => setSortMode(mode)}
                       className={`px-3 py-1.5 text-xs font-semibold rounded-md transition-colors ${
                         sortMode === mode ? 'bg-blue-700 text-white' : 'text-slate-500 hover:bg-slate-50'
                       }`}>
+                      <i className={`fa-solid ${icon} mr-1.5`}></i>
                       {label}
                     </button>
                   ))}
@@ -427,7 +430,7 @@ function Roommates() {
                 {topPicks.length > 0 && sortMode === 'match' && (
                   <div className="mb-8">
                     <div className="flex items-center gap-2 mb-3">
-                      <span className="text-base">⭐</span>
+                      <i className="fa-solid fa-star text-yellow-500"></i>
                       <h2 className="text-sm font-bold text-slate-700">Top Picks For You</h2>
                       <span className="text-xs text-slate-400">Based on your priorities</span>
                     </div>

@@ -38,7 +38,7 @@ function StudentCard({ p, topPick = false }) {
     const val = p[q.key]
     if (!val) return null
     const opt = q.options.find(o => o.value === Number(val))
-    return opt ? opt.title : null
+    return opt ? { icon: q.icon, label: q.label, value: opt.title } : null
   }).filter(Boolean)
 
   return (
@@ -109,7 +109,10 @@ function StudentCard({ p, topPick = false }) {
         {tags.length > 0 && (
           <div className="flex flex-wrap gap-1.5 mb-4">
             {tags.slice(0, 6).map(tag => (
-              <span key={tag} className="px-2 py-0.5 text-xs bg-slate-50 text-slate-600 border border-slate-200 rounded-lg">{tag}</span>
+              <span key={tag.label} title={tag.label} className="flex items-center gap-1.5 px-2 py-0.5 text-xs bg-slate-50 text-slate-600 border border-slate-200 rounded-lg">
+                <i className={`fa-solid ${tag.icon} text-slate-400 text-[10px]`}></i>
+                {tag.value}
+              </span>
             ))}
             {tags.length > 6 && <span className="px-2 py-0.5 text-xs text-slate-400">+{tags.length - 6}</span>}
           </div>

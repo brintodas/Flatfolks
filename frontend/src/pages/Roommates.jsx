@@ -34,11 +34,23 @@ function StudentCard({ p, topPick = false }) {
   const area      = p.preferred_area || p.preferred_district || '—'
   const score     = p.match_score
 
+  const formatTagText = (key, val) => {
+    const v = Number(val)
+    switch (key) {
+      case 'sleep_schedule':  return v===1 ? 'Early bird' : v===2 ? 'Flexible sleep schedule' : 'Night owl'
+      case 'cleanliness':     return v===1 ? 'Relaxed cleanliness' : v===2 ? 'Average cleanliness' : 'Neat freak'
+      case 'noise_tolerance': return v===1 ? 'Prefers quiet' : v===2 ? 'Moderate noise OK' : 'Lively noise OK'
+      case 'guests_pref':     return v===1 ? 'Rarely allows guests' : v===2 ? 'Sometimes allows guests' : 'Often allows guests'
+      case 'smoking_pref':    return v===1 ? 'Non-smoker' : v===2 ? 'Flexible about smoking' : 'Smoker'
+      case 'study_habits':    return v===1 ? 'Studies at home' : v===2 ? 'Mixed study habits' : 'Studies at library'
+      default: return ''
+    }
+  }
+
   const tags = QUIZ_QUESTIONS.map(q => {
     const val = p[q.key]
     if (!val) return null
-    const opt = q.options.find(o => o.value === Number(val))
-    return opt ? { icon: q.icon, label: q.label, value: opt.title } : null
+    return { icon: q.icon, label: q.label, value: formatTagText(q.key, val) }
   }).filter(Boolean)
 
   return (

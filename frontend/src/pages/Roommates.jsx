@@ -15,15 +15,6 @@ const ROOM_LABELS = { single: 'Single', shared: 'Shared', either: 'Either' }
 
 const emptyFilters = { search: '', district: '', area: '', budget_max: '', room_type: '' }
 
-const TRAIT_META = {
-  sleep_schedule:  { icon: 'fa-moon',        label: 'Sleep' },
-  cleanliness:     { icon: 'fa-broom',        label: 'Clean' },
-  noise_tolerance: { icon: 'fa-volume-high',  label: 'Noise' },
-  guests_pref:     { icon: 'fa-user-group',   label: 'Guests' },
-  smoking_pref:    { icon: 'fa-ban-smoking',  label: 'Smoke' },
-  study_habits:    { icon: 'fa-book-open',    label: 'Study' },
-}
-
 function matchColor(score) {
   if (score >= 75) return 'bg-green-50 text-green-700 border-green-200'
   if (score >= 50) return 'bg-amber-50 text-amber-700 border-amber-200'
@@ -34,25 +25,6 @@ function matchLabel(score) {
   if (score >= 75) return 'Great match'
   if (score >= 50) return 'Good match'
   return 'Low match'
-}
-
-function TraitBreakdown({ breakdown }) {
-  if (!breakdown) return null
-  return (
-    <div className="flex gap-1.5 flex-wrap mt-2 mb-3">
-      {Object.entries(TRAIT_META).map(([key, { icon, label }]) => {
-        const score = breakdown[key]
-        const color = score === 100 ? 'text-green-500' : score === 50 ? 'text-amber-500' : 'text-red-400'
-        return (
-          <span key={key} title={`${label}: ${score}%`}
-            className="flex items-center gap-1 text-[10px] px-1.5 py-0.5 rounded bg-slate-50 border border-slate-100">
-            <i className={`fa-solid ${icon} ${color} text-[9px]`}></i>
-            <span className="text-slate-500">{label}</span>
-          </span>
-        )
-      })}
-    </div>
-  )
 }
 
 function StudentCard({ p, topPick = false }) {
@@ -96,9 +68,6 @@ function StudentCard({ p, topPick = false }) {
             </p>
           </div>
         </div>
-
-        {/* Trait breakdown */}
-        {p.match_breakdown && <TraitBreakdown breakdown={p.match_breakdown} />}
 
         {/* Bio */}
         {p.bio && <p className="text-xs text-slate-600 leading-relaxed mb-3 line-clamp-2">{p.bio}</p>}

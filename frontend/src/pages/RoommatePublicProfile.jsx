@@ -80,7 +80,8 @@ function RoommatePublicProfile() {
       .then(r => r.json())
       .then(mine => {
         if (mine.error || !mine.quiz_completed) return
-        setMatchScore(calcCompatibility(mine, profile))
+        const result = calcCompatibility(mine, profile)
+        setMatchScore(result ? result.total : null)
       })
       .catch(() => {})
   }, [profile, currentUser?.id, userId])

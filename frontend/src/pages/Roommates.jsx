@@ -140,11 +140,7 @@ function StudentCard({ p, topPick = false }) {
         )}
 
         {/* Footer */}
-        <div className="border-t border-slate-100 pt-3 flex items-center justify-between">
-          {p.quiz_completed
-            ? <span className="text-xs text-green-600"><i className="fa-solid fa-circle-check mr-1"></i>Quiz done</span>
-            : <span className="text-xs text-slate-400"><i className="fa-regular fa-clock mr-1"></i>Quiz pending</span>
-          }
+        <div className="border-t border-slate-100 pt-3 flex justify-end">
           <Link to={`/roommate/${p.user_id}`}
             className="px-3.5 py-1.5 text-xs font-semibold text-white bg-blue-700 hover:bg-blue-800 rounded-lg transition-colors">
             View Profile

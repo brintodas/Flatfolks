@@ -33,6 +33,7 @@ const adminRoute     = require('./routes/admin')
 const landlordRoute  = require('./routes/landlord')
 const reportsRoute   = require('./routes/reports')
 const roommatesRoute = require('./routes/roommates')
+const quizRoute      = require('./routes/quiz')
 app.use('/api/listings',  listingsRoute)
 app.use('/api/bookmarks', bookmarksRoute)
 app.use('/api/auth',      authRoute)
@@ -42,6 +43,7 @@ app.use('/api/admin',     adminRoute)
 app.use('/api/landlord',  landlordRoute)
 app.use('/api/reports',   reportsRoute)
 app.use('/api/roommates', roommatesRoute)
+app.use('/api/quiz',      quizRoute)
 
 
 app.get('/', (req, res) => {

@@ -473,25 +473,41 @@ function RoommateProfile() {
             </h2>
 
             {quizDone && quizScores ? (
-              <div className="grid grid-cols-2 gap-3">
-                {Object.entries(QUIZ_LABELS).map(([key, { label, options }]) => {
-                  const score = quizScores[key]
-                  const text  = score ? (options[score - 1] || '—') : '—'
-                  return (
-                    <div key={key} className="flex items-center justify-between px-3 py-2.5 bg-slate-50 rounded-lg border border-slate-200">
-                      <span className="text-sm text-slate-600">{label}</span>
-                      <span className="text-sm font-semibold text-blue-700">{text}</span>
-                    </div>
-                  )
-                })}
-              </div>
+              <>
+                <div className="grid grid-cols-2 gap-3">
+                  {Object.entries(QUIZ_LABELS).map(([key, { label, options }]) => {
+                    const score = quizScores[key]
+                    const text  = score ? (options[score - 1] || '—') : '—'
+                    return (
+                      <div key={key} className="flex items-center justify-between px-3 py-2.5 bg-slate-50 rounded-lg border border-slate-200">
+                        <span className="text-sm text-slate-600">{label}</span>
+                        <span className="text-sm font-semibold text-blue-700">{text}</span>
+                      </div>
+                    )
+                  })}
+                </div>
+                <div className="mt-4">
+                  <Link
+                    to="/lifestyle-quiz"
+                    className="inline-flex items-center gap-2 text-sm font-semibold text-blue-700 hover:text-blue-800"
+                  >
+                    <i className="fa-solid fa-rotate"></i> Retake lifestyle quiz
+                  </Link>
+                </div>
+              </>
             ) : (
               <div className="text-center py-6 border border-dashed border-slate-200 rounded-lg">
                 <i className="fa-regular fa-clock text-slate-300 text-2xl mb-2"></i>
                 <p className="text-sm text-slate-500">Quiz not completed yet.</p>
-                <p className="text-xs text-slate-400 mt-1">
-                  Your scores will appear here once the lifestyle quiz is available.
+                <p className="text-xs text-slate-400 mt-1 mb-4">
+                  Complete the lifestyle quiz to get compatibility scores with roommates.
                 </p>
+                <Link
+                  to="/lifestyle-quiz"
+                  className="inline-flex items-center gap-2 px-4 py-2 bg-blue-700 hover:bg-blue-800 text-white text-sm font-semibold rounded-lg"
+                >
+                  Take Lifestyle Quiz
+                </Link>
               </div>
             )}
           </div>

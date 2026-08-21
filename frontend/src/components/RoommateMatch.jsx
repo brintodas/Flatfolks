@@ -1,20 +1,4 @@
-const roommates = [
-  {
-    initial: 'R', name: 'Rania Islam', dept: 'CSE · BRACU',
-    desc: 'Night owl · Clean · Quiet study · No guests',
-    match: 94, gradient: 'from-blue-400 to-blue-700', connected: true,
-  },
-  {
-    initial: 'T', name: 'Tahmid Hasan', dept: 'EEE · NSU',
-    desc: 'Early riser · Moderate · Social · Non-smoker',
-    match: 87, gradient: 'from-indigo-400 to-purple-600', connected: false,
-  },
-  {
-    initial: 'N', name: 'Nusrat Jahan', dept: 'BBA · IUB',
-    desc: 'Flexible · Tidy · Quiet evenings · Non-smoker',
-    match: 81, gradient: 'from-teal-400 to-blue-600', connected: false,
-  },
-]
+import { Link } from 'react-router-dom'
 
 const RoommateMatch = () => {
   return (
@@ -54,9 +38,9 @@ const RoommateMatch = () => {
                 </li>
               ))}
             </ul>
-            <a href="#" className="inline-flex items-center gap-2 px-7 py-3.5 bg-blue-500 hover:bg-blue-600 text-white font-semibold rounded-xl transition-all shadow-lg">
+            <Link to="/lifestyle-quiz" className="inline-flex items-center gap-2 px-7 py-3.5 bg-blue-500 hover:bg-blue-600 text-white font-semibold rounded-xl transition-all shadow-lg">
               Take the Compatibility Quiz <i className="fa-solid fa-arrow-right text-sm"></i>
-            </a>
+            </Link>
           </div>
 
         </div>

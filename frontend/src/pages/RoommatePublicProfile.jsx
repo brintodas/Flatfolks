@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useParams, Link, useNavigate } from 'react-router-dom'
+import { calcCompatibility } from '../utils/compatibility'
 
 const QUIZ_META = {
   sleep_schedule:  { label: 'Sleep Schedule', icon: 'fa-moon',        options: ['Early bird', 'Flexible', 'Night owl'] },
@@ -23,6 +24,7 @@ function RoommatePublicProfile() {
   const [profile, setProfile] = useState(null)
   const [loading, setLoading] = useState(true)
   const [notFound, setNotFound] = useState(false)
+  const [matchScore, setMatchScore] = useState(null)
 
   const navigate    = useNavigate()
   const currentUser = JSON.parse(localStorage.getItem('ff_user') || 'null')
@@ -67,6 +69,21 @@ function RoommatePublicProfile() {
       })
       .catch(() => { setNotFound(true); setLoading(false) })
   }, [userId])
+
+  useEffect(() => {
+    setMatchScore(null)
+    if (!profile || !currentUser || currentUser.role !== 'student') return
+    if (String(currentUser.id) === String(userId)) return
+    if (!profile.quiz_completed) return
+
+    fetch(`http://localhost:8000/api/profile/${currentUser.id}`)
+      .then(r => r.json())
+      .then(mine => {
+        if (mine.error || !mine.quiz_completed) return
+        setMatchScore(calcCompatibility(mine, profile))
+      })
+      .catch(() => {})
+  }, [profile, currentUser?.id, userId])
 
   if (loading) {
     return (
@@ -124,6 +141,11 @@ function RoommatePublicProfile() {
               <div className="flex-1 min-w-0">
                 <div className="flex flex-wrap items-center gap-2 mb-1">
                   <h1 className="text-2xl font-bold text-slate-800">{profile.full_name}</h1>
+                  {matchScore != null && (
+                    <span className="px-2.5 py-1 text-xs font-semibold bg-green-50 text-green-700 border border-green-100 rounded-full">
+                      {matchScore}% compatible
+                    </span>
+                  )}
                 </div>
 
                 <div className="flex flex-wrap gap-x-4 gap-y-1 text-sm text-slate-500 mb-4">

@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from 'react'
 import { Link } from 'react-router-dom'
+import { calcCompatibility } from '../utils/compatibility'
 
 const DISTRICTS = ['Dhaka', 'Gazipur', 'Narayanganj', 'Chittagong', 'Sylhet', 'Rajshahi', 'Khulna', 'Comilla']
 
@@ -14,7 +15,7 @@ const ROOM_LABELS = { single: 'Single', shared: 'Shared', either: 'Either' }
 
 const emptyFilters = { search: '', district: '', area: '', budget_max: '', room_type: '' }
 
-function StudentCard({ p }) {
+function StudentCard({ p, matchScore }) {
   const initials   = p.full_name?.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase()
   const photoSrc   = p.profile_photo ? `http://localhost:8000${p.profile_photo}` : null
   const tags       = p.personality_tags ? p.personality_tags.split(',').filter(Boolean) : []
@@ -35,6 +36,11 @@ function StudentCard({ p }) {
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-1.5 flex-wrap">
               <h3 className="text-base font-bold text-slate-800 truncate">{p.full_name}</h3>
+              {matchScore != null && (
+                <span className="px-2 py-0.5 text-xs font-semibold bg-green-50 text-green-700 border border-green-100 rounded-full">
+                  {matchScore}% match
+                </span>
+              )}
             </div>
             <p className="text-xs text-slate-500 mt-0.5">
               {[p.department, p.year_of_study ? `${p.year_of_study} year` : null].filter(Boolean).join(' · ') || 'BRACU Student'}
@@ -119,8 +125,29 @@ function Roommates() {
   const [filters, setFilters]    = useState(getInitialFilters)
   const [applied, setApplied]    = useState(getInitialFilters)
   const [sidebarOpen, setSidebarOpen] = useState(false)
+  const [myQuiz, setMyQuiz]      = useState(null)
 
   const currentUser = JSON.parse(localStorage.getItem('ff_user') || 'null')
+
+  useEffect(() => {
+    if (!currentUser || currentUser.role !== 'student') return
+    fetch(`http://localhost:8000/api/profile/${currentUser.id}`)
+      .then(r => r.json())
+      .then(data => {
+        if (data.quiz_completed) {
+          setMyQuiz({
+            quiz_completed: data.quiz_completed,
+            sleep_schedule: data.sleep_schedule,
+            cleanliness: data.cleanliness,
+            noise_tolerance: data.noise_tolerance,
+            guests_pref: data.guests_pref,
+            smoking_pref: data.smoking_pref,
+            study_habits: data.study_habits,
+          })
+        }
+      })
+      .catch(() => {})
+  }, [currentUser?.id])
 
   const fetchStudents = useCallback((f) => {
     setLoading(true)
@@ -149,14 +176,37 @@ function Roommates() {
   const clearFilters = () => { setFilters(emptyFilters); setApplied(emptyFilters) }
   const hasFilters   = Object.values(applied).some(v => v !== '')
 
-  // exclude logged in user from browsing their own card
-  const visibleStudents = students.filter(s => !currentUser || s.user_id !== currentUser.id)
+  // exclude logged in user from browsing their own card; sort by compatibility when available
+  const visibleStudents = students
+    .filter(s => !currentUser || s.user_id !== currentUser.id)
+    .map(s => ({ ...s, matchScore: calcCompatibility(myQuiz, s) }))
+    .sort((a, b) => {
+      if (a.matchScore == null && b.matchScore == null) return 0
+      if (a.matchScore == null) return 1
+      if (b.matchScore == null) return -1
+      return b.matchScore - a.matchScore
+    })
 
   return (
     <div className="min-h-screen bg-slate-50 pt-16">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
 
-
+        {currentUser?.role === 'student' && !myQuiz && (
+          <div className="mb-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 bg-white border border-slate-200 rounded-xl px-5 py-4">
+            <div>
+              <p className="text-sm font-semibold text-slate-800">Take the lifestyle quiz</p>
+              <p className="text-xs text-slate-500 mt-0.5">
+                Get compatibility scores with potential roommates based on sleep, cleanliness, noise, guests, smoking, and study habits.
+              </p>
+            </div>
+            <Link
+              to="/lifestyle-quiz"
+              className="shrink-0 px-4 py-2 text-sm font-semibold text-white bg-blue-700 hover:bg-blue-800 rounded-lg"
+            >
+              Start Quiz
+            </Link>
+          </div>
+        )}
 
         <div className="flex gap-6">
 
@@ -336,7 +386,7 @@ function Roommates() {
 
             {!loading && !error && visibleStudents.length > 0 && (
               <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4">
-                {visibleStudents.map(p => <StudentCard key={p.user_id} p={p} />)}
+                {visibleStudents.map(p => <StudentCard key={p.user_id} p={p} matchScore={p.matchScore} />)}
               </div>
             )}
 

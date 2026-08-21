@@ -125,7 +125,10 @@ const Navbar = () => {
       ]
     }
     if (currentUser.role === 'student') {
-      return [{ to: '/roommate-profile', icon: 'fa-id-card', label: 'My Profile' }]
+      return [
+        { to: '/roommate-profile', icon: 'fa-id-card', label: 'My Profile' },
+        { to: '/lifestyle-quiz', icon: 'fa-clipboard-list', label: 'Lifestyle Quiz' },
+      ]
     }
     if (currentUser.role === 'admin') {
       return [{ to: '/admin', icon: 'fa-shield-halved', label: 'Admin Panel', accent: true }]

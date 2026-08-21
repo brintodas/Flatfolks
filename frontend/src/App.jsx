@@ -28,6 +28,7 @@ import AdminDashboard        from './pages/AdminDashboard'
 import LandlordProfileSetup  from './pages/LandlordProfileSetup'
 import PublicLandlordProfile from './pages/PublicLandlordProfile'
 import LandlordDashboard     from './pages/LandlordDashboard'
+import LifestyleQuiz         from './pages/LifestyleQuiz'
 
 function ConditionalFooter() {
   const location = useLocation()
@@ -70,7 +71,8 @@ function App() {
           <Route path="/roommate-profile"   element={<RoommateProfile />} />
           <Route path="/roommates"          element={<Roommates />} />
           <Route path="/roommate/:userId"   element={<RoommatePublicProfile />} />
-          
+          <Route path="/lifestyle-quiz"     element={<LifestyleQuiz />} />
+
           <Route path="/messages"           element={<Messages />} />
           <Route path="/messages/:conversationId" element={<Messages />} />
           <Route path="/admin"              element={<AdminDashboard />} />

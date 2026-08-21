@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from 'react'
 import { Link } from 'react-router-dom'
 import { calcCompatibility } from '../utils/compatibility'
+import { QUIZ_QUESTIONS } from '../utils/quizMeta'
 
 const DISTRICTS = ['Dhaka', 'Gazipur', 'Narayanganj', 'Chittagong', 'Sylhet', 'Rajshahi', 'Khulna', 'Comilla']
 
@@ -30,9 +31,15 @@ function matchLabel(score) {
 function StudentCard({ p, topPick = false }) {
   const initials  = p.full_name?.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase()
   const photoSrc  = p.profile_photo ? `http://localhost:8000${p.profile_photo}` : null
-  const tags      = p.personality_tags ? p.personality_tags.split(',').filter(Boolean) : []
   const area      = p.preferred_area || p.preferred_district || '—'
   const score     = p.match_score
+
+  const tags = QUIZ_QUESTIONS.map(q => {
+    const val = p[q.key]
+    if (!val) return null
+    const opt = q.options.find(o => o.value === Number(val))
+    return opt ? opt.title : null
+  }).filter(Boolean)
 
   return (
     <div className={`bg-white border rounded-xl overflow-hidden hover:shadow-md transition-shadow ${
@@ -101,10 +108,10 @@ function StudentCard({ p, topPick = false }) {
         {/* Tags */}
         {tags.length > 0 && (
           <div className="flex flex-wrap gap-1.5 mb-4">
-            {tags.slice(0, 4).map(tag => (
-              <span key={tag} className="px-2 py-0.5 text-xs bg-blue-50 text-blue-700 border border-blue-100 rounded-full">{tag}</span>
+            {tags.slice(0, 6).map(tag => (
+              <span key={tag} className="px-2 py-0.5 text-xs bg-slate-50 text-slate-600 border border-slate-200 rounded-lg">{tag}</span>
             ))}
-            {tags.length > 4 && <span className="px-2 py-0.5 text-xs text-slate-400">+{tags.length - 4}</span>}
+            {tags.length > 6 && <span className="px-2 py-0.5 text-xs text-slate-400">+{tags.length - 6}</span>}
           </div>
         )}
 

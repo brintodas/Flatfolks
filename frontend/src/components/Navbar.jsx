@@ -165,6 +165,13 @@ const Navbar = () => {
             >
               Find Roommates
             </NavLink>
+            <NavLink 
+              to="/compare" 
+              className={({isActive}) => `flex items-center gap-1.5 px-4 py-2 text-[14px] font-semibold rounded-lg transition-all ${isActive ? 'bg-blue-800 text-white shadow-sm' : 'text-blue-800 hover:text-blue-900 hover:bg-blue-50'}`}
+            >
+              <i className="fa-solid fa-scale-balanced text-xs"></i>
+              Compare
+            </NavLink>
           </div>
 
           {/* Right side */}
@@ -386,6 +393,9 @@ const Navbar = () => {
           </Link>
           <Link to="/roommates" className="block px-4 py-2.5 text-sm font-medium text-slate-700 hover:bg-blue-50 hover:text-blue-700 rounded-lg">
             Find Roommates
+          </Link>
+          <Link to="/compare" className="block px-4 py-2.5 text-sm font-medium text-slate-700 hover:bg-blue-50 hover:text-blue-700 rounded-lg">
+            <i className="fa-solid fa-scale-balanced mr-2"></i>Compare Properties
           </Link>
 
           <div className="my-2 border-t border-slate-100"></div>

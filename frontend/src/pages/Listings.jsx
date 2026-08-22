@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import InteractiveMap from '../components/Map/InteractiveMap'
+import CompareBar from '../components/CompareBar'
 
 const emptyFilters = {
   search: '',
@@ -48,6 +49,7 @@ function Listings() {
   const [bookmarked, setBookmarked]   = useState(new Set()) // set of bookmarked listing IDs
   const [viewMode, setViewMode]       = useState('list')    // 'list' or 'map'
   const [groupContext, setGroupContext] = useState(null)     // group search context from API
+  const [compareSelection, setCompareSelection] = useState([]) // up to 2 listings picked for comparison
   const userKey    = getUserKey()
   const currentUser = JSON.parse(localStorage.getItem('ff_user') || 'null')
 
@@ -130,6 +132,19 @@ function Listings() {
       .catch(() => {})
   }
 
+  const toggleCompare = (e, listing) => {
+    e.stopPropagation()
+    e.preventDefault()
+    setCompareSelection(prev => {
+      const exists = prev.some(l => String(l.id) === String(listing.id))
+      if (exists) return prev.filter(l => String(l.id) !== String(listing.id))
+      if (prev.length >= 2) return [prev[1], listing] // keep it to 2, drop the oldest
+      return [...prev, listing]
+    })
+  }
+
+  const isSelectedForCompare = (id) => compareSelection.some(l => String(l.id) === String(id))
+
   const hasActiveFilters = Object.values(filters).some(v => v !== '')
 
   const renderListingCard = (listing) => (
@@ -158,6 +173,19 @@ function Listings() {
           <i className={`fa-bookmark text-sm ${
             bookmarked.has(listing.id) ? 'fa-solid' : 'fa-regular'
           }`}></i>
+        </button>
+
+        {/* Compare toggle */}
+        <button
+          onClick={(e) => toggleCompare(e, listing)}
+          title={isSelectedForCompare(listing.id) ? 'Remove from comparison' : 'Add to comparison'}
+          className={`absolute top-3 left-3 w-8 h-8 rounded-full shadow flex items-center justify-center transition-all ${
+            isSelectedForCompare(listing.id)
+              ? 'bg-blue-600 text-white'
+              : 'bg-white text-slate-400 hover:text-blue-600'
+          }`}
+        >
+          <i className="fa-solid fa-scale-balanced text-sm"></i>
         </button>
       </div>
 
@@ -474,6 +502,12 @@ function Listings() {
         </div>
 
       </div>
+
+      <CompareBar
+        selected={compareSelection}
+        onRemove={(id) => setCompareSelection(prev => prev.filter(l => String(l.id) !== String(id)))}
+        onClear={() => setCompareSelection([])}
+      />
     </div>
   )
 }

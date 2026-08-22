@@ -239,6 +239,27 @@ router.get('/featured', (req, res) => {
   }
 })
 
+// GET /api/listings/compare?ids=3,7
+// Fetches multiple listings in one round trip for the comparison page.
+// Frontend can also just hit GET /:id twice, but this saves a request.
+router.get('/compare', (req, res) => {
+  const idsParam = req.query.ids || ''
+  const ids = idsParam.split(',').map(s => parseInt(s.trim())).filter(n => !isNaN(n))
+
+  if (ids.length === 0) {
+    return res.json({ success: false, message: 'Provide at least one id, e.g. ?ids=3,7' })
+  }
+
+  const placeholders = ids.map(() => '?').join(',')
+  db.query(`SELECT * FROM listings WHERE id IN (${placeholders})`, ids, (err, results) => {
+    if (err) {
+      console.log('Error fetching listings for compare:', err)
+      return res.json({ success: false, message: 'Failed to fetch listings' })
+    }
+    res.json({ success: true, data: results })
+  })
+})
+
 // GET /api/listings/:id
 router.get('/:id', (req, res) => {
   db.query('SELECT * FROM listings WHERE id = ?', [req.params.id], (err, results) => {

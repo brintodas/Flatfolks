@@ -156,11 +156,13 @@ function Roommates() {
   const [sidebarOpen, setSidebarOpen] = useState(false)
   const [myQuiz, setMyQuiz]           = useState(null)
   const [sortMode, setSortMode]       = useState('match') // 'match' | 'newest'
+  const [billSummary, setBillSummary] = useState(null)
 
   const currentUser = JSON.parse(localStorage.getItem('ff_user') || 'null')
 
   useEffect(() => {
     if (!currentUser || currentUser.role !== 'student') return
+    // Fetch quiz
     fetch(`http://localhost:8000/api/profile/${currentUser.id}`)
       .then(r => r.json())
       .then(data => {
@@ -180,6 +182,16 @@ function Roommates() {
             w_smoking_pref:    data.w_smoking_pref,
             w_study_habits:    data.w_study_habits,
           })
+        }
+      })
+      .catch(() => {})
+
+    // Fetch pending bills summary
+    fetch(`http://localhost:8000/api/bills/summary/${currentUser.id}`)
+      .then(r => r.json())
+      .then(data => {
+        if (data.success && data.hasGroup) {
+          setBillSummary(data.data)
         }
       })
       .catch(() => {})
@@ -315,6 +327,35 @@ function Roommates() {
                 className="w-full py-2.5 text-sm font-semibold text-white bg-blue-700 hover:bg-blue-800 rounded-lg transition-colors">
                 Apply Filters
               </button>
+
+              {/* Shared Bills Widget */}
+              <div className="pt-4 border-t border-slate-100">
+                <div className="bg-gradient-to-br from-blue-50 to-indigo-50/60 rounded-xl p-3.5 border border-blue-100">
+                  <div className="flex items-center gap-2 mb-1.5">
+                    <i className="fa-solid fa-receipt text-blue-700 text-xs"></i>
+                    <h3 className="text-xs font-bold text-slate-800">Shared Bills & Split</h3>
+                  </div>
+                  <p className="text-[11px] text-slate-500 mb-2.5">
+                    {billSummary
+                      ? `${billSummary.groupName} • ${billSummary.pendingCount} bills logged`
+                      : 'Split utilities, Wi-Fi, and groceries with flatmates.'}
+                  </p>
+                  {billSummary && (
+                    <div className="mb-2 text-xs font-bold flex items-center justify-between">
+                      <span className="text-slate-600">Net Standing:</span>
+                      <span className={billSummary.netBalance >= 0 ? 'text-emerald-700' : 'text-rose-600'}>
+                        {billSummary.netBalance >= 0 ? `+৳${billSummary.netBalance}` : `-৳${Math.abs(billSummary.netBalance)}`}
+                      </span>
+                    </div>
+                  )}
+                  <Link
+                    to="/bills"
+                    className="block text-center py-1.5 px-2.5 bg-blue-700 hover:bg-blue-800 text-white rounded-lg text-xs font-bold transition-colors"
+                  >
+                    Open Bills Tracker →
+                  </Link>
+                </div>
+              </div>
             </div>
           </aside>
 

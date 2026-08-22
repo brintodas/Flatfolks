@@ -19,7 +19,9 @@ function Messages() {
   useEffect(() => {
     const params = new URLSearchParams(window.location.search)
     const to = params.get('to')
+    const msg = params.get('msg')
     if (to) setTargetUserId(to)
+    if (msg) setNewMessage(msg)
   }, [window.location.search])
 
   useEffect(() => {

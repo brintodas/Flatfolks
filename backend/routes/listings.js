@@ -134,11 +134,11 @@ router.get('/', attachGroupContext, (req, res) => {
   let sql = 'SELECT * FROM listings WHERE status = "active"'
   const params = []
 
-  // If a group context exists, auto-apply aggregate budget and bed filters
+  // If in Group Mode and a group context exists, auto-apply aggregate budget and bed filters
   // (only when no explicit filter was passed by the user)
-  const gc = req.groupContext
-  const effectiveMaxRent  = max_rent  || (gc ? gc.maxBudget  : null)
-  const effectiveMinBeds  = gc && !req.query.beds ? gc.minBeds : null
+  const isGroupMode = req.query.search_mode !== 'single' && Boolean(req.groupContext)
+  const effectiveMaxRent  = max_rent  || (isGroupMode ? req.groupContext.maxBudget  : null)
+  const effectiveMinBeds  = isGroupMode && !req.query.beds ? req.groupContext.minBeds : null
 
   if (available_before) {
     sql += ' AND (available_from <= ? OR available_from IS NULL)'

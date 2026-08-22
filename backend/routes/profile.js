@@ -102,7 +102,7 @@ router.get('/', (req, res) => {
   sql += ` ORDER BY sp.id DESC, u.created_at DESC`
 
   db.query(sql, params, (err, rows) => {
-    if (err) { console.error(err); return res.status(500).json({ error: 'Server error' }) }
+    if (err) { console.error(err); return res.status(500).json({ success: false, message: 'Server error' }) }
 
     // merge fallback fields
     let data = rows.map(row => ({
@@ -122,7 +122,7 @@ router.get('/', (req, res) => {
       `SELECT sp.*, u.id AS user_id FROM student_profiles sp JOIN users u ON u.id = sp.user_id WHERE sp.user_id = ?`,
       [viewer_id],
       (err2, viewerRows) => {
-        if (err2) { console.error(err2); return res.status(500).json({ error: 'Server error' }) }
+        if (err2) { console.error(err2); return res.status(500).json({ success: false, message: 'Server error' }) }
         const viewer = viewerRows[0] || null
 
         // attach match_score + breakdown to each candidate

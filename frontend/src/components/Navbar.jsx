@@ -127,6 +127,7 @@ const Navbar = () => {
     if (currentUser.role === 'student') {
       return [
         { to: '/roommate-profile', icon: 'fa-id-card', label: 'My Profile' },
+        { to: '/bills', icon: 'fa-receipt', label: 'Shared Bills' },
         { to: '/lifestyle-quiz', icon: 'fa-clipboard-list', label: 'Lifestyle Quiz' },
       ]
     }

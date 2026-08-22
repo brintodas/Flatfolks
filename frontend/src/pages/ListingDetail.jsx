@@ -12,7 +12,22 @@ function ListingDetail() {
   const [showAllPhotos, setShowAllPhotos] = useState(false)
   const [showFraudReportForm, setShowFraudReportForm] = useState(false)
   const [verifiedReports, setVerifiedReports] = useState([])
+  const [userGroup, setUserGroup] = useState(null)
+  const [bookingMode, setBookingMode] = useState(() => sessionStorage.getItem('ff_search_mode') || 'group')
 
+  const currentUser = JSON.parse(localStorage.getItem('ff_user') || 'null')
+
+  useEffect(() => {
+    if (!currentUser || currentUser.role !== 'student') return
+    fetch(`http://localhost:8000/api/roommates/my-group?user_id=${currentUser.id}`)
+      .then(r => r.json())
+      .then(data => {
+        if (data.success && data.group) {
+          setUserGroup(data.group)
+        }
+      })
+      .catch(() => {})
+  }, [currentUser?.id])
 
   useEffect(() => {
     fetch(`http://localhost:8000/api/listings/${id}`)
@@ -24,7 +39,6 @@ function ListingDetail() {
       })
       .catch(() => { setError('Could not connect to server'); setLoading(false) })
   }, [id])
-
 
   useEffect(() => {
     fetch(`http://localhost:8000/api/reports/listing/${id}`)
@@ -373,18 +387,89 @@ function ListingDetail() {
           {/* ── Right — Sticky Booking Card ───────────────── */}
           <div className="lg:w-[360px] shrink-0">
             <div className="sticky top-24 space-y-4">
-              <div className="border border-slate-200 rounded-2xl shadow-lg overflow-hidden">
+              <div className="border border-slate-200 rounded-2xl shadow-lg overflow-hidden bg-white">
+
+                {/* Single vs Group Inquire / Booking Switcher */}
+                {userGroup && (
+                  <div className="p-3 bg-slate-50 border-b border-slate-100">
+                    <p className="text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-2">
+                      Inquire & Book As:
+                    </p>
+                    <div className="grid grid-cols-2 gap-1.5 bg-slate-200/70 p-1 rounded-xl">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setBookingMode('group')
+                          sessionStorage.setItem('ff_search_mode', 'group')
+                        }}
+                        className={`py-1.5 text-xs font-bold rounded-lg transition-all flex items-center justify-center gap-1.5 ${
+                          bookingMode === 'group'
+                            ? 'bg-blue-700 text-white shadow-sm'
+                            : 'text-slate-600 hover:text-slate-900'
+                        }`}
+                      >
+                        <i className="fa-solid fa-users text-[10px]"></i>
+                        <span>As Group ({userGroup.members?.length || 2})</span>
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setBookingMode('single')
+                          sessionStorage.setItem('ff_search_mode', 'single')
+                        }}
+                        className={`py-1.5 text-xs font-bold rounded-lg transition-all flex items-center justify-center gap-1.5 ${
+                          bookingMode === 'single'
+                            ? 'bg-indigo-600 text-white shadow-sm'
+                            : 'text-slate-600 hover:text-slate-900'
+                        }`}
+                      >
+                        <i className="fa-solid fa-user text-[10px]"></i>
+                        <span>Single Student</span>
+                      </button>
+                    </div>
+                  </div>
+                )}
 
                 {/* Price header */}
                 <div className="p-6 border-b border-slate-100">
-                  <div className="flex items-baseline gap-2 mb-1">
-                    <span className="text-3xl font-black text-slate-900">
-                      ৳{Number(listing.rent).toLocaleString()}
-                    </span>
-                    <span className="text-slate-400 font-normal">/ month</span>
-                  </div>
+                  {bookingMode === 'group' && userGroup && userGroup.members?.length > 1 ? (
+                    <div>
+                      <div className="flex items-baseline gap-2 mb-0.5">
+                        <span className="text-3xl font-black text-blue-700">
+                          ৳{Math.round(listing.rent / userGroup.members.length).toLocaleString()}
+                        </span>
+                        <span className="text-slate-500 font-semibold text-xs">/ person per month</span>
+                      </div>
+                      <p className="text-xs text-slate-500 mt-1 font-medium">
+                        Total rent: <strong className="text-slate-800">৳{Number(listing.rent).toLocaleString()}/mo</strong> split across {userGroup.members.length} roommates
+                      </p>
+                      <div className="mt-2.5 flex items-center gap-1.5 flex-wrap">
+                        <span className="text-[11px] font-bold text-slate-600">Roommates:</span>
+                        {userGroup.members.map((m) => (
+                          <span key={m.id} className="text-[10px] font-semibold bg-blue-50 text-blue-700 border border-blue-100 px-2 py-0.5 rounded-md">
+                            {m.full_name?.split(' ')[0] || 'Member'}
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+                  ) : (
+                    <div>
+                      <div className="flex items-baseline gap-2 mb-1">
+                        <span className="text-3xl font-black text-slate-900">
+                          ৳{Number(listing.rent).toLocaleString()}
+                        </span>
+                        <span className="text-slate-400 font-normal">/ month</span>
+                      </div>
+                      {userGroup && (
+                        <p className="text-xs text-indigo-600 font-medium">
+                          Individual student rate
+                        </p>
+                      )}
+                    </div>
+                  )}
+
                   {listing.available_from && (
-                    <p className="text-sm text-slate-500 mt-1">
+                    <p className="text-sm text-slate-500 mt-2">
                       Available from{' '}
                       <span className="font-semibold text-slate-800">
                         {new Date(listing.available_from).toLocaleDateString('en-GB', {
@@ -396,9 +481,9 @@ function ListingDetail() {
                 </div>
 
                 {/* Contact info */}
-                <div className="px-6 py-5">
+                <div className="px-6 py-5 space-y-4">
                   {listing.landlord_name && (
-                    <div className="flex items-center gap-3 mb-4">
+                    <div className="flex items-center gap-3">
                       {listing.landlord_id ? (
                         <Link to={`/landlord/${listing.landlord_id}`} className="w-10 h-10 rounded-full bg-blue-100 hover:bg-blue-200 flex items-center justify-center shrink-0 transition-colors">
                           <i className="fa-solid fa-user text-blue-600 text-sm"></i>
@@ -422,11 +507,25 @@ function ListingDetail() {
                     </div>
                   )}
 
-
                   {listing.landlord_id && (
-                    <Link to={`/messages/new?to=${listing.landlord_id}`}
-                      className="flex items-center justify-center gap-2 w-full border border-blue-200 text-blue-700 hover:bg-blue-50 font-semibold py-3.5 rounded-xl transition-colors">
-                      <i className="fa-regular fa-message text-lg"></i> Message
+                    <Link
+                      to={`/messages/new?to=${listing.landlord_id}&msg=${encodeURIComponent(
+                        bookingMode === 'group' && userGroup
+                          ? `Hi ${listing.landlord_name || 'Landlord'}, I am inquiring on behalf of our roommate group "${userGroup.name}" (${userGroup.members?.length || 2} students). We are interested in viewing/booking your listing "${listing.title}" located at ${listing.location}.`
+                          : `Hi ${listing.landlord_name || 'Landlord'}, I am interested in viewing/booking your listing "${listing.title}" located at ${listing.location}.`
+                      )}`}
+                      className={`flex items-center justify-center gap-2 w-full font-bold py-3.5 rounded-xl transition-all shadow-sm ${
+                        bookingMode === 'group' && userGroup
+                          ? 'bg-blue-700 hover:bg-blue-800 text-white'
+                          : 'border border-blue-200 text-blue-700 hover:bg-blue-50'
+                      }`}
+                    >
+                      <i className="fa-regular fa-message text-lg"></i>
+                      <span>
+                        {bookingMode === 'group' && userGroup
+                          ? `Inquire / Book with Group (${userGroup.members?.length || 2})`
+                          : 'Message Landlord'}
+                      </span>
                     </Link>
                   )}
                 </div>

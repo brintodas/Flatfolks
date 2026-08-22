@@ -476,6 +476,14 @@ function ListingDetail() {
                 </div>
               </div>
 
+              {/* Compare with another listing */}
+              <Link
+                to={`/compare?a=${listing.id}`}
+                className="flex items-center gap-2 justify-center w-full border border-blue-200 text-blue-700 hover:bg-blue-50 font-semibold py-3 rounded-xl text-sm transition-colors"
+              >
+                <i className="fa-solid fa-scale-balanced"></i> Compare This Listing
+              </Link>
+
               {/* 360 walkthrough */}
               {listing.walkthrough_link && (
                 <a href={listing.walkthrough_link} target="_blank" rel="noreferrer"

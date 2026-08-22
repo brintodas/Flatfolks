@@ -19,7 +19,7 @@ function attachGroupContext(req, res, next) {
 
   // Find the user's current group membership
   const memberSql = `
-    SELECT rgm.group_id, rg.status
+    SELECT rgm.group_id, rg.name AS group_name, rg.status
     FROM roommate_group_members rgm
     JOIN roommate_groups rg ON rg.id = rgm.group_id
     WHERE rgm.user_id = ?
@@ -32,7 +32,7 @@ function attachGroupContext(req, res, next) {
       return next()
     }
 
-    const groupId = rows[0].group_id
+    const { group_id: groupId, group_name: groupName } = rows[0]
 
     // Aggregate all members' budget_max and bed preferences
     const aggSql = `
@@ -54,6 +54,7 @@ function attachGroupContext(req, res, next) {
       const { member_count, total_budget } = agg[0]
       req.groupContext = {
         groupId,
+        groupName   : groupName || 'My Group',
         memberCount : parseInt(member_count),
         maxBudget   : parseInt(total_budget),  // sum of all members' budget_max
         minBeds     : parseInt(member_count),  // at minimum, need 1 bed per person

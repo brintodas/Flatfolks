@@ -195,6 +195,28 @@ function RoommateProfile() {
       <div className="max-w-4xl mx-auto px-4">
 
 
+        {/* ── Quick Shared Bills Widget ────────────────────────── */}
+        <div className="mb-6 bg-gradient-to-r from-blue-700 via-indigo-700 to-blue-800 rounded-2xl p-5 text-white shadow-md flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div className="flex items-center gap-3.5">
+            <div className="w-11 h-11 rounded-xl bg-white/15 flex items-center justify-center text-xl shrink-0">
+              <i className="fa-solid fa-receipt"></i>
+            </div>
+            <div>
+              <h3 className="text-base font-bold">Shared Bills & Roommate Expense Tracker</h3>
+              <p className="text-xs text-blue-100 mt-0.5">
+                Split utilities, track Wi-Fi & groceries, and record bKash settlements with your flatmates.
+              </p>
+            </div>
+          </div>
+          <Link
+            to="/bills"
+            className="px-4 py-2.5 bg-white text-blue-800 hover:bg-blue-50 text-xs font-bold rounded-xl transition-all shadow-sm shrink-0 flex items-center justify-center gap-2"
+          >
+            <span>Open Bills Tracker</span>
+            <i className="fa-solid fa-arrow-right text-xs"></i>
+          </Link>
+        </div>
+
         {/* ── Roommate Group Panel ─────────────────────────────── */}
         <div className="mb-8">
           <h2 className="text-base font-semibold text-slate-700 mb-3 flex items-center gap-2">

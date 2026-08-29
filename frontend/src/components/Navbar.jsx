@@ -128,6 +128,7 @@ const Navbar = () => {
       return [
         { to: '/roommate-profile', icon: 'fa-id-card', label: 'My Profile' },
         { to: '/bills', icon: 'fa-receipt', label: 'Shared Bills' },
+        { to: '/meal-plans', icon: 'fa-utensils', label: 'Meal Plans' },
         { to: '/lifestyle-quiz', icon: 'fa-clipboard-list', label: 'Lifestyle Quiz' },
       ]
     }

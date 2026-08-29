@@ -35,6 +35,7 @@ const reportsRoute   = require('./routes/reports')
 const roommatesRoute = require('./routes/roommates')
 const quizRoute      = require('./routes/quiz')
 const billsRoute     = require('./routes/bills')
+const mealsRoute     = require('./routes/meals')
 app.use('/api/listings',  listingsRoute)
 app.use('/api/bookmarks', bookmarksRoute)
 app.use('/api/auth',      authRoute)
@@ -46,6 +47,7 @@ app.use('/api/reports',   reportsRoute)
 app.use('/api/roommates', roommatesRoute)
 app.use('/api/quiz',      quizRoute)
 app.use('/api/bills',     billsRoute)
+app.use('/api/meals',     mealsRoute)
 
 
 app.get('/', (req, res) => {

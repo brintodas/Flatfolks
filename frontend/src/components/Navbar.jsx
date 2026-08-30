@@ -150,6 +150,7 @@ const Navbar = () => {
       return [
         { to: '/roommate-profile', icon: 'fa-id-card', label: 'My Profile' },
         { to: '/bills', icon: 'fa-receipt', label: 'Shared Bills' },
+        { to: '/meal-plans', icon: 'fa-utensils', label: 'Meal Plans' },
         { to: '/maintenance', icon: 'fa-wrench', label: 'Maintenance' },
         { to: '/rent-reminder', icon: 'fa-calendar-check', label: 'Rent Reminder' },
         { to: '/lifestyle-quiz', icon: 'fa-clipboard-list', label: 'Lifestyle Quiz' },

@@ -1,10 +1,11 @@
 import { useEffect, useState } from 'react'
 import { useParams, Link } from 'react-router-dom'
 import FraudReportForm from '../components/FraudReportForm'
-
+import ReviewSection from '../components/reviews/ReviewSection'
 
 function ListingDetail() {
   const { id } = useParams()
+  const currentUser = JSON.parse(localStorage.getItem('ff_user') || 'null')
   const [listing, setListing] = useState(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
@@ -15,7 +16,6 @@ function ListingDetail() {
   const [userGroup, setUserGroup] = useState(null)
   const [bookingMode, setBookingMode] = useState(() => sessionStorage.getItem('ff_search_mode') || 'group')
 
-  const currentUser = JSON.parse(localStorage.getItem('ff_user') || 'null')
 
   useEffect(() => {
     if (!currentUser || currentUser.role !== 'student') return
@@ -604,6 +604,17 @@ function ListingDetail() {
 
         </div>
       </div>
+      {/* Reviews & Ratings */}
+<ReviewSection
+  targetType={
+    listing.property_type === 'single_room' ||
+    listing.property_type === 'shared_room'
+      ? 'room'
+      : 'property'
+  }
+  targetId={id}
+  reviewerId={currentUser?.id}
+/>
     </div>
   )
 }

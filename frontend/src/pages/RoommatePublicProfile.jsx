@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import { useParams, Link, useNavigate } from 'react-router-dom'
 import { calcCompatibility } from '../utils/compatibility'
-
+import ReviewSection from '../components/reviews/ReviewSection'
 const QUIZ_META = {
   sleep_schedule:  { label: 'Sleep Schedule', icon: 'fa-moon',        options: ['Early bird', 'Flexible', 'Night owl'] },
   cleanliness:     { label: 'Cleanliness',    icon: 'fa-broom',       options: ['Messy', 'Average', 'Neat freak'] },
@@ -329,6 +329,13 @@ function RoommatePublicProfile() {
             </div>
           </div>
         </div>
+{/* Reviews & Ratings */}
+<ReviewSection
+  targetType="roommate"
+  targetId={userId}
+  reviewerId={isOwnProfile ? null : currentUser?.id}
+/>
+
 
         {/* Back link */}
         <div className="mt-8">

@@ -20,6 +20,7 @@
     "jsonwebtoken": "^9.0.3",
     "multer": "^2.2.0",
     "mysql2": "^3.23.3",
+    "node-cron": "^4.6.0",
     "sequelize": "^6.37.8",
     "socket.io": "^4.8.3"
   },

@@ -38,6 +38,8 @@ const reviewsRoute = require('./routes/reviews')
 const billsRoute     = require('./routes/bills')
 const maintenanceRoute = require('./routes/maintenance')
 const utilityAssistanceRoute = require('./routes/utilityAssistance')
+const remindersRoute = require('./routes/reminders')
+const notificationsRoute = require('./routes/notifications')
 app.use('/api/listings',  listingsRoute)
 app.use('/api/bookmarks', bookmarksRoute)
 app.use('/api/auth',      authRoute)
@@ -52,6 +54,11 @@ app.use('/api/reviews', reviewsRoute)
 app.use('/api/bills',     billsRoute)
 app.use('/api/maintenance', maintenanceRoute)
 app.use('/api/utility-assistance', utilityAssistanceRoute)
+app.use('/api/reminders', remindersRoute)
+app.use('/api/notifications', notificationsRoute)
+
+// Start the daily rent reminder cron job
+require('./cron/rentReminderJob')
 
 app.get('/', (req, res) => {
   res.send('Flatfolks API is running')

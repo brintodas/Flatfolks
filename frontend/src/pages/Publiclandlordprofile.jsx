@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useParams, Link } from 'react-router-dom'
-
+import ReviewSection from '../components/reviews/ReviewSection'
 const STATUS_META = {
   none:     { label: 'Not submitted', color: 'bg-slate-100 text-slate-600', icon: 'fa-circle-minus' },
   pending:  { label: 'Under review',  color: 'bg-amber-50 text-amber-700',  icon: 'fa-clock' },
@@ -400,7 +400,12 @@ function PublicLandlordProfile() {
             </div>
           </div>
         </div>
- 
+      {/* Reviews & Ratings */}
+<ReviewSection
+  targetType="landlord"
+  targetId={id}
+  reviewerId={isOwnProfile ? null : currentUser?.id}
+/>
         <div className="mt-8">
           <Link to="/listings" className="text-sm text-slate-500 hover:text-blue-700">← Back to listings</Link>
         </div>

@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import InteractiveMap from '../components/Map/InteractiveMap'
+import CompareBar from '../components/CompareBar'
 
 const emptyFilters = {
   search: '',
@@ -47,12 +48,19 @@ function Listings() {
   })
   const [bookmarked, setBookmarked]   = useState(new Set()) // set of bookmarked listing IDs
   const [viewMode, setViewMode]       = useState('list')    // 'list' or 'map'
+  const [searchMode, setSearchMode]   = useState(() => sessionStorage.getItem('ff_search_mode') || 'group') // 'group' | 'single'
   const [groupContext, setGroupContext] = useState(null)     // group search context from API
+  const [compareSelection, setCompareSelection] = useState([]) // up to 2 listings picked for comparison
   const userKey    = getUserKey()
   const currentUser = JSON.parse(localStorage.getItem('ff_user') || 'null')
 
   const updateFilter = (key, value) => {
     setFilters(prev => ({ ...prev, [key]: value }))
+  }
+
+  const handleModeChange = (mode) => {
+    setSearchMode(mode)
+    sessionStorage.setItem('ff_search_mode', mode)
   }
 
   useEffect(() => {
@@ -67,8 +75,11 @@ function Listings() {
     if (filters.lease) params.set('lease_duration', filters.lease)
     if (filters.availableBefore) params.set('available_before', filters.availableBefore)
 
-    // Pass user_id so the backend can activate group-context filtering
-    if (currentUser?.role === 'student') params.set('user_id', currentUser.id)
+    // Pass user_id and search_mode so the backend knows whether to apply group aggregates
+    if (currentUser?.role === 'student') {
+      params.set('user_id', currentUser.id)
+      params.set('search_mode', searchMode)
+    }
 
     const qs = params.toString()
     const url = 'http://localhost:8000/api/listings' + (qs ? `?${qs}` : '')
@@ -98,7 +109,7 @@ function Listings() {
     }, 300)
 
     return () => clearTimeout(timer)
-  }, [filters])
+  }, [filters, searchMode])
 
   // load which listings this user has already bookmarked
   useEffect(() => {
@@ -130,6 +141,19 @@ function Listings() {
       .catch(() => {})
   }
 
+  const toggleCompare = (e, listing) => {
+    e.stopPropagation()
+    e.preventDefault()
+    setCompareSelection(prev => {
+      const exists = prev.some(l => String(l.id) === String(listing.id))
+      if (exists) return prev.filter(l => String(l.id) !== String(listing.id))
+      if (prev.length >= 2) return [prev[1], listing] // keep it to 2, drop the oldest
+      return [...prev, listing]
+    })
+  }
+
+  const isSelectedForCompare = (id) => compareSelection.some(l => String(l.id) === String(id))
+
   const hasActiveFilters = Object.values(filters).some(v => v !== '')
 
   const renderListingCard = (listing) => (
@@ -158,6 +182,19 @@ function Listings() {
           <i className={`fa-bookmark text-sm ${
             bookmarked.has(listing.id) ? 'fa-solid' : 'fa-regular'
           }`}></i>
+        </button>
+
+        {/* Compare toggle */}
+        <button
+          onClick={(e) => toggleCompare(e, listing)}
+          title={isSelectedForCompare(listing.id) ? 'Remove from comparison' : 'Add to comparison'}
+          className={`absolute top-3 left-3 w-8 h-8 rounded-full shadow flex items-center justify-center transition-all ${
+            isSelectedForCompare(listing.id)
+              ? 'bg-blue-600 text-white'
+              : 'bg-white text-slate-400 hover:text-blue-600'
+          }`}
+        >
+          <i className="fa-solid fa-scale-balanced text-sm"></i>
         </button>
       </div>
 
@@ -191,9 +228,14 @@ function Listings() {
         </div>
 
         <div className="flex gap-2 flex-wrap mb-3">
-          <span className="text-xs bg-blue-50 text-blue-700 px-2 py-0.5 rounded-full">
+          <span className="text-xs bg-blue-50 text-blue-700 px-2 py-0.5 rounded-full font-medium">
             {listing.beds} Bed{listing.beds > 1 ? 's' : ''}
           </span>
+          {searchMode === 'group' && groupContext?.memberCount > 1 && (
+            <span className="text-xs bg-indigo-50 text-indigo-700 border border-indigo-200 px-2 py-0.5 rounded-full font-bold">
+              ৳{Math.round(listing.rent / groupContext.memberCount).toLocaleString()}/person
+            </span>
+          )}
           {listing.furnished ? (
             <span className="text-xs bg-green-50 text-green-700 px-2 py-0.5 rounded-full">Furnished</span>
           ) : null}
@@ -231,17 +273,32 @@ function Listings() {
 
       {!loading && listings.length === 0 && !error && (
         <div className="text-center py-20">
-          <p className="text-slate-400 text-lg mb-4">
-            {hasActiveFilters ? 'No listings match your filters.' : 'No listings yet.'}
+          <div className="w-16 h-16 bg-blue-50 text-blue-600 rounded-full flex items-center justify-center mx-auto mb-4 text-2xl">
+            <i className="fa-solid fa-magnifying-glass"></i>
+          </div>
+          <h3 className="text-lg font-bold text-slate-800 mb-1">No listings found</h3>
+          <p className="text-slate-500 text-sm mb-6 max-w-sm mx-auto">
+            {hasActiveFilters
+              ? 'Try clearing or adjusting your filters to see more results.'
+              : searchMode === 'group'
+              ? 'No listings match your group budget and bed requirements. Try switching to Single Mode or relaxing filters.'
+              : 'No listings match your search criteria.'}
           </p>
-          {hasActiveFilters ? (
-            <button onClick={() => setFilters(emptyFilters)} className="text-blue-600 font-semibold hover:underline">
-              Clear filters
+          {hasActiveFilters && (
+            <button
+              onClick={() => setFilters(emptyFilters)}
+              className="px-4 py-2 bg-blue-50 text-blue-700 hover:bg-blue-100 rounded-xl text-sm font-semibold transition-colors"
+            >
+              Clear all filters
             </button>
-          ) : (
-            <Link to="/post-listing" className="text-blue-600 font-semibold hover:underline">
-              Be the first to post one →
-            </Link>
+          )}
+          {searchMode === 'group' && (
+            <button
+              onClick={() => handleModeChange('single')}
+              className="ml-2 px-4 py-2 bg-indigo-50 text-indigo-700 hover:bg-indigo-100 rounded-xl text-sm font-semibold transition-colors"
+            >
+              Switch to Single Mode
+            </button>
           )}
         </div>
       )}
@@ -289,24 +346,82 @@ function Listings() {
           </div>
         </div>
 
-        {/* ── Group search banner ───────────────────────────────────────────── */}
+        {/* ── Interactive Group vs Single Mode Switcher Banner ───────────────── */}
         {groupContext && (
-          <div className="flex items-center gap-3 bg-blue-50 border border-blue-200 rounded-xl px-4 py-3 mb-4">
-            <div className="w-8 h-8 rounded-full bg-blue-700 flex items-center justify-center flex-shrink-0">
-              <i className="fa-solid fa-people-group text-white text-xs"></i>
+          <div
+            className={`flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 rounded-2xl px-5 py-4 mb-5 border transition-all ${
+              searchMode === 'group'
+                ? 'bg-gradient-to-r from-blue-50 via-blue-50/80 to-indigo-50/60 border-blue-200 shadow-sm'
+                : 'bg-gradient-to-r from-slate-50 via-indigo-50/40 to-slate-50 border-slate-200'
+            }`}
+          >
+            <div className="flex items-center gap-3.5 min-w-0">
+              <div
+                className={`w-10 h-10 rounded-2xl flex items-center justify-center flex-shrink-0 shadow-sm ${
+                  searchMode === 'group' ? 'bg-blue-700 text-white' : 'bg-slate-700 text-white'
+                }`}
+              >
+                <i className={`fa-solid ${searchMode === 'group' ? 'fa-people-group' : 'fa-user'} text-sm`}></i>
+              </div>
+              <div className="min-w-0">
+                <div className="flex items-center gap-2 flex-wrap">
+                  <p className="text-sm font-bold text-slate-900">
+                    {searchMode === 'group'
+                      ? `Searching as Group · ${groupContext.groupName || 'Roommates'} (${groupContext.memberCount} members)`
+                      : 'Searching as Single Student'}
+                  </p>
+                  <span
+                    className={`text-[10px] uppercase tracking-wider font-extrabold px-2 py-0.5 rounded-full ${
+                      searchMode === 'group'
+                        ? 'bg-blue-700 text-white'
+                        : 'bg-slate-200 text-slate-700'
+                    }`}
+                  >
+                    {searchMode === 'group' ? 'Group Filter Active' : 'Individual Filter'}
+                  </span>
+                </div>
+                <p className="text-xs text-slate-600 mt-0.5">
+                  {searchMode === 'group' ? (
+                    <>
+                      Combined budget: <strong className="text-slate-800">৳{Number(groupContext.maxBudget).toLocaleString()}/mo</strong>
+                      &nbsp;•&nbsp;Minimum <strong className="text-slate-800">{groupContext.minBeds} beds</strong> needed for group
+                    </>
+                  ) : (
+                    <>
+                      Group filters bypassed • Showing single rooms and flats for 1 student
+                    </>
+                  )}
+                </p>
+              </div>
             </div>
-            <div className="flex-1 min-w-0">
-              <p className="text-sm font-semibold text-blue-900">
-                Searching as a group · {groupContext.memberCount} {groupContext.memberCount === 1 ? 'member' : 'members'}
-              </p>
-              <p className="text-xs text-blue-700 mt-0.5">
-                Combined budget ৳{Number(groupContext.maxBudget).toLocaleString()}/mo
-                &nbsp;·&nbsp;Minimum {groupContext.minBeds} bed{groupContext.minBeds !== 1 ? 's' : ''} needed
-              </p>
+
+            {/* Interactive Mode Toggle Button Group */}
+            <div className="flex items-center bg-white p-1 rounded-xl border border-slate-200 shadow-sm shrink-0 w-full sm:w-auto justify-center">
+              <button
+                type="button"
+                onClick={() => handleModeChange('group')}
+                className={`px-3.5 py-1.5 text-xs font-bold rounded-lg transition-all flex items-center justify-center gap-1.5 ${
+                  searchMode === 'group'
+                    ? 'bg-blue-700 text-white shadow-sm ring-1 ring-blue-700'
+                    : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
+                }`}
+              >
+                <i className="fa-solid fa-users text-[11px]"></i>
+                <span>Group Mode</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => handleModeChange('single')}
+                className={`px-3.5 py-1.5 text-xs font-bold rounded-lg transition-all flex items-center justify-center gap-1.5 ${
+                  searchMode === 'single'
+                    ? 'bg-indigo-600 text-white shadow-sm ring-1 ring-indigo-600'
+                    : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
+                }`}
+              >
+                <i className="fa-solid fa-user text-[11px]"></i>
+                <span>Single Mode</span>
+              </button>
             </div>
-            <span className="text-xs bg-blue-700 text-white px-2.5 py-1 rounded-full font-semibold flex-shrink-0">
-              Group Mode
-            </span>
           </div>
         )}
 
@@ -474,6 +589,12 @@ function Listings() {
         </div>
 
       </div>
+
+      <CompareBar
+        selected={compareSelection}
+        onRemove={(id) => setCompareSelection(prev => prev.filter(l => String(l.id) !== String(id)))}
+        onClear={() => setCompareSelection([])}
+      />
     </div>
   )
 }

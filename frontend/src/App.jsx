@@ -32,6 +32,7 @@ import LifestyleQuiz         from './pages/LifestyleQuiz'
 import Compare                from './pages/Compare'
 import BillsPage              from './pages/BillsPage'
 import MaintenancePage        from './pages/MaintenancePage'
+import UtilityAssistance from './pages/UtilityAssistance'
 
 function ConditionalFooter() {
   const location = useLocation()
@@ -76,6 +77,7 @@ function App() {
           <Route path="/roommate/:userId"   element={<RoommatePublicProfile />} />
           <Route path="/bills"              element={<BillsPage />} />
           <Route path="/maintenance"        element={<MaintenancePage />} />
+          <Route path="/utility-assistance" element={<UtilityAssistance />} />
           <Route path="/lifestyle-quiz"     element={<LifestyleQuiz />} />
           <Route path="/compare"            element={<Compare />} />
 

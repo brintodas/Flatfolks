@@ -36,6 +36,7 @@ const roommatesRoute = require('./routes/roommates')
 const quizRoute      = require('./routes/quiz')
 const billsRoute     = require('./routes/bills')
 const maintenanceRoute = require('./routes/maintenance')
+const utilityAssistanceRoute = require('./routes/utilityAssistance')
 app.use('/api/listings',  listingsRoute)
 app.use('/api/bookmarks', bookmarksRoute)
 app.use('/api/auth',      authRoute)
@@ -48,7 +49,7 @@ app.use('/api/roommates', roommatesRoute)
 app.use('/api/quiz',      quizRoute)
 app.use('/api/bills',     billsRoute)
 app.use('/api/maintenance', maintenanceRoute)
-
+app.use('/api/utility-assistance', utilityAssistanceRoute)
 
 app.get('/', (req, res) => {
   res.send('Flatfolks API is running')

@@ -218,7 +218,7 @@ const Navbar = () => {
 
             {/* Messages */}
             <NavLink to="/messages" title="Messages"
-              className={({isActive}) => `relative hidden sm:flex items-center justify-center w-10 h-10 rounded-lg transition-all ${isActive ? 'bg-blue-800 text-white shadow-sm' : 'text-blue-800 hover:text-blue-900 hover:bg-blue-50'}`}>
+              className={({isActive}) => `relative flex items-center justify-center w-10 h-10 rounded-lg transition-all ${isActive ? 'bg-blue-800 text-white shadow-sm' : 'text-blue-800 hover:text-blue-900 hover:bg-blue-50'}`}>
               <i className="fa-regular fa-message text-lg"></i>
               {unreadMessageCount > 0 && (
                 <span className="absolute top-0 right-0 min-w-5 h-5 px-1 flex items-center justify-center bg-red-500 text-white text-xs font-bold rounded-full">
@@ -229,7 +229,7 @@ const Navbar = () => {
 
             {/* ── Roommate Requests (students only) ── */}
             {currentUser?.role === 'student' && (
-              <div className="relative hidden sm:block">
+              <div className="relative">
                 <button
                   onClick={() => setReqDropdownOpen(o => !o)}
                   title="Roommate Requests"
@@ -336,7 +336,7 @@ const Navbar = () => {
 
             {/* ── Rent Reminder Notification Bell (students only) ── */}
             {currentUser?.role === 'student' && (
-              <div className="relative hidden sm:block">
+              <div className="relative">
                 <button
                   onClick={() => setRentNotifOpen(o => !o)}
                   title="Rent Reminders"

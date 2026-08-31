@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 
 const BANGLA_TIME_SLOTS = [
   { value: 'জোহরের আগে', label: 'জোহরের আগে (Before Dhuhr)' },
@@ -13,6 +13,7 @@ const BANGLA_TIME_SLOTS = [
 ]
 
 export default function MaintenancePage() {
+  const navigate = useNavigate()
   const APARTMENT_ID = 1 // Active apartment / roommate group ID
 
   // Form State
@@ -124,10 +125,16 @@ export default function MaintenancePage() {
       })
       const json = await res.json()
       if (json.success) {
-        setSuccessMsg('Booking confirmed! Logged to shared apartment view.')
-        setSelectedTechnician(null)
-        setProblemDescription('')
         fetchMaintenanceLogs()
+        // hand off to the centralized payment gateway using the booking_id
+        // and estimated_cost the backend just returned
+        const params = new URLSearchParams({
+          service_type: 'maintenance',
+          reference_id: json.booking_id,
+          amount: json.estimated_cost,
+          title: json.service_name || 'Maintenance Service',
+        })
+        navigate(`/payment?${params.toString()}`)
       } else {
         alert(json.message || 'Booking failed')
       }

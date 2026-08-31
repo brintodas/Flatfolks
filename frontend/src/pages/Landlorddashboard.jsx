@@ -157,6 +157,16 @@ function LandlordDashboard() {
     }).catch(() => setLoading(false))
   }, [landlordId])
 
+  // Poll for rent payments coming in through the gateway — a tenant paying
+  // rent while this dashboard is open shows up here within ~10s, no manual
+  // refresh needed (pairs with the NotificationsBell in the navbar, which
+  // is what makes the *alert* itself feel instant).
+  useEffect(() => {
+    if (!landlordId) return
+    const t = setInterval(loadDashboard, 10_000)
+    return () => clearInterval(t)
+  }, [landlordId])
+
   const respondToRequest = async (id, status) => {
     await fetch(`${API}/viewing-requests/${id}`, {
       method: 'PUT',
@@ -196,6 +206,13 @@ function LandlordDashboard() {
     month: new Date(r.month + '-01').toLocaleDateString('en-GB', { month: 'short' }),
     revenue: Number(r.total)
   }))
+
+  const METHOD_LABELS = { bkash: 'bKash', nagad: 'Nagad', bank: 'Bank', card: 'Card', cash: 'Cash', unknown: 'Other' }
+  const methodData = (dashboard.revenue_by_method || []).map(m => ({
+    method: METHOD_LABELS[m.payment_method] || m.payment_method,
+    total: Number(m.total)
+  }))
+  const revenueLog = dashboard.revenue_log || []
 
   const pendingRequests = (tenantsData?.viewing_requests || []).filter(v => v.status === 'pending')
 
@@ -265,7 +282,7 @@ function LandlordDashboard() {
               <div className="bg-white border border-slate-200 rounded-xl p-6">
                 <h2 className="text-sm font-bold text-slate-700 mb-4">Monthly Revenue (Last 6 Months)</h2>
                 {revenueData.length === 0 ? (
-                  <p className="text-sm text-slate-400 italic">No recorded payments yet. Record a payment from the Tenant Contacts Hub.</p>
+                  <p className="text-sm text-slate-400 italic">No recorded payments yet. Tenants can pay rent through the payment gateway, or record one manually from the Tenant Contacts Hub.</p>
                 ) : (
                   <ResponsiveContainer width="100%" height={260}>
                     <LineChart data={revenueData}>
@@ -276,6 +293,59 @@ function LandlordDashboard() {
                       <Line type="monotone" dataKey="revenue" stroke="#1d4ed8" strokeWidth={2.5} dot={{ r: 4 }} />
                     </LineChart>
                   </ResponsiveContainer>
+                )}
+              </div>
+
+              {/* Payments by Type — bKash / Nagad / Card / Bank / Cash */}
+              <div className="bg-white border border-slate-200 rounded-xl p-6">
+                <h2 className="text-sm font-bold text-slate-700 mb-4">Payments by Type (Last 6 Months)</h2>
+                {methodData.length === 0 ? (
+                  <p className="text-sm text-slate-400 italic">No recorded payments yet.</p>
+                ) : (
+                  <ResponsiveContainer width="100%" height={260}>
+                    <BarChart data={methodData} layout="vertical" margin={{ left: 10 }}>
+                      <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
+                      <XAxis type="number" tick={{ fontSize: 12 }} />
+                      <YAxis type="category" dataKey="method" tick={{ fontSize: 12 }} width={60} />
+                      <Tooltip formatter={v => `৳${Number(v).toLocaleString()}`} />
+                      <Bar dataKey="total" fill="#1d4ed8" radius={[0, 4, 4, 0]} name="Revenue" />
+                    </BarChart>
+                  </ResponsiveContainer>
+                )}
+              </div>
+
+              {/* Revenue Log — individual transactions, most recent first */}
+              <div className="lg:col-span-2 bg-white border border-slate-200 rounded-xl p-6 overflow-x-auto">
+                <h2 className="text-sm font-bold text-slate-700 mb-4">Revenue Log</h2>
+                {revenueLog.length === 0 ? (
+                  <p className="text-sm text-slate-400 italic">No payments recorded yet.</p>
+                ) : (
+                  <table className="w-full min-w-[500px]">
+                    <thead>
+                      <tr className="text-left text-xs text-slate-400 uppercase border-b border-slate-100">
+                        <th className="py-2 pr-4 font-medium">Tenant</th>
+                        <th className="py-2 pr-4 font-medium">Property</th>
+                        <th className="py-2 pr-4 font-medium">Amount</th>
+                        <th className="py-2 pr-4 font-medium">Method</th>
+                        <th className="py-2 font-medium">Date</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {revenueLog.map(r => (
+                        <tr key={r.id} className="border-b border-slate-50 last:border-0">
+                          <td className="py-2.5 pr-4 text-sm font-semibold text-slate-800">{r.tenant_name}</td>
+                          <td className="py-2.5 pr-4 text-sm text-slate-500">{r.listing_title}</td>
+                          <td className="py-2.5 pr-4 text-sm font-semibold text-slate-800">৳{Number(r.amount).toLocaleString()}</td>
+                          <td className="py-2.5 pr-4">
+                            <span className="text-xs font-semibold px-2.5 py-1 rounded-full bg-blue-50 text-blue-700 capitalize">
+                              {METHOD_LABELS[r.payment_method] || r.payment_method || 'Cash'}
+                            </span>
+                          </td>
+                          <td className="py-2.5 text-sm text-slate-400">{new Date(r.created_at).toLocaleDateString()}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
                 )}
               </div>
             </div>

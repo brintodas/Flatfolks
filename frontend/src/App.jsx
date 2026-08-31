@@ -27,12 +27,15 @@ import Messages              from './pages/Messages'
 import AdminDashboard        from './pages/AdminDashboard'
 import LandlordProfileSetup  from './pages/LandlordProfileSetup'
 import PublicLandlordProfile from './pages/PublicLandlordProfile'
-import LandlordDashboard     from './pages/LandlordDashboard'
+import LandlordDashboard     from './pages/Landlorddashboard'
 import LifestyleQuiz         from './pages/LifestyleQuiz'
 import Compare                from './pages/Compare'
 import BillsPage              from './pages/BillsPage'
 import MaintenancePage        from './pages/MaintenancePage'
-import UtilityAssistance from './pages/UtilityAssistance'
+import UtilityAssistance      from './pages/UtilityAssistance'
+import PaymentPage            from './pages/PaymentsPage'
+import PaymentResult          from './pages/PaymentResult'
+import PaymentsPage           from './pages/PaymentsPage'
 
 function ConditionalFooter() {
   const location = useLocation()
@@ -79,6 +82,11 @@ function App() {
           <Route path="/maintenance"        element={<MaintenancePage />} />
           <Route path="/utility-assistance" element={<UtilityAssistance />} />
           <Route path="/lifestyle-quiz"     element={<LifestyleQuiz />} />
+
+          {/* Centralized Payment Gateway — every payable flow routes here */}
+          <Route path="/payment"            element={<PaymentPage />} />
+          <Route path="/payment/result"     element={<PaymentResult />} />
+          <Route path="/payments"           element={<PaymentsPage />} />
           <Route path="/compare"            element={<Compare />} />
 
           <Route path="/messages"           element={<Messages />} />

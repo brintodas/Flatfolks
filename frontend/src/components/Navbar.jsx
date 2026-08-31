@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from 'react'
 import { Link, NavLink, useNavigate } from 'react-router-dom'
+import NotificationsBell from './NotificationsBell'
 
 const Navbar = () => {
   const navigate = useNavigate()
@@ -121,12 +122,14 @@ const Navbar = () => {
       return [
         { to: '/post-listing', icon: 'fa-square-plus', label: 'Post Listing' },
         { to: `/landlord/${currentUser.id}/dashboard`, icon: 'fa-chart-line', label: 'Dashboard' },
+        { to: '/payments', icon: 'fa-money-bill-wave', label: 'Payments' },
         { to: `/landlord/${currentUser.id}`, icon: 'fa-id-card', label: 'My Profile' },
       ]
     }
     if (currentUser.role === 'student') {
       return [
         { to: '/roommate-profile', icon: 'fa-id-card', label: 'My Profile' },
+        { to: '/payments', icon: 'fa-money-bill-wave', label: 'Payments' },
         { to: '/bills', icon: 'fa-receipt', label: 'Shared Bills' },
         { to: '/maintenance', icon: 'fa-wrench', label: 'Maintenance' },
         { to: '/lifestyle-quiz', icon: 'fa-clipboard-list', label: 'Lifestyle Quiz' },
@@ -180,6 +183,13 @@ const Navbar = () => {
             >
               <i className="fa-solid fa-screwdriver-wrench text-xs"></i>
               Maintenance
+            </NavLink>
+            <NavLink 
+              to="/payments" 
+              className={({isActive}) => `flex items-center gap-1.5 px-4 py-2 text-[14px] font-semibold rounded-lg transition-all ${isActive ? 'bg-blue-800 text-white shadow-sm' : 'text-blue-800 hover:text-blue-900 hover:bg-blue-50'}`}
+            >
+              <i className="fa-solid fa-money-bill-wave text-xs"></i>
+              Payments
             </NavLink>
           </div>
 
@@ -311,17 +321,24 @@ const Navbar = () => {
               </div>
             )}
 
-            {/* Notification bell */}
+            {/* Watchlist bell (rent-drop / availability alerts on bookmarked listings) — students only */}
             {currentUser?.role !== 'landlord' && (
-              <NavLink to="/watchlist" title="Notifications"
+              <NavLink to="/watchlist" title="Watchlist alerts"
                 className={({isActive}) => `relative hidden sm:flex items-center justify-center w-10 h-10 rounded-lg transition-all ${isActive ? 'bg-blue-800 text-white shadow-sm' : 'text-blue-800 hover:text-blue-900 hover:bg-blue-50'}`}>
-                <i className="fa-regular fa-bell text-lg"></i>
+                <i className="fa-regular fa-bookmark text-lg"></i>
                 {notificationCount > 0 && (
                   <span className="absolute top-0 right-0 min-w-5 h-5 px-1 flex items-center justify-center bg-red-500 text-white text-xs font-bold rounded-full">
                     {notificationCount}
                   </span>
                 )}
               </NavLink>
+            )}
+
+            {/* General notifications (payments received/sent, etc.) — every logged-in role, polls every 8s */}
+            {currentUser && (
+              <div className="hidden sm:block">
+                <NotificationsBell currentUser={currentUser} />
+              </div>
             )}
 
             {/* Auth area */}
@@ -408,6 +425,9 @@ const Navbar = () => {
           </Link>
           <Link to="/maintenance" className="block px-4 py-2.5 text-sm font-medium text-slate-700 hover:bg-blue-50 hover:text-blue-700 rounded-lg">
             <i className="fa-solid fa-screwdriver-wrench mr-2"></i>Maintenance
+          </Link>
+          <Link to="/payments" className="block px-4 py-2.5 text-sm font-medium text-slate-700 hover:bg-blue-50 hover:text-blue-700 rounded-lg">
+            <i className="fa-solid fa-money-bill-wave mr-2"></i>Payments
           </Link>
 
           <div className="my-2 border-t border-slate-100"></div>

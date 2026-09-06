@@ -151,6 +151,7 @@ const Navbar = () => {
       return [
         { to: '/roommate-profile', icon: 'fa-id-card', label: 'My Profile' },
         { to: '/my-tenancy', icon: 'fa-house-user', label: 'My Tenancy' },
+        { to: '/my-applications', icon: 'fa-file-signature', label: 'My Applications' },
         { to: '/bills', icon: 'fa-receipt', label: 'Shared Bills' },
         { to: '/meal-plans', icon: 'fa-utensils', label: 'Meal Plans' },
         { to: '/maintenance', icon: 'fa-wrench', label: 'Maintenance' },

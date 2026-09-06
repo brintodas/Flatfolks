@@ -20,6 +20,7 @@ import GetStarted      from './pages/GetStarted'
 import StudentSignup   from './pages/StudentSignup'
 import LandlordSignup  from './pages/LandlordSignup'
 import SignIn          from './pages/SignIn'
+import MyApplications  from './pages/MyApplications'
 import RoommateProfile       from './pages/RoommateProfile'
 import RoommatePublicProfile from './pages/RoommatePublicProfile'
 import Roommates             from './pages/Roommates'
@@ -72,6 +73,7 @@ function App() {
           <Route path="/"                  element={<Home />} />
           <Route path="/listings"           element={<Listings />} />
           <Route path="/post-listing"       element={<PostListing />} />
+          <Route path="/my-applications"    element={<MyApplications />} />
           <Route path="/watchlist"          element={<Watchlist />} />
           <Route path="/listings/:id"       element={<ListingDetail />} />
           <Route path="/get-started"        element={<GetStarted />} />

@@ -260,6 +260,24 @@ router.get('/compare', (req, res) => {
   })
 })
 
+// GET /api/listings/applications/student/:id
+router.get('/applications/student/:id', (req, res) => {
+  const studentId = req.params.id
+
+  db.query(
+    `SELECT v.*, l.title AS listing_title, l.location AS listing_location, l.rent, l.photos, l.landlord_id
+     FROM viewing_requests v
+     JOIN listings l ON l.id = v.listing_id
+     WHERE v.student_id = ?
+     ORDER BY v.created_at DESC`,
+    [studentId],
+    (err, rows) => {
+      if (err) return res.status(500).json({ success: false, message: 'Server error.' })
+      res.json({ success: true, applications: rows })
+    }
+  )
+})
+
 // GET /api/listings/:id
 router.get('/:id', (req, res) => {
   db.query('SELECT * FROM listings WHERE id = ?', [req.params.id], (err, results) => {

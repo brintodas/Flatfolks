@@ -1,13 +1,7 @@
 /**
  * routes/notifications.js
- *
  * In-App Notifications API
  * Mounted at: /api/notifications
- *
- * GET    /            — ?user_id=X  List all notifications for a user
- * PATCH  /:id/read    — Mark a single notification as read
- * PATCH  /read-all    — Mark all of a user's notifications as read
- * DELETE /:id         — Delete a notification
  */
 const express = require('express')
 const router  = express.Router()
@@ -25,8 +19,11 @@ router.get('/', async (req, res) => {
     return res.status(400).json({ success: false, message: 'user_id is required.' })
   }
   try {
+    // Attempting to select body, due_date from rent_reminders branch, 
+    // and message, related_type, related_id from payments_schema. 
+    // We'll use SELECT * so it works regardless of which migration ran last.
     const notifications = await query(
-      `SELECT id, type, title, body, is_read, due_date, created_at
+      `SELECT *
        FROM notifications
        WHERE user_id = ?
        ORDER BY created_at DESC
@@ -38,6 +35,32 @@ router.get('/', async (req, res) => {
   } catch (err) {
     console.error('GET /notifications error:', err)
     res.status(500).json({ success: false, message: 'Server error.' })
+  }
+})
+
+// GET /api/notifications/:userId — recent notifications + unread count (From payment-gateway)
+router.get('/:userId', async (req, res) => {
+  const { userId } = req.params
+  const { since } = req.query
+  try {
+    const params = [userId]
+    let sql = `SELECT * FROM notifications WHERE user_id = ?`
+    if (since) {
+      sql += ` AND created_at > ?`
+      params.push(since)
+    }
+    sql += ` ORDER BY created_at DESC LIMIT 50`
+
+    const items = await query(sql, params)
+    const unreadRows = await query(
+      `SELECT COUNT(*) AS unread FROM notifications WHERE user_id = ? AND is_read = 0`,
+      [userId]
+    )
+
+    res.json({ success: true, data: items, unread_count: unreadRows[0].unread })
+  } catch (err) {
+    console.error('Notifications fetch error:', err)
+    res.status(500).json({ success: false, message: 'Server error' })
   }
 })
 
@@ -57,6 +80,19 @@ router.patch('/read-all', async (req, res) => {
   }
 })
 
+// PUT /api/notifications/mark-all-read (From payment-gateway)
+router.put('/mark-all-read', async (req, res) => {
+  const { user_id } = req.body
+  if (!user_id) return res.status(400).json({ success: false, message: 'user_id is required' })
+  try {
+    await query(`UPDATE notifications SET is_read = 1 WHERE user_id = ? AND is_read = 0`, [user_id])
+    res.json({ success: true })
+  } catch (err) {
+    console.error('Mark-all-read error:', err)
+    res.status(500).json({ success: false, message: 'Server error' })
+  }
+})
+
 // ─── PATCH /api/notifications/:id/read ──────────────────────
 router.patch('/:id/read', async (req, res) => {
   const { id } = req.params
@@ -69,6 +105,17 @@ router.patch('/:id/read', async (req, res) => {
   } catch (err) {
     console.error('PATCH /notifications/:id/read error:', err)
     res.status(500).json({ success: false, message: 'Server error.' })
+  }
+})
+
+// PUT /api/notifications/:id/read (From payment-gateway)
+router.put('/:id/read', async (req, res) => {
+  try {
+    await query(`UPDATE notifications SET is_read = 1 WHERE id = ?`, [req.params.id])
+    res.json({ success: true })
+  } catch (err) {
+    console.error('Notification read error:', err)
+    res.status(500).json({ success: false, message: 'Server error' })
   }
 })
 

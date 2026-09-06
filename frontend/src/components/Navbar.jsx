@@ -439,6 +439,13 @@ const Navbar = () => {
               </div>
             )}
 
+                        {/* General notifications (payments received/sent, etc.) — every logged-in role, polls every 8s */}
+            {currentUser && (
+              <div className="hidden sm:block">
+                <NotificationsBell currentUser={currentUser} />
+              </div>
+            )}
+
             {/* Auth area */}
             {currentUser ? (
               <div className="relative" ref={menuRef}>

@@ -327,18 +327,51 @@ router.get('/:id/dashboard', (req, res) => {
         (err2, revenueRows) => {
           if (err2) return res.json({ success: false, message: 'DB error' })
 
-          res.json({
-            success: true,
-            data: {
-              total_units: totalUnits,
-              occupied_units: occupiedUnits,
-              vacant_units: vacantUnits,
-              occupancy_rate: totalUnits ? Math.round((occupiedUnits / totalUnits) * 100) : 0,
-              occupancy_by_property: Object.values(groups),
-              revenue_by_month: revenueRows,
-              listings: listings.map(l => ({ ...l, occupied: l.occupied > 0 }))
+          // revenue for the last 6 months, broken down by *how* it was paid
+          // (bkash / nagad / card / bank from the gateway, or 'cash' for
+          // payments the landlord recorded manually) — feeds the
+          // "Payments by Type" chart
+          db.query(
+            `SELECT COALESCE(payment_method, 'cash') AS payment_method, SUM(amount) AS total
+             FROM rent_payments
+             WHERE landlord_id = ? AND payment_month >= DATE_SUB(CURDATE(), INTERVAL 6 MONTH)
+             GROUP BY COALESCE(payment_method, 'cash') ORDER BY total DESC`,
+            [landlordId],
+            (err3, methodRows) => {
+              if (err3) return res.json({ success: false, message: 'DB error' })
+
+              // revenue log — individual transactions, most recent first
+              db.query(
+                `SELECT rp.id, rp.amount, rp.payment_method, rp.payment_month, rp.created_at,
+                        t.tenant_name, l.title AS listing_title
+                 FROM rent_payments rp
+                 JOIN tenancies t ON t.id = rp.tenancy_id
+                 JOIN listings l ON l.id = t.listing_id
+                 WHERE rp.landlord_id = ?
+                 ORDER BY rp.created_at DESC
+                 LIMIT 25`,
+                [landlordId],
+                (err4, logRows) => {
+                  if (err4) return res.json({ success: false, message: 'DB error' })
+
+                  res.json({
+                    success: true,
+                    data: {
+                      total_units: totalUnits,
+                      occupied_units: occupiedUnits,
+                      vacant_units: vacantUnits,
+                      occupancy_rate: totalUnits ? Math.round((occupiedUnits / totalUnits) * 100) : 0,
+                      occupancy_by_property: Object.values(groups),
+                      revenue_by_month: revenueRows,
+                      revenue_by_method: methodRows,
+                      revenue_log: logRows,
+                      listings: listings.map(l => ({ ...l, occupied: l.occupied > 0 }))
+                    }
+                  })
+                }
+              )
             }
-          })
+          )
         }
       )
     }
@@ -380,18 +413,61 @@ router.get('/:id/tenants', (req, res) => {
 })
 
 // POST /api/landlord/tenancies — move a tenant into a unit (marks it occupied)
-router.post('/tenancies', (req, res) => {
-  const { listing_id, landlord_id, tenant_name, tenant_phone, rent_amount, start_date } = req.body
+router.post('/tenancies', async (req, res) => {
+  const { listing_id, landlord_id, tenant_name, tenant_phone, tenant_user_id, rent_amount, start_date } = req.body
   if (!listing_id || !landlord_id || !tenant_name || !rent_amount || !start_date) {
     return res.json({ success: false, message: 'Missing required fields' })
   }
+
+  // if the landlord didn't explicitly pick the student's account, try to
+  // find one automatically by phone so the student can find "my rent"
+  // later without needing to self-link
+  let resolvedUserId = tenant_user_id || null
+  if (!resolvedUserId && tenant_phone) {
+    try {
+      const matches = await q(`SELECT id FROM users WHERE phone = ? AND role = 'student' LIMIT 1`, [tenant_phone])
+      if (matches.length > 0) resolvedUserId = matches[0].id
+    } catch (e) { /* best-effort, not fatal */ }
+  }
+
   db.query(
-    `INSERT INTO tenancies (listing_id, landlord_id, tenant_name, tenant_phone, rent_amount, start_date)
-     VALUES (?, ?, ?, ?, ?, ?)`,
-    [listing_id, landlord_id, tenant_name, tenant_phone || null, rent_amount, start_date],
+    `INSERT INTO tenancies (listing_id, landlord_id, tenant_name, tenant_phone, tenant_user_id, rent_amount, start_date)
+     VALUES (?, ?, ?, ?, ?, ?, ?)`,
+    [listing_id, landlord_id, tenant_name, tenant_phone || null, resolvedUserId, rent_amount, start_date],
     (err, result) => {
       if (err) { console.log('Tenancy error:', err); return res.json({ success: false, message: 'DB error' }) }
       res.json({ success: true, message: 'Tenant added', id: result.insertId })
+    }
+  )
+})
+
+// PUT /api/landlord/tenancies/:id/link-student — self-service link, for when
+// the automatic phone match on creation didn't find the student's account
+// (e.g. they registered with a different number than the landlord has on file)
+router.put('/tenancies/:id/link-student', (req, res) => {
+  const { user_id } = req.body
+  if (!user_id) return res.json({ success: false, message: 'user_id is required' })
+  db.query(`UPDATE tenancies SET tenant_user_id = ? WHERE id = ?`, [user_id, req.params.id], (err) => {
+    if (err) return res.json({ success: false, message: 'DB error' })
+    res.json({ success: true, message: 'Tenancy linked to your account' })
+  })
+})
+
+// GET /api/landlord/tenancies/mine/:userId — the "what do I owe" lookup a
+// logged-in student uses to find their own active rent to pay. Powers the
+// "Pay Rent" card on the student Payments page.
+router.get('/tenancies/mine/:userId', (req, res) => {
+  db.query(
+    `SELECT t.id, t.rent_amount, t.landlord_id, t.start_date,
+            l.id AS listing_id, l.title AS listing_title
+     FROM tenancies t
+     JOIN listings l ON l.id = t.listing_id
+     WHERE t.tenant_user_id = ? AND t.status = 'active'
+     ORDER BY t.start_date DESC`,
+    [req.params.userId],
+    (err, rows) => {
+      if (err) return res.json({ success: false, message: 'DB error' })
+      res.json({ success: true, data: rows })
     }
   )
 })
@@ -409,14 +485,17 @@ router.put('/tenancies/:id/end', (req, res) => {
 })
 
 // POST /api/landlord/tenancies/:id/payment — record a rent payment (feeds the revenue graph)
+// Used for payments collected outside the gateway (e.g. handed over in cash).
+// Payments made through the gateway are recorded automatically by
+// routes/payments.js and don't go through here.
 router.post('/tenancies/:id/payment', (req, res) => {
-  const { landlord_id, amount, payment_month } = req.body
+  const { landlord_id, amount, payment_month, payment_method } = req.body
   if (!landlord_id || !amount || !payment_month) {
     return res.json({ success: false, message: 'Missing required fields' })
   }
   db.query(
-    `INSERT INTO rent_payments (tenancy_id, landlord_id, amount, payment_month) VALUES (?, ?, ?, ?)`,
-    [req.params.id, landlord_id, amount, payment_month],
+    `INSERT INTO rent_payments (tenancy_id, landlord_id, amount, payment_method, payment_month) VALUES (?, ?, ?, ?, ?)`,
+    [req.params.id, landlord_id, amount, payment_method || 'cash', payment_month],
     (err) => {
       if (err) return res.json({ success: false, message: 'DB error' })
       res.json({ success: true, message: 'Payment recorded' })

@@ -127,9 +127,16 @@ router.post('/bookings', async (req, res) => {
       problem_description || null,
     ])
 
+    // include the service's estimated cost so the frontend can drop straight
+    // into the payment gateway: /payment?service_type=maintenance&reference_id=<booking_id>&amount=<estimated_cost>
+    const serviceRows = await query('SELECT estimated_cost, name FROM services WHERE id = ?', [service_id])
+    const service = serviceRows[0] || {}
+
     res.status(201).json({
       success: true,
       booking_id: result.insertId,
+      estimated_cost: service.estimated_cost,
+      service_name: service.name,
       message: 'Technician booked successfully. Shared with all flatmates!',
     })
   } catch (err) {

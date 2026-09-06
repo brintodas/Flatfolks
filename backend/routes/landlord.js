@@ -604,7 +604,7 @@ router.put('/viewing-requests/:id/approve', async (req, res) => {
        VALUES (?, 'system', ?, ?)`,
       [
         vr.student_id,
-        '🎉 Application Approved!',
+        'Application Approved!',
         `Congratulations! Your application for "${vr.listing_title}" has been approved. You can now view your tenancy and pay rent from your dashboard.`
       ]
     ).catch(() => {}) // notification failure must not block the main flow

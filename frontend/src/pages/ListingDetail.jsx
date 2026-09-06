@@ -617,7 +617,7 @@ function ListingDetail() {
                               application.status === 'approved' ? 'fa-circle-check' : 'fa-circle-xmark'
                             }`} />
                             {application.status === 'pending'  ? 'Application Pending…' :
-                             application.status === 'approved' ? 'Application Approved! 🎉' :
+                             application.status === 'approved' ? 'Application Approved!' :
                              'Application Declined'}
                           </div>
                           {application.status === 'declined' && application.decline_reason && (

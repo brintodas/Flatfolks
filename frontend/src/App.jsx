@@ -35,10 +35,9 @@ import MealPlansPage          from './pages/MealPlansPage'
 import MealPlanDetail         from './pages/MealPlanDetail'
 import MaintenancePage        from './pages/MaintenancePage'
 import UtilityAssistance      from './pages/UtilityAssistance'
-import PaymentPage            from './pages/PaymentsPage'
 import PaymentResult          from './pages/PaymentResult'
 import PaymentsPage           from './pages/PaymentsPage'
-import RentReminder from './pages/RentReminder'
+import RentReminder           from './pages/RentReminder'
 import MyTenancy              from './pages/MyTenancy'
 
 function ConditionalFooter() {
@@ -92,7 +91,7 @@ function App() {
           <Route path="/lifestyle-quiz"     element={<LifestyleQuiz />} />
 
           {/* Centralized Payment Gateway — every payable flow routes here */}
-          <Route path="/payment"            element={<PaymentPage />} />
+          <Route path="/payment"            element={<PaymentsPage />} />
           <Route path="/payment/result"     element={<PaymentResult />} />
           <Route path="/payments"           element={<PaymentsPage />} />
           <Route path="/compare"            element={<Compare />} />

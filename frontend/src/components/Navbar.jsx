@@ -1,6 +1,5 @@
 import { useState, useEffect, useRef } from 'react'
 import { Link, NavLink, useNavigate } from 'react-router-dom'
-import NotificationsBell from './NotificationsBell'
 
 const Navbar = () => {
   const navigate = useNavigate()
@@ -12,6 +11,9 @@ const Navbar = () => {
   const [roommateRequests, setRoommateRequests]     = useState([])    // pending received invites
   const [reqDropdownOpen, setReqDropdownOpen]       = useState(false)
   const [respondingId, setRespondingId]             = useState(null)
+  const [rentNotifOpen, setRentNotifOpen]           = useState(false)
+  const [rentNotifications, setRentNotifications]   = useState([])
+  const [rentUnreadCount, setRentUnreadCount]       = useState(0)
   const [currentUser, setCurrentUser]     = useState(() =>
     JSON.parse(localStorage.getItem('ff_user') || 'null')
   )
@@ -85,6 +87,25 @@ const Navbar = () => {
     return () => clearInterval(t)
   }, [currentUser?.id])
 
+  // ── Poll for rent reminder notifications (students only) ────────────────────
+  useEffect(() => {
+    if (!currentUser || currentUser.role !== 'student') return
+    const loadNotifs = () => {
+      fetch(`http://localhost:8000/api/notifications?user_id=${currentUser.id}`)
+        .then(r => r.json())
+        .then(data => {
+          if (data.success) {
+            setRentNotifications(data.data)
+            setRentUnreadCount(data.unreadCount || 0)
+          }
+        })
+        .catch(() => {})
+    }
+    loadNotifs()
+    const t = setInterval(loadNotifs, 60_000) // refresh every 60 s
+    return () => clearInterval(t)
+  }, [currentUser?.id])
+
   async function respondToRequest(inviteId, action) {
     setRespondingId(inviteId)
     try {
@@ -122,16 +143,16 @@ const Navbar = () => {
       return [
         { to: '/post-listing', icon: 'fa-square-plus', label: 'Post Listing' },
         { to: `/landlord/${currentUser.id}/dashboard`, icon: 'fa-chart-line', label: 'Dashboard' },
-        { to: '/payments', icon: 'fa-money-bill-wave', label: 'Payments' },
         { to: `/landlord/${currentUser.id}`, icon: 'fa-id-card', label: 'My Profile' },
       ]
     }
     if (currentUser.role === 'student') {
       return [
         { to: '/roommate-profile', icon: 'fa-id-card', label: 'My Profile' },
-        { to: '/payments', icon: 'fa-money-bill-wave', label: 'Payments' },
         { to: '/bills', icon: 'fa-receipt', label: 'Shared Bills' },
+        { to: '/meal-plans', icon: 'fa-utensils', label: 'Meal Plans' },
         { to: '/maintenance', icon: 'fa-wrench', label: 'Maintenance' },
+        { to: '/rent-reminder', icon: 'fa-calendar-check', label: 'Rent Reminder' },
         { to: '/lifestyle-quiz', icon: 'fa-clipboard-list', label: 'Lifestyle Quiz' },
       ]
     }
@@ -184,13 +205,6 @@ const Navbar = () => {
               <i className="fa-solid fa-screwdriver-wrench text-xs"></i>
               Maintenance
             </NavLink>
-            <NavLink 
-              to="/payments" 
-              className={({isActive}) => `flex items-center gap-1.5 px-4 py-2 text-[14px] font-semibold rounded-lg transition-all ${isActive ? 'bg-blue-800 text-white shadow-sm' : 'text-blue-800 hover:text-blue-900 hover:bg-blue-50'}`}
-            >
-              <i className="fa-solid fa-money-bill-wave text-xs"></i>
-              Payments
-            </NavLink>
           </div>
 
           {/* Right side */}
@@ -205,7 +219,7 @@ const Navbar = () => {
 
             {/* Messages */}
             <NavLink to="/messages" title="Messages"
-              className={({isActive}) => `relative hidden sm:flex items-center justify-center w-10 h-10 rounded-lg transition-all ${isActive ? 'bg-blue-800 text-white shadow-sm' : 'text-blue-800 hover:text-blue-900 hover:bg-blue-50'}`}>
+              className={({isActive}) => `relative flex items-center justify-center w-10 h-10 rounded-lg transition-all ${isActive ? 'bg-blue-800 text-white shadow-sm' : 'text-blue-800 hover:text-blue-900 hover:bg-blue-50'}`}>
               <i className="fa-regular fa-message text-lg"></i>
               {unreadMessageCount > 0 && (
                 <span className="absolute top-0 right-0 min-w-5 h-5 px-1 flex items-center justify-center bg-red-500 text-white text-xs font-bold rounded-full">
@@ -216,7 +230,7 @@ const Navbar = () => {
 
             {/* ── Roommate Requests (students only) ── */}
             {currentUser?.role === 'student' && (
-              <div className="relative hidden sm:block">
+              <div className="relative">
                 <button
                   onClick={() => setReqDropdownOpen(o => !o)}
                   title="Roommate Requests"
@@ -321,20 +335,111 @@ const Navbar = () => {
               </div>
             )}
 
-            {/* Watchlist bell (rent-drop / availability alerts on bookmarked listings) — students only */}
-            {currentUser?.role !== 'landlord' && (
-              <NavLink to="/watchlist" title="Watchlist alerts"
-                className={({isActive}) => `relative hidden sm:flex items-center justify-center w-10 h-10 rounded-lg transition-all ${isActive ? 'bg-blue-800 text-white shadow-sm' : 'text-blue-800 hover:text-blue-900 hover:bg-blue-50'}`}>
-                <i className="fa-regular fa-bookmark text-lg"></i>
-                {notificationCount > 0 && (
-                  <span className="absolute top-0 right-0 min-w-5 h-5 px-1 flex items-center justify-center bg-red-500 text-white text-xs font-bold rounded-full">
-                    {notificationCount}
-                  </span>
+            {/* ── Rent Reminder Notification Bell (students only) ── */}
+            {currentUser?.role === 'student' && (
+              <div className="relative">
+                <button
+                  onClick={() => setRentNotifOpen(o => !o)}
+                  title="Rent Reminders"
+                  className={`relative flex items-center justify-center w-10 h-10 rounded-lg transition-all ${
+                    rentNotifOpen ? 'bg-blue-800 text-white shadow-sm' : 'text-blue-800 hover:text-blue-900 hover:bg-blue-50'
+                  }`}
+                >
+                  <i className="fa-regular fa-bell text-lg" />
+                  {rentUnreadCount > 0 && (
+                    <span className="absolute top-0 right-0 min-w-5 h-5 px-1 flex items-center justify-center bg-red-500 text-white text-xs font-bold rounded-full">
+                      {rentUnreadCount}
+                    </span>
+                  )}
+                </button>
+
+                {rentNotifOpen && (
+                  <>
+                    <div className="fixed inset-0 z-40" onClick={() => setRentNotifOpen(false)} />
+                    <div className="absolute right-0 top-12 z-50 w-80 bg-white rounded-2xl shadow-2xl border border-slate-100 overflow-hidden">
+                      {/* Header */}
+                      <div className="px-4 py-3 border-b border-slate-100 flex items-center justify-between">
+                        <h3 className="text-sm font-bold text-slate-800">
+                          <i className="fa-solid fa-bell text-amber-500 mr-2" />
+                          Rent Reminders
+                        </h3>
+                        {rentUnreadCount > 0 && (
+                          <button
+                            className="text-xs text-blue-600 hover:underline font-semibold"
+                            onClick={() => {
+                              fetch('http://localhost:8000/api/notifications/read-all', {
+                                method: 'PATCH',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({ user_id: currentUser.id }),
+                              }).then(() => {
+                                setRentNotifications(prev => prev.map(n => ({ ...n, is_read: 1 })))
+                                setRentUnreadCount(0)
+                              }).catch(() => {})
+                            }}
+                          >
+                            Mark all read
+                          </button>
+                        )}
+                      </div>
+
+                      {/* Notification list */}
+                      <div className="max-h-80 overflow-y-auto divide-y divide-slate-50">
+                        {rentNotifications.length === 0 ? (
+                          <div className="px-4 py-8 text-center">
+                            <i className="fa-regular fa-bell-slash text-slate-200 text-3xl mb-3" />
+                            <p className="text-sm font-medium text-slate-400">No reminders yet</p>
+                            <p className="text-xs text-slate-300 mt-1">Set your rent due date to receive reminders.</p>
+                          </div>
+                        ) : (
+                          rentNotifications.slice(0, 8).map(n => (
+                            <div
+                              key={n.id}
+                              className={`px-4 py-3 flex items-start gap-3 ${n.is_read ? '' : 'bg-blue-50'}`}
+                            >
+                              <div className={`mt-1 w-2 h-2 rounded-full shrink-0 ${n.is_read ? 'bg-slate-200' : 'bg-blue-500'}`} />
+                              <div className="flex-1 min-w-0">
+                                <p className={`text-xs font-semibold ${n.is_read ? 'text-slate-600' : 'text-slate-900'}`}>{n.title}</p>
+                                <p className="text-[11px] text-slate-500 mt-0.5 leading-snug line-clamp-2">{n.body}</p>
+                                <p className="text-[10px] text-slate-400 mt-1">
+                                  {new Date(n.created_at).toLocaleDateString('en-BD', { day: 'numeric', month: 'short' })}
+                                </p>
+                              </div>
+                              {!n.is_read && (
+                                <button
+                                  onClick={() => {
+                                    fetch(`http://localhost:8000/api/notifications/${n.id}/read`, { method: 'PATCH' })
+                                      .then(() => {
+                                        setRentNotifications(prev => prev.map(x => x.id === n.id ? { ...x, is_read: 1 } : x))
+                                        setRentUnreadCount(c => Math.max(0, c - 1))
+                                      }).catch(() => {})
+                                  }}
+                                  className="text-[10px] text-blue-600 hover:underline font-semibold shrink-0"
+                                >
+                                  Read
+                                </button>
+                              )}
+                            </div>
+                          ))
+                        )}
+                      </div>
+
+                      {/* Footer */}
+                      <div className="px-4 py-2.5 border-t border-slate-100 bg-slate-50">
+                        <Link
+                          to="/rent-reminder"
+                          onClick={() => setRentNotifOpen(false)}
+                          className="block text-center text-xs text-blue-700 hover:underline font-medium"
+                        >
+                          Manage rent reminder settings →
+                        </Link>
+                      </div>
+                    </div>
+                  </>
                 )}
-              </NavLink>
+              </div>
             )}
 
-            {/* General notifications (payments received/sent, etc.) — every logged-in role, polls every 8s */}
+                        {/* General notifications (payments received/sent, etc.) — every logged-in role, polls every 8s */}
             {currentUser && (
               <div className="hidden sm:block">
                 <NotificationsBell currentUser={currentUser} />
@@ -425,9 +530,6 @@ const Navbar = () => {
           </Link>
           <Link to="/maintenance" className="block px-4 py-2.5 text-sm font-medium text-slate-700 hover:bg-blue-50 hover:text-blue-700 rounded-lg">
             <i className="fa-solid fa-screwdriver-wrench mr-2"></i>Maintenance
-          </Link>
-          <Link to="/payments" className="block px-4 py-2.5 text-sm font-medium text-slate-700 hover:bg-blue-50 hover:text-blue-700 rounded-lg">
-            <i className="fa-solid fa-money-bill-wave mr-2"></i>Payments
           </Link>
 
           <div className="my-2 border-t border-slate-100"></div>

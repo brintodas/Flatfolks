@@ -16,7 +16,6 @@ function ListingDetail() {
   const [userGroup, setUserGroup] = useState(null)
   const [bookingMode, setBookingMode] = useState(() => sessionStorage.getItem('ff_search_mode') || 'group')
 
- 
 
   useEffect(() => {
     if (!currentUser || currentUser.role !== 'student') return

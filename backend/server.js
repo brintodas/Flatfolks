@@ -36,9 +36,11 @@ const roommatesRoute = require('./routes/roommates')
 const quizRoute      = require('./routes/quiz')
 const reviewsRoute = require('./routes/reviews')
 const billsRoute     = require('./routes/bills')
+const mealsRoute     = require('./routes/meals')
 const maintenanceRoute = require('./routes/maintenance')
 const utilityAssistanceRoute = require('./routes/utilityAssistance')
 const paymentsRoute = require('./routes/payments')
+const remindersRoute = require('./routes/reminders')
 const notificationsRoute = require('./routes/notifications')
 app.use('/api/listings',  listingsRoute)
 app.use('/api/bookmarks', bookmarksRoute)
@@ -52,11 +54,16 @@ app.use('/api/roommates', roommatesRoute)
 app.use('/api/quiz',      quizRoute)
 app.use('/api/reviews', reviewsRoute)
 app.use('/api/bills',     billsRoute)
+app.use('/api/meals',     mealsRoute)
 app.use('/api/maintenance', maintenanceRoute)
 app.use('/api/utility-assistance', utilityAssistanceRoute)
 app.use('/api/payments', paymentsRoute)
-app.use('/api/notifications', notificationsRoute)
+app.use('/api/reminders', remindersRoute)
 
+// Start the daily rent reminder cron job
+require('./cron/rentReminderJob')
+
+app.use('/api/notifications', notificationsRoute)
 app.get('/', (req, res) => {
   res.send('Flatfolks API is running')
 })
@@ -64,4 +71,3 @@ app.get('/', (req, res) => {
 const PORT = process.env.PORT || 8000
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`)
-})

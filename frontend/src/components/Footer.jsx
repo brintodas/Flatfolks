@@ -23,6 +23,21 @@ const Footer = () => {
             <p className="text-sm leading-relaxed mb-6 text-blue-400">
               Bangladesh's trusted student housing and roommate finder. Verified listings. Smart matching. Secure platform.
             </p>
+
+            <div className="mb-6 p-4 bg-blue-900/50 rounded-xl border border-blue-800">
+              <h4 className="text-white font-bold text-sm mb-2">Need help or support? Contact us</h4>
+              <div className="flex flex-col gap-2 text-sm">
+                <a href="mailto:admin@flatfolks.com" className="flex items-center gap-2 hover:text-white transition-colors">
+                  <i className="fa-solid fa-envelope text-blue-400 w-4"></i>
+                  admin@flatfolks.com
+                </a>
+                <a href="tel:+8801234567890" className="flex items-center gap-2 hover:text-white transition-colors">
+                  <i className="fa-solid fa-phone text-blue-400 w-4"></i>
+                  +880 1234-567890
+                </a>
+              </div>
+            </div>
+
             <div className="flex gap-3">
               {[
                 { icon: 'fa-facebook-f', href: '#' },

@@ -18,7 +18,7 @@ const NotificationsBell = ({ currentUser }) => {
   useEffect(() => {
     if (!currentUser?.id) return
     const load = () => {
-      fetch(`http://localhost:8000/api/notifications/${currentUser.id}`)
+      fetch(`http://localhost:8000/api/notifications/${currentUser.id}?type=system`)
         .then((r) => r.json())
         .then((data) => {
           if (data.success) {

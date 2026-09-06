@@ -92,7 +92,7 @@ const Navbar = () => {
   useEffect(() => {
     if (!currentUser || currentUser.role !== 'student') return
     const loadNotifs = () => {
-      fetch(`http://localhost:8000/api/notifications?user_id=${currentUser.id}`)
+      fetch(`http://localhost:8000/api/notifications?user_id=${currentUser.id}&type=rent_reminder`)
         .then(r => r.json())
         .then(data => {
           if (data.success) {

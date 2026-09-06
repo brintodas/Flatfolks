@@ -12,24 +12,30 @@ const query = (sql, params = []) =>
     db.query(sql, params, (err, rows) => (err ? reject(err) : resolve(rows)))
   )
 
-// ─── GET /api/notifications?user_id=X ───────────────────────
+// ─── GET /api/notifications?user_id=X&type=Y ───────────────────────
 router.get('/', async (req, res) => {
-  const { user_id } = req.query
+  const { user_id, type } = req.query
   if (!user_id) {
     return res.status(400).json({ success: false, message: 'user_id is required.' })
   }
   try {
-    // Attempting to select body, due_date from rent_reminders branch, 
-    // and message, related_type, related_id from payments_schema. 
-    // We'll use SELECT * so it works regardless of which migration ran last.
-    const notifications = await query(
-      `SELECT *
-       FROM notifications
-       WHERE user_id = ?
-       ORDER BY created_at DESC
-       LIMIT 30`,
-      [user_id]
-    )
+    let sql = `SELECT * FROM notifications WHERE user_id = ?`
+    const params = [user_id]
+    
+    if (type) {
+      if (type === 'rent_reminder') {
+        sql += ` AND type LIKE 'rent_reminder%'`
+      } else if (type === 'system') {
+        sql += ` AND type NOT LIKE 'rent_reminder%'`
+      } else {
+        sql += ` AND type = ?`
+        params.push(type)
+      }
+    }
+    
+    sql += ` ORDER BY created_at DESC LIMIT 30`
+    
+    const notifications = await query(sql, params)
     const unreadCount = notifications.filter(n => !n.is_read).length
     res.json({ success: true, unreadCount, data: notifications })
   } catch (err) {
@@ -41,10 +47,22 @@ router.get('/', async (req, res) => {
 // GET /api/notifications/:userId — recent notifications + unread count (From payment-gateway)
 router.get('/:userId', async (req, res) => {
   const { userId } = req.params
-  const { since } = req.query
+  const { since, type } = req.query
   try {
     const params = [userId]
     let sql = `SELECT * FROM notifications WHERE user_id = ?`
+    
+    if (type) {
+      if (type === 'rent_reminder') {
+        sql += ` AND type LIKE 'rent_reminder%'`
+      } else if (type === 'system') {
+        sql += ` AND type NOT LIKE 'rent_reminder%'`
+      } else {
+        sql += ` AND type = ?`
+        params.push(type)
+      }
+    }
+    
     if (since) {
       sql += ` AND created_at > ?`
       params.push(since)
@@ -52,10 +70,21 @@ router.get('/:userId', async (req, res) => {
     sql += ` ORDER BY created_at DESC LIMIT 50`
 
     const items = await query(sql, params)
-    const unreadRows = await query(
-      `SELECT COUNT(*) AS unread FROM notifications WHERE user_id = ? AND is_read = 0`,
-      [userId]
-    )
+    
+    let unreadSql = `SELECT COUNT(*) AS unread FROM notifications WHERE user_id = ? AND is_read = 0`
+    const unreadParams = [userId]
+    if (type) {
+      if (type === 'rent_reminder') {
+        unreadSql += ` AND type LIKE 'rent_reminder%'`
+      } else if (type === 'system') {
+        unreadSql += ` AND type NOT LIKE 'rent_reminder%'`
+      } else {
+        unreadSql += ` AND type = ?`
+        unreadParams.push(type)
+      }
+    }
+    
+    const unreadRows = await query(unreadSql, unreadParams)
 
     res.json({ success: true, data: items, unread_count: unreadRows[0].unread })
   } catch (err) {

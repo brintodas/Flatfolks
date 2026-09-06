@@ -458,7 +458,7 @@ function LandlordDashboard() {
                 <div className="space-y-3">
                   {tenantsData.viewing_requests.map(v => (
                     <div key={v.id} className="border border-slate-100 rounded-xl p-4">
-                      <div className="flex items-start justify-between mb-1 gap-2">
+                      <div className="flex items-start justify-between mb-3 gap-2">
                         <div>
                           <p className="text-sm font-bold text-slate-800">{v.student_name}</p>
                           <p className="text-xs text-slate-400">{v.listing_title}</p>
@@ -469,16 +469,62 @@ function LandlordDashboard() {
                           'bg-red-50 text-red-600 border border-red-200'
                         }`}>{v.status}</span>
                       </div>
-                      {v.move_in_date && (
-                        <p className="text-xs text-slate-500 mb-1">
-                          <i className="fa-regular fa-calendar mr-1" />
-                          Move-in: {new Date(v.move_in_date).toLocaleDateString('en-BD', { day: 'numeric', month: 'long', year: 'numeric' })}
-                        </p>
+                      
+                      <div className="grid grid-cols-2 gap-x-2 gap-y-3 mb-3">
+                        {v.move_in_date && (
+                          <div className="col-span-2 sm:col-span-1">
+                            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wide">Move-In Date</p>
+                            <p className="text-xs font-semibold text-slate-700">{new Date(v.move_in_date).toLocaleDateString('en-BD', { day: 'numeric', month: 'long', year: 'numeric' })}</p>
+                          </div>
+                        )}
+                        {v.expected_duration && (
+                          <div className="col-span-2 sm:col-span-1">
+                            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wide">Expected Lease</p>
+                            <p className="text-xs font-semibold text-slate-700 capitalize">{v.expected_duration}</p>
+                          </div>
+                        )}
+                        {v.guarantor_name && (
+                          <div className="col-span-2 sm:col-span-1">
+                            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wide">Guarantor</p>
+                            <p className="text-xs text-slate-600">{v.guarantor_name} <br/><span className="text-slate-400">{v.guarantor_phone}</span></p>
+                          </div>
+                        )}
+                        {v.emergency_contact_name && (
+                          <div className="col-span-2 sm:col-span-1">
+                            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wide">Emergency Contact</p>
+                            <p className="text-xs text-slate-600">{v.emergency_contact_name} <br/><span className="text-slate-400">{v.emergency_contact_phone}</span></p>
+                          </div>
+                        )}
+                        {v.rent_payer && (
+                          <div className="col-span-2">
+                            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wide">Who pays rent?</p>
+                            <p className="text-xs text-slate-600 capitalize">{v.rent_payer}</p>
+                          </div>
+                        )}
+                      </div>
+
+                      {v.id_document && (
+                        <div className="mb-3">
+                          <a href={`http://localhost:8000/uploads/${v.id_document}`} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1.5 text-xs font-semibold text-blue-600 hover:underline">
+                            <i className="fa-solid fa-file-pdf"></i> View Uploaded ID Document
+                          </a>
+                        </div>
                       )}
-                      {v.notes && <p className="text-xs text-slate-500 italic mb-2">"{v.notes}"</p>}
-                      {v.message && !v.notes && <p className="text-xs text-slate-500 italic mb-2">"{v.message}"</p>}
+
+                      {v.notes && (
+                        <div className="bg-slate-50 p-2.5 rounded-lg mb-2">
+                          <p className="text-xs text-slate-600 italic">"{v.notes}"</p>
+                        </div>
+                      )}
+                      
+                      {v.message && !v.notes && (
+                        <div className="bg-slate-50 p-2.5 rounded-lg mb-2">
+                          <p className="text-xs text-slate-600 italic">"{v.message}"</p>
+                        </div>
+                      )}
+
                       {v.status === 'pending' && (
-                        <div className="flex gap-2 mt-3">
+                        <div className="flex gap-2 mt-4">
                           <button
                             onClick={() => openApproveModal(v)}
                             className="flex-1 text-xs font-bold py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg transition-colors"

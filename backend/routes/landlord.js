@@ -395,7 +395,11 @@ router.get('/:id/tenants', (req, res) => {
 
       db.query(
         `SELECT v.id, v.requested_date, v.message, v.status, v.created_at,
-                l.id AS listing_id, l.title AS listing_title,
+                v.move_in_date, v.notes, v.guarantor_name, v.guarantor_phone,
+                v.guarantor_relation, v.rent_payer, v.expected_duration,
+                v.emergency_contact_name, v.emergency_contact_phone,
+                v.agreed_to_rules, v.id_document,
+                l.id AS listing_id, l.title AS listing_title, l.rent AS listing_rent,
                 u.id AS student_id, u.full_name AS student_name, u.phone AS student_phone
          FROM viewing_requests v
          JOIN listings l ON l.id = v.listing_id

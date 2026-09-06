@@ -348,7 +348,7 @@ const Navbar = () => {
                     rentNotifOpen ? 'bg-blue-800 text-white shadow-sm' : 'text-blue-800 hover:text-blue-900 hover:bg-blue-50'
                   }`}
                 >
-                  <i className="fa-regular fa-bell text-lg" />
+                  <i className="fa-regular fa-calendar-check text-lg" />
                   {rentUnreadCount > 0 && (
                     <span className="absolute top-0 right-0 min-w-5 h-5 px-1 flex items-center justify-center bg-red-500 text-white text-xs font-bold rounded-full">
                       {rentUnreadCount}

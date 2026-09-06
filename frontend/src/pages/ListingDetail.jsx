@@ -16,6 +16,23 @@ function ListingDetail() {
   const [userGroup, setUserGroup] = useState(null)
   const [bookingMode, setBookingMode] = useState(() => sessionStorage.getItem('ff_search_mode') || 'group')
 
+  // ── Application state ──
+  const [application, setApplication]         = useState(null)  // null = not applied, obj = applied
+  const [appLoading, setAppLoading]            = useState(false)
+  const [showApplyModal, setShowApplyModal]    = useState(false)
+  const [applyMoveIn, setApplyMoveIn]          = useState('')
+  const [applyNotes, setApplyNotes]            = useState('')
+  const [guarantorName, setGuarantorName]      = useState('')
+  const [guarantorPhone, setGuarantorPhone]    = useState('')
+  const [guarantorRelation, setGuarantorRel]   = useState('')
+  const [rentPayer, setRentPayer]              = useState('self')
+  const [expectedDuration, setExpectedDuration]= useState('6 months')
+  const [emergencyName, setEmergencyName]      = useState('')
+  const [emergencyPhone, setEmergencyPhone]    = useState('')
+  const [idDoc, setIdDoc]                      = useState(null)
+  const [agreeRules, setAgreeRules]            = useState(false)
+  const [applySubmitting, setApplySubmitting]  = useState(false)
+  const [applyToast, setApplyToast]            = useState(null)
 
   useEffect(() => {
     if (!currentUser || currentUser.role !== 'student') return
@@ -52,6 +69,58 @@ function ListingDetail() {
         setVerifiedReports([])
       })
  }, [id])
+
+  // ── Check if student already applied ──
+  useEffect(() => {
+    if (!currentUser?.id || currentUser.role !== 'student') return
+    setAppLoading(true)
+    fetch(`http://localhost:8000/api/listings/${id}/my-application?user_id=${currentUser.id}`)
+      .then(r => r.json())
+      .then(data => { if (data.success) setApplication(data.application) })
+      .catch(() => {})
+      .finally(() => setAppLoading(false))
+  }, [id, currentUser?.id])
+
+  const submitApply = async () => {
+    if (!applyMoveIn) { setApplyToast({ type: 'error', msg: 'Please select a move-in date.' }); return }
+    if (!guarantorName || !guarantorPhone || !emergencyName || !emergencyPhone) {
+      setApplyToast({ type: 'error', msg: 'Please fill in all required contact fields.' }); return
+    }
+    if (!agreeRules) { setApplyToast({ type: 'error', msg: 'You must agree to the house rules.' }); return }
+    
+    setApplySubmitting(true)
+    try {
+      const formData = new FormData()
+      formData.append('student_id', currentUser.id)
+      formData.append('move_in_date', applyMoveIn)
+      formData.append('notes', applyNotes)
+      formData.append('guarantor_name', guarantorName)
+      formData.append('guarantor_phone', guarantorPhone)
+      formData.append('guarantor_relation', guarantorRelation)
+      formData.append('rent_payer', rentPayer)
+      formData.append('expected_duration', expectedDuration)
+      formData.append('emergency_contact_name', emergencyName)
+      formData.append('emergency_contact_phone', emergencyPhone)
+      formData.append('agreed_to_rules', agreeRules)
+      if (idDoc) formData.append('id_document', idDoc)
+
+      const res = await fetch(`http://localhost:8000/api/listings/${id}/apply`, {
+        method: 'POST',
+        body: formData
+      })
+      const data = await res.json()
+      if (data.success) {
+        setApplication({ status: 'pending', move_in_date: applyMoveIn, notes: applyNotes })
+        setShowApplyModal(false)
+        setApplyToast({ type: 'success', msg: data.message })
+      } else {
+        setApplyToast({ type: 'error', msg: data.message })
+      }
+    } catch { setApplyToast({ type: 'error', msg: 'Network error. Please try again.' }) }
+    finally { setApplySubmitting(false) }
+    setTimeout(() => setApplyToast(null), 5000)
+  }
+
   if (loading) return (
     <div className="min-h-screen flex items-center justify-center pt-16">
       <div className="flex flex-col items-center gap-3">
@@ -528,6 +597,52 @@ function ListingDetail() {
                       </span>
                     </Link>
                   )}
+
+                  {/* ── Apply for this Listing (students only) ── */}
+                  {currentUser?.role === 'student' && listing.status !== 'inactive' && (
+                    <div className="pt-1">
+                      {appLoading ? (
+                        <div className="w-full py-3.5 text-center text-sm text-slate-400">
+                          <i className="fa-solid fa-circle-notch fa-spin mr-2" />Checking application...
+                        </div>
+                      ) : application ? (
+                        <div className={`w-full flex flex-col items-center justify-center gap-1.5 py-3 rounded-xl text-sm font-semibold border ${
+                          application.status === 'pending'  ? 'bg-amber-50 border-amber-200 text-amber-700' :
+                          application.status === 'approved' ? 'bg-emerald-50 border-emerald-200 text-emerald-700' :
+                          'bg-slate-100 border-slate-200 text-slate-500'
+                        }`}>
+                          <div className="flex items-center gap-2">
+                            <i className={`fa-solid ${
+                              application.status === 'pending'  ? 'fa-clock' :
+                              application.status === 'approved' ? 'fa-circle-check' : 'fa-circle-xmark'
+                            }`} />
+                            {application.status === 'pending'  ? 'Application Pending…' :
+                             application.status === 'approved' ? 'Application Approved!' :
+                             'Application Declined'}
+                          </div>
+                          {application.status === 'declined' && application.decline_reason && (
+                            <div className="text-xs font-normal text-slate-500 max-w-[80%] text-center mt-1">
+                              <strong>Reason:</strong> {application.decline_reason}
+                            </div>
+                          )}
+                        </div>
+                      ) : (
+                        <button
+                          onClick={() => setShowApplyModal(true)}
+                          className="w-full flex items-center justify-center gap-2 bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-3.5 rounded-xl transition-all shadow-sm"
+                        >
+                          <i className="fa-solid fa-file-signature" />
+                          Apply for This Listing
+                        </button>
+                      )}
+                    </div>
+                  )}
+
+                  {currentUser?.role === 'student' && listing.status === 'inactive' && (
+                    <div className="w-full flex items-center justify-center gap-2 py-3 rounded-xl text-sm font-semibold bg-slate-100 border border-slate-200 text-slate-500">
+                      <i className="fa-solid fa-ban" /> Unit No Longer Available
+                    </div>
+                  )}
                 </div>
               </div>
               {/* Student fraud reporting */}
@@ -615,6 +730,138 @@ function ListingDetail() {
   targetId={id}
   reviewerId={currentUser?.id}
 />
+
+      {/* ── Apply Modal ── */}
+      {showApplyModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 px-4">
+          <div className="bg-white rounded-2xl shadow-xl w-full max-w-md p-6 space-y-5">
+            <div className="flex items-center justify-between">
+              <h2 className="text-lg font-black text-slate-900">Apply for This Listing</h2>
+              <button onClick={() => setShowApplyModal(false)} className="text-slate-400 hover:text-slate-600 text-xl leading-none">&times;</button>
+            </div>
+
+            <div className="bg-blue-50 border border-blue-100 rounded-xl px-4 py-3 text-sm text-blue-800">
+              <strong>{listing.title}</strong>
+              <p className="text-xs text-blue-600 mt-0.5">{listing.location}</p>
+            </div>
+
+            <div className="max-h-[60vh] overflow-y-auto pr-2 space-y-4">
+              <div>
+                <label className="block text-xs font-bold text-slate-600 mb-1.5 uppercase tracking-wide">
+                  Preferred Move-In Date <span className="text-red-500">*</span>
+                </label>
+                <input type="date" value={applyMoveIn} min={new Date().toISOString().split('T')[0]}
+                  onChange={e => setApplyMoveIn(e.target.value)}
+                  className="w-full border border-slate-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-blue-300" />
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-slate-600 mb-1.5 uppercase tracking-wide">Expected Lease Duration</label>
+                <select value={expectedDuration} onChange={e => setExpectedDuration(e.target.value)}
+                  className="w-full border border-slate-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-blue-300 bg-white">
+                  <option value="6 months">6 Months</option>
+                  <option value="1 year">1 Year</option>
+                  <option value="More than 1 year">More than 1 Year</option>
+                  <option value="Less than 6 months">Less than 6 Months</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-slate-600 mb-1.5 uppercase tracking-wide">Who is paying rent?</label>
+                <select value={rentPayer} onChange={e => setRentPayer(e.target.value)}
+                  className="w-full border border-slate-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-blue-300 bg-white">
+                  <option value="self">Self</option>
+                  <option value="parents">Parents</option>
+                  <option value="guardian">Guardian</option>
+                  <option value="other">Other</option>
+                </select>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-xs font-bold text-slate-600 mb-1.5 uppercase tracking-wide">Guarantor Name <span className="text-red-500">*</span></label>
+                  <input type="text" value={guarantorName} onChange={e => setGuarantorName(e.target.value)}
+                    className="w-full border border-slate-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-300" />
+                </div>
+                <div>
+                  <label className="block text-xs font-bold text-slate-600 mb-1.5 uppercase tracking-wide">Guarantor Phone <span className="text-red-500">*</span></label>
+                  <input type="tel" value={guarantorPhone} onChange={e => setGuarantorPhone(e.target.value)}
+                    className="w-full border border-slate-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-300" />
+                </div>
+                <div className="col-span-2">
+                  <label className="block text-xs font-bold text-slate-600 mb-1.5 uppercase tracking-wide">Relationship to Guarantor</label>
+                  <input type="text" value={guarantorRelation} onChange={e => setGuarantorRel(e.target.value)} placeholder="e.g. Father, Mother, Uncle"
+                    className="w-full border border-slate-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-300" />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-xs font-bold text-slate-600 mb-1.5 uppercase tracking-wide">Emergency Contact <span className="text-red-500">*</span></label>
+                  <input type="text" value={emergencyName} onChange={e => setEmergencyName(e.target.value)} placeholder="Name"
+                    className="w-full border border-slate-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-300" />
+                </div>
+                <div>
+                  <label className="block text-xs font-bold text-slate-600 mb-1.5 uppercase tracking-wide">Emergency Phone <span className="text-red-500">*</span></label>
+                  <input type="tel" value={emergencyPhone} onChange={e => setEmergencyPhone(e.target.value)} placeholder="Phone"
+                    className="w-full border border-slate-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-300" />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-slate-600 mb-1.5 uppercase tracking-wide">Upload ID/NID <span className="text-slate-400 font-normal">(optional if verified)</span></label>
+                <input type="file" accept="image/*,.pdf" onChange={e => setIdDoc(e.target.files[0])}
+                  className="w-full text-sm text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100" />
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-slate-600 mb-1.5 uppercase tracking-wide">
+                  Message to Landlord <span className="text-slate-400 font-normal">(optional)</span>
+                </label>
+                <textarea value={applyNotes} onChange={e => setApplyNotes(e.target.value)}
+                  placeholder="Introduce yourself — your university, year, lifestyle, etc." rows={2}
+                  className="w-full border border-slate-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-blue-300 resize-none" />
+              </div>
+
+              <div className="pt-2">
+                <label className="flex items-start gap-3 cursor-pointer">
+                  <input type="checkbox" checked={agreeRules} onChange={e => setAgreeRules(e.target.checked)} className="mt-1 w-4 h-4 text-emerald-600 rounded border-slate-300 focus:ring-emerald-500" />
+                  <span className="text-sm text-slate-600">I agree to abide by the house rules and confirm all provided information is accurate. <span className="text-red-500">*</span></span>
+                </label>
+              </div>
+            </div>
+
+            {applyToast && (
+              <div className={`text-sm px-4 py-3 rounded-xl ${applyToast.type === 'error' ? 'bg-red-50 text-red-700 border border-red-200' : 'bg-emerald-50 text-emerald-700 border border-emerald-200'}`}>
+                {applyToast.msg}
+              </div>
+            )}
+
+            <div className="flex gap-3 pt-1">
+              <button onClick={() => setShowApplyModal(false)} className="flex-1 py-3 rounded-xl border border-slate-200 text-slate-600 text-sm font-semibold hover:bg-slate-50">
+                Cancel
+              </button>
+              <button
+                onClick={submitApply}
+                disabled={applySubmitting}
+                className="flex-1 py-3 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-bold disabled:opacity-60 transition-colors"
+              >
+                {applySubmitting ? <><i className="fa-solid fa-circle-notch fa-spin mr-2" />Sending…</> : 'Submit Application'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── Toast (outside modal) ── */}
+      {applyToast && !showApplyModal && (
+        <div className={`fixed bottom-6 right-6 z-50 px-5 py-3.5 rounded-xl shadow-lg text-sm font-semibold max-w-sm ${
+          applyToast.type === 'error' ? 'bg-red-600 text-white' : 'bg-emerald-600 text-white'
+        }`}>
+          <i className={`fa-solid ${applyToast.type === 'error' ? 'fa-circle-xmark' : 'fa-circle-check'} mr-2`} />
+          {applyToast.msg}
+        </div>
+      )}
     </div>
   )
 }

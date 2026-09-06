@@ -260,6 +260,24 @@ router.get('/compare', (req, res) => {
   })
 })
 
+// GET /api/listings/applications/student/:id
+router.get('/applications/student/:id', (req, res) => {
+  const studentId = req.params.id
+
+  db.query(
+    `SELECT v.*, l.title AS listing_title, l.location AS listing_location, l.rent, l.photos, l.landlord_id
+     FROM viewing_requests v
+     JOIN listings l ON l.id = v.listing_id
+     WHERE v.student_id = ?
+     ORDER BY v.created_at DESC`,
+    [studentId],
+    (err, rows) => {
+      if (err) return res.status(500).json({ success: false, message: 'Server error.' })
+      res.json({ success: true, applications: rows })
+    }
+  )
+})
+
 // GET /api/listings/:id
 router.get('/:id', (req, res) => {
   db.query('SELECT * FROM listings WHERE id = ?', [req.params.id], (err, results) => {
@@ -272,6 +290,86 @@ router.get('/:id', (req, res) => {
     }
     res.json({ success: true, data: results[0] })
   })
+})
+
+// ─── POST /api/listings/:id/apply ───────────────────────────────────────────
+// Student submits a comprehensive application for a listing
+router.post('/:id/apply', upload.single('id_document'), (req, res) => {
+  const listing_id = req.params.id
+  const { 
+    student_id, move_in_date, notes, 
+    guarantor_name, guarantor_phone, guarantor_relation, 
+    rent_payer, expected_duration, 
+    emergency_contact_name, emergency_contact_phone, 
+    agreed_to_rules 
+  } = req.body
+
+  const id_document = req.file ? req.file.filename : null
+
+  if (!student_id) {
+    return res.status(400).json({ success: false, message: 'student_id is required.' })
+  }
+
+  // First fetch the listing to get landlord_id
+  db.query(
+    `SELECT landlord_id, status FROM listings WHERE id = ?`,
+    [listing_id],
+    (err, listings) => {
+      if (err) return res.status(500).json({ success: false, message: 'Server error.' })
+      if (!listings.length) return res.status(404).json({ success: false, message: 'Listing not found.' })
+
+      const listing = listings[0]
+      if (listing.status === 'inactive') {
+        return res.status(400).json({ success: false, message: 'This listing is no longer available.' })
+      }
+      if (!listing.landlord_id) {
+        return res.status(400).json({ success: false, message: 'This listing has no landlord assigned yet.' })
+      }
+
+      db.query(
+        `INSERT INTO viewing_requests (
+          listing_id, student_id, landlord_id, move_in_date, notes, status,
+          guarantor_name, guarantor_phone, guarantor_relation, rent_payer,
+          expected_duration, emergency_contact_name, emergency_contact_phone, 
+          agreed_to_rules, id_document
+        ) VALUES (?, ?, ?, ?, ?, 'pending', ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        [
+          listing_id, student_id, listing.landlord_id, move_in_date || null, notes || null,
+          guarantor_name || null, guarantor_phone || null, guarantor_relation || null, rent_payer || null,
+          expected_duration || null, emergency_contact_name || null, emergency_contact_phone || null,
+          agreed_to_rules === 'true' || agreed_to_rules === '1' ? 1 : 0, id_document
+        ],
+        (err2) => {
+          if (err2) {
+            if (err2.code === 'ER_DUP_ENTRY') {
+              return res.status(409).json({ success: false, message: 'You have already applied for this listing.' })
+            }
+            return res.status(500).json({ success: false, message: 'Server error.' })
+          }
+          res.json({ success: true, message: 'Application submitted! The landlord will review it shortly.' })
+        }
+      )
+    }
+  )
+})
+
+// ─── GET /api/listings/:id/my-application?user_id=X ─────────────────────────
+// Lets the frontend check if a student has already applied + current status
+router.get('/:id/my-application', (req, res) => {
+  const { user_id } = req.query
+  const listing_id = req.params.id
+  if (!user_id) return res.status(400).json({ success: false, message: 'user_id is required.' })
+
+  db.query(
+    `SELECT id, status, move_in_date, notes, created_at, decline_reason FROM viewing_requests
+     WHERE listing_id = ? AND student_id = ? LIMIT 1`,
+    [listing_id, user_id],
+    (err, rows) => {
+      if (err) return res.status(500).json({ success: false, message: 'Server error.' })
+      if (!rows.length) return res.json({ success: true, application: null })
+      res.json({ success: true, application: rows[0] })
+    }
+  )
 })
 
 module.exports = router

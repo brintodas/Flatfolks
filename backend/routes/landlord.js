@@ -395,7 +395,11 @@ router.get('/:id/tenants', (req, res) => {
 
       db.query(
         `SELECT v.id, v.requested_date, v.message, v.status, v.created_at,
-                l.id AS listing_id, l.title AS listing_title,
+                v.move_in_date, v.notes, v.guarantor_name, v.guarantor_phone,
+                v.guarantor_relation, v.rent_payer, v.expected_duration,
+                v.emergency_contact_name, v.emergency_contact_phone,
+                v.agreed_to_rules, v.id_document,
+                l.id AS listing_id, l.title AS listing_title, l.rent AS listing_rent,
                 u.id AS student_id, u.full_name AS student_name, u.phone AS student_phone
          FROM viewing_requests v
          JOIN listings l ON l.id = v.listing_id
@@ -542,6 +546,128 @@ router.put('/listings/:id/quick-update', (req, res) => {
     (err) => {
       if (err) return res.json({ success: false, message: 'DB error' })
       res.json({ success: true, message: 'Listing updated' })
+    }
+  )
+})
+
+// ─── PUT /api/landlord/viewing-requests/:id/approve ──────────────────────────
+// Approve an application: creates tenancy, marks listing inactive, notifies student
+router.put('/viewing-requests/:id/approve', async (req, res) => {
+  const { id } = req.params
+  const { rent_amount, start_date } = req.body
+
+  if (!rent_amount || !start_date) {
+    return res.status(400).json({ success: false, message: 'rent_amount and start_date are required.' })
+  }
+
+  try {
+    // 1. Fetch the viewing request + listing + student info
+    const rows = await q(
+      `SELECT vr.*, l.title AS listing_title, l.landlord_id,
+              u.full_name AS student_name, u.phone AS student_phone
+       FROM viewing_requests vr
+       JOIN listings l ON l.id = vr.listing_id
+       JOIN users u ON u.id = vr.student_id
+       WHERE vr.id = ?`,
+      [id]
+    )
+    if (!rows.length) return res.status(404).json({ success: false, message: 'Application not found.' })
+    const vr = rows[0]
+
+    if (vr.status !== 'pending') {
+      return res.status(400).json({ success: false, message: 'This application is no longer pending.' })
+    }
+
+    // 2. Create tenancy row
+    await q(
+      `INSERT INTO tenancies (listing_id, landlord_id, tenant_user_id, tenant_name, tenant_phone, rent_amount, start_date, status)
+       VALUES (?, ?, ?, ?, ?, ?, ?, 'active')`,
+      [vr.listing_id, vr.landlord_id, vr.student_id, vr.student_name, vr.student_phone || null, rent_amount, start_date]
+    )
+
+    // 3. Mark the viewing request as approved
+    await q(`UPDATE viewing_requests SET status = 'approved' WHERE id = ?`, [id])
+
+    // 4. Decline all other pending requests for this listing
+    await q(
+      `UPDATE viewing_requests SET status = 'declined'
+       WHERE listing_id = ? AND id != ? AND status = 'pending'`,
+      [vr.listing_id, id]
+    )
+
+    // 5. Mark the listing as inactive (unit is now occupied)
+    await q(`UPDATE listings SET status = 'inactive' WHERE id = ?`, [vr.listing_id])
+
+    // 6. Send in-app notification to the student
+    await q(
+      `INSERT INTO notifications (user_id, type, title, body)
+       VALUES (?, 'system', ?, ?)`,
+      [
+        vr.student_id,
+        'Application Approved!',
+        `Congratulations! Your application for "${vr.listing_title}" has been approved. You can now view your tenancy and pay rent from your dashboard.`
+      ]
+    ).catch(() => {}) // notification failure must not block the main flow
+
+    res.json({ success: true, message: 'Application approved. Tenancy created.' })
+  } catch (err) {
+    console.error('Approve error:', err)
+    res.status(500).json({ success: false, message: 'Server error.' })
+  }
+})
+
+// ─── PUT /api/landlord/viewing-requests/:id/decline ──────────────────────────
+// Decline an application and notify the student
+router.put('/viewing-requests/:id/decline', async (req, res) => {
+  const { id } = req.params
+  const { reason } = req.body || {}
+
+  try {
+    const rows = await q(
+      `SELECT vr.*, l.title AS listing_title
+       FROM viewing_requests vr
+       JOIN listings l ON l.id = vr.listing_id
+       WHERE vr.id = ?`,
+      [id]
+    )
+    if (!rows.length) return res.status(404).json({ success: false, message: 'Application not found.' })
+    const vr = rows[0]
+
+    await q(`UPDATE viewing_requests SET status = 'declined', decline_reason = ? WHERE id = ?`, [reason || null, id])
+
+    // Notify student
+    const notifBody = reason 
+      ? `Your application for "${vr.listing_title}" was declined. Reason: "${reason}"`
+      : `Your application for "${vr.listing_title}" was not selected this time. Keep looking — there are more listings available!`;
+
+    await q(
+      `INSERT INTO notifications (user_id, type, title, body)
+       VALUES (?, 'system', ?, ?)`,
+      [vr.student_id, 'Application Update', notifBody]
+    ).catch(() => {})
+
+    res.json({ success: true, message: 'Application declined.' })
+  } catch (err) {
+    console.error('Decline error:', err)
+    res.status(500).json({ success: false, message: 'Server error.' })
+  }
+})
+
+// ─── GET /api/landlord/tenancies/student/:userId ─────────────────────────────
+// Student fetches their own active tenancy
+router.get('/tenancies/student/:userId', (req, res) => {
+  db.query(
+    `SELECT t.*, l.title AS listing_title, l.location, l.area, l.district,
+            u.full_name AS landlord_name, u.phone AS landlord_phone, u.email AS landlord_email
+     FROM tenancies t
+     JOIN listings l ON l.id = t.listing_id
+     JOIN users u ON u.id = t.landlord_id
+     WHERE t.tenant_user_id = ? AND t.status = 'active'
+     LIMIT 1`,
+    [req.params.userId],
+    (err, rows) => {
+      if (err) return res.status(500).json({ success: false, message: 'Server error.' })
+      res.json({ success: true, tenancy: rows[0] || null })
     }
   )
 })

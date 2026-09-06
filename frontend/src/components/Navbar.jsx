@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from 'react'
 import { Link, NavLink, useNavigate } from 'react-router-dom'
+import NotificationsBell from './NotificationsBell'
 
 const Navbar = () => {
   const navigate = useNavigate()
@@ -91,7 +92,7 @@ const Navbar = () => {
   useEffect(() => {
     if (!currentUser || currentUser.role !== 'student') return
     const loadNotifs = () => {
-      fetch(`http://localhost:8000/api/notifications?user_id=${currentUser.id}`)
+      fetch(`http://localhost:8000/api/notifications?user_id=${currentUser.id}&type=rent_reminder`)
         .then(r => r.json())
         .then(data => {
           if (data.success) {
@@ -149,6 +150,8 @@ const Navbar = () => {
     if (currentUser.role === 'student') {
       return [
         { to: '/roommate-profile', icon: 'fa-id-card', label: 'My Profile' },
+        { to: '/my-tenancy', icon: 'fa-house-user', label: 'My Tenancy' },
+        { to: '/my-applications', icon: 'fa-file-signature', label: 'My Applications' },
         { to: '/bills', icon: 'fa-receipt', label: 'Shared Bills' },
         { to: '/meal-plans', icon: 'fa-utensils', label: 'Meal Plans' },
         { to: '/maintenance', icon: 'fa-wrench', label: 'Maintenance' },
@@ -345,7 +348,7 @@ const Navbar = () => {
                     rentNotifOpen ? 'bg-blue-800 text-white shadow-sm' : 'text-blue-800 hover:text-blue-900 hover:bg-blue-50'
                   }`}
                 >
-                  <i className="fa-regular fa-bell text-lg" />
+                  <i className="fa-regular fa-calendar-check text-lg" />
                   {rentUnreadCount > 0 && (
                     <span className="absolute top-0 right-0 min-w-5 h-5 px-1 flex items-center justify-center bg-red-500 text-white text-xs font-bold rounded-full">
                       {rentUnreadCount}

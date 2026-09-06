@@ -20,6 +20,7 @@ import GetStarted      from './pages/GetStarted'
 import StudentSignup   from './pages/StudentSignup'
 import LandlordSignup  from './pages/LandlordSignup'
 import SignIn          from './pages/SignIn'
+import MyApplications  from './pages/MyApplications'
 import RoommateProfile       from './pages/RoommateProfile'
 import RoommatePublicProfile from './pages/RoommatePublicProfile'
 import Roommates             from './pages/Roommates'
@@ -35,10 +36,10 @@ import MealPlansPage          from './pages/MealPlansPage'
 import MealPlanDetail         from './pages/MealPlanDetail'
 import MaintenancePage        from './pages/MaintenancePage'
 import UtilityAssistance      from './pages/UtilityAssistance'
-import PaymentPage            from './pages/PaymentsPage'
 import PaymentResult          from './pages/PaymentResult'
 import PaymentsPage           from './pages/PaymentsPage'
-import RentReminder from './pages/RentReminder'
+import RentReminder           from './pages/RentReminder'
+import MyTenancy              from './pages/MyTenancy'
 
 function ConditionalFooter() {
   const location = useLocation()
@@ -72,6 +73,7 @@ function App() {
           <Route path="/"                  element={<Home />} />
           <Route path="/listings"           element={<Listings />} />
           <Route path="/post-listing"       element={<PostListing />} />
+          <Route path="/my-applications"    element={<MyApplications />} />
           <Route path="/watchlist"          element={<Watchlist />} />
           <Route path="/listings/:id"       element={<ListingDetail />} />
           <Route path="/get-started"        element={<GetStarted />} />
@@ -87,10 +89,11 @@ function App() {
           <Route path="/maintenance"        element={<MaintenancePage />} />
           <Route path="/utility-assistance" element={<UtilityAssistance />} />
           <Route path="/rent-reminder"      element={<RentReminder />} />
+          <Route path="/my-tenancy"         element={<MyTenancy />} />
           <Route path="/lifestyle-quiz"     element={<LifestyleQuiz />} />
 
           {/* Centralized Payment Gateway — every payable flow routes here */}
-          <Route path="/payment"            element={<PaymentPage />} />
+          <Route path="/payment"            element={<PaymentsPage />} />
           <Route path="/payment/result"     element={<PaymentResult />} />
           <Route path="/payments"           element={<PaymentsPage />} />
           <Route path="/compare"            element={<Compare />} />

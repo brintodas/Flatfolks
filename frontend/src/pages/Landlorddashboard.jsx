@@ -135,6 +135,9 @@ function LandlordDashboard() {
   const [approveModal, setApproveModal] = useState(null) // { viewingRequest }
   const [approveForm, setApproveForm] = useState({ rent_amount: '', start_date: '' })
   const [approveLoading, setApproveLoading] = useState(false)
+  const [declineModal, setDeclineModal] = useState(null) // { viewingRequest }
+  const [declineReason, setDeclineReason] = useState('')
+  const [declineLoading, setDeclineLoading] = useState(false)
   const [actionToast, setActionToast] = useState(null)
 
   const showToast = (msg, type = 'success') => {
@@ -204,11 +207,31 @@ function LandlordDashboard() {
     finally { setApproveLoading(false) }
   }
 
-  const declineRequest = async (id) => {
-    await fetch(`${API}/viewing-requests/${id}/decline`, { method: 'PUT' })
-    showToast('Application declined. Student notified.')
-    loadTenants()
+  const openDeclineModal = (v) => {
+    setDeclineReason('')
+    setDeclineModal(v)
   }
+
+  const submitDecline = async () => {
+    setDeclineLoading(true)
+    try {
+      const res = await fetch(`${API}/viewing-requests/${declineModal.id}/decline`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ reason: declineReason })
+      })
+      const data = await res.json()
+      if (data.success) {
+        setDeclineModal(null)
+        showToast('Application declined. Student notified.')
+        loadTenants()
+      } else {
+        showToast(data.message || 'Something went wrong.', 'error')
+      }
+    } catch { showToast('Network error.', 'error') }
+    finally { setDeclineLoading(false) }
+  }
+
 
   const endTenancy = async (id) => {
     await fetch(`${API}/tenancies/${id}/end`, { method: 'PUT' })
@@ -532,7 +555,7 @@ function LandlordDashboard() {
                             <i className="fa-solid fa-circle-check mr-1.5" />Approve & Move In
                           </button>
                           <button
-                            onClick={() => declineRequest(v.id)}
+                            onClick={() => openDeclineModal(v)}
                             className="flex-1 text-xs font-bold py-2 border border-red-200 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
                           >
                             <i className="fa-solid fa-circle-xmark mr-1.5" />Decline
@@ -608,7 +631,51 @@ function LandlordDashboard() {
         </div>
       )}
 
+      {/* ── Decline Modal ── */}
+      {declineModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 px-4">
+          <div className="bg-white rounded-2xl shadow-xl w-full max-w-sm p-6 space-y-4">
+            <div className="flex items-center justify-between">
+              <h2 className="text-base font-black text-slate-900">Decline Application</h2>
+              <button onClick={() => setDeclineModal(null)} className="text-slate-400 hover:text-slate-600 text-xl leading-none">&times;</button>
+            </div>
+
+            <div className="bg-red-50 border border-red-100 rounded-xl px-4 py-3 text-sm">
+              <p className="font-bold text-slate-800">{declineModal.student_name}</p>
+              <p className="text-xs text-red-600 mt-0.5">{declineModal.listing_title}</p>
+            </div>
+
+            <div>
+              <label className="block text-xs font-bold text-slate-600 mb-1.5 uppercase tracking-wide">
+                Reason <span className="text-slate-400 font-normal">(optional)</span>
+              </label>
+              <textarea
+                value={declineReason}
+                onChange={e => setDeclineReason(e.target.value)}
+                placeholder="e.g. Someone else just took it, sorry!"
+                rows={3}
+                className="w-full border border-slate-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-red-300 resize-none"
+              />
+            </div>
+
+            <div className="flex gap-3 pt-1">
+              <button onClick={() => setDeclineModal(null)} className="flex-1 py-3 rounded-xl border border-slate-200 text-slate-600 text-sm font-semibold hover:bg-slate-50">
+                Cancel
+              </button>
+              <button
+                onClick={submitDecline}
+                disabled={declineLoading}
+                className="flex-1 py-3 rounded-xl bg-red-600 hover:bg-red-700 text-white text-sm font-bold disabled:opacity-60 transition-colors"
+              >
+                {declineLoading ? <><i className="fa-solid fa-circle-notch fa-spin mr-2" />Declining…</> : 'Confirm Decline'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* ── Toast ── */}
+
       {actionToast && (
         <div className={`fixed bottom-6 right-6 z-50 px-5 py-3.5 rounded-xl shadow-lg text-sm font-semibold max-w-sm ${
           actionToast.type === 'error' ? 'bg-red-600 text-white' : 'bg-emerald-600 text-white'

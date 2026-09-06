@@ -343,7 +343,7 @@ router.get('/:id/my-application', (req, res) => {
   if (!user_id) return res.status(400).json({ success: false, message: 'user_id is required.' })
 
   db.query(
-    `SELECT id, status, move_in_date, notes, created_at FROM viewing_requests
+    `SELECT id, status, move_in_date, notes, created_at, decline_reason FROM viewing_requests
      WHERE listing_id = ? AND student_id = ? LIMIT 1`,
     [listing_id, user_id],
     (err, rows) => {

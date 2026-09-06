@@ -606,18 +606,25 @@ function ListingDetail() {
                           <i className="fa-solid fa-circle-notch fa-spin mr-2" />Checking application...
                         </div>
                       ) : application ? (
-                        <div className={`w-full flex items-center justify-center gap-2 py-3 rounded-xl text-sm font-semibold border ${
+                        <div className={`w-full flex flex-col items-center justify-center gap-1.5 py-3 rounded-xl text-sm font-semibold border ${
                           application.status === 'pending'  ? 'bg-amber-50 border-amber-200 text-amber-700' :
                           application.status === 'approved' ? 'bg-emerald-50 border-emerald-200 text-emerald-700' :
                           'bg-slate-100 border-slate-200 text-slate-500'
                         }`}>
-                          <i className={`fa-solid ${
-                            application.status === 'pending'  ? 'fa-clock' :
-                            application.status === 'approved' ? 'fa-circle-check' : 'fa-circle-xmark'
-                          }`} />
-                          {application.status === 'pending'  ? 'Application Pending…' :
-                           application.status === 'approved' ? 'Application Approved! 🎉' :
-                           'Application Declined'}
+                          <div className="flex items-center gap-2">
+                            <i className={`fa-solid ${
+                              application.status === 'pending'  ? 'fa-clock' :
+                              application.status === 'approved' ? 'fa-circle-check' : 'fa-circle-xmark'
+                            }`} />
+                            {application.status === 'pending'  ? 'Application Pending…' :
+                             application.status === 'approved' ? 'Application Approved! 🎉' :
+                             'Application Declined'}
+                          </div>
+                          {application.status === 'declined' && application.decline_reason && (
+                            <div className="text-xs font-normal text-slate-500 max-w-[80%] text-center mt-1">
+                              <strong>Reason:</strong> {application.decline_reason}
+                            </div>
+                          )}
                         </div>
                       ) : (
                         <button

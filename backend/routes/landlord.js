@@ -620,6 +620,7 @@ router.put('/viewing-requests/:id/approve', async (req, res) => {
 // Decline an application and notify the student
 router.put('/viewing-requests/:id/decline', async (req, res) => {
   const { id } = req.params
+  const { reason } = req.body || {}
 
   try {
     const rows = await q(
@@ -632,17 +633,17 @@ router.put('/viewing-requests/:id/decline', async (req, res) => {
     if (!rows.length) return res.status(404).json({ success: false, message: 'Application not found.' })
     const vr = rows[0]
 
-    await q(`UPDATE viewing_requests SET status = 'declined' WHERE id = ?`, [id])
+    await q(`UPDATE viewing_requests SET status = 'declined', decline_reason = ? WHERE id = ?`, [reason || null, id])
 
     // Notify student
+    const notifBody = reason 
+      ? `Your application for "${vr.listing_title}" was declined. Reason: "${reason}"`
+      : `Your application for "${vr.listing_title}" was not selected this time. Keep looking — there are more listings available!`;
+
     await q(
       `INSERT INTO notifications (user_id, type, title, body)
        VALUES (?, 'system', ?, ?)`,
-      [
-        vr.student_id,
-        'Application Update',
-        `Your application for "${vr.listing_title}" was not selected this time. Keep looking — there are more listings available!`
-      ]
+      [vr.student_id, 'Application Update', notifBody]
     ).catch(() => {})
 
     res.json({ success: true, message: 'Application declined.' })

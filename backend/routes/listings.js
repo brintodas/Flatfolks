@@ -275,10 +275,18 @@ router.get('/:id', (req, res) => {
 })
 
 // ─── POST /api/listings/:id/apply ───────────────────────────────────────────
-// Student submits an application for a listing
-router.post('/:id/apply', (req, res) => {
+// Student submits a comprehensive application for a listing
+router.post('/:id/apply', upload.single('id_document'), (req, res) => {
   const listing_id = req.params.id
-  const { student_id, move_in_date, notes } = req.body
+  const { 
+    student_id, move_in_date, notes, 
+    guarantor_name, guarantor_phone, guarantor_relation, 
+    rent_payer, expected_duration, 
+    emergency_contact_name, emergency_contact_phone, 
+    agreed_to_rules 
+  } = req.body
+
+  const id_document = req.file ? req.file.filename : null
 
   if (!student_id) {
     return res.status(400).json({ success: false, message: 'student_id is required.' })
@@ -301,9 +309,18 @@ router.post('/:id/apply', (req, res) => {
       }
 
       db.query(
-        `INSERT INTO viewing_requests (listing_id, student_id, landlord_id, move_in_date, notes, status)
-         VALUES (?, ?, ?, ?, ?, 'pending')`,
-        [listing_id, student_id, listing.landlord_id, move_in_date || null, notes || null],
+        `INSERT INTO viewing_requests (
+          listing_id, student_id, landlord_id, move_in_date, notes, status,
+          guarantor_name, guarantor_phone, guarantor_relation, rent_payer,
+          expected_duration, emergency_contact_name, emergency_contact_phone, 
+          agreed_to_rules, id_document
+        ) VALUES (?, ?, ?, ?, ?, 'pending', ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        [
+          listing_id, student_id, listing.landlord_id, move_in_date || null, notes || null,
+          guarantor_name || null, guarantor_phone || null, guarantor_relation || null, rent_payer || null,
+          expected_duration || null, emergency_contact_name || null, emergency_contact_phone || null,
+          agreed_to_rules === 'true' || agreed_to_rules === '1' ? 1 : 0, id_document
+        ],
         (err2) => {
           if (err2) {
             if (err2.code === 'ER_DUP_ENTRY') {

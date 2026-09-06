@@ -22,6 +22,15 @@ function ListingDetail() {
   const [showApplyModal, setShowApplyModal]    = useState(false)
   const [applyMoveIn, setApplyMoveIn]          = useState('')
   const [applyNotes, setApplyNotes]            = useState('')
+  const [guarantorName, setGuarantorName]      = useState('')
+  const [guarantorPhone, setGuarantorPhone]    = useState('')
+  const [guarantorRelation, setGuarantorRel]   = useState('')
+  const [rentPayer, setRentPayer]              = useState('self')
+  const [expectedDuration, setExpectedDuration]= useState('6 months')
+  const [emergencyName, setEmergencyName]      = useState('')
+  const [emergencyPhone, setEmergencyPhone]    = useState('')
+  const [idDoc, setIdDoc]                      = useState(null)
+  const [agreeRules, setAgreeRules]            = useState(false)
   const [applySubmitting, setApplySubmitting]  = useState(false)
   const [applyToast, setApplyToast]            = useState(null)
 
@@ -74,12 +83,30 @@ function ListingDetail() {
 
   const submitApply = async () => {
     if (!applyMoveIn) { setApplyToast({ type: 'error', msg: 'Please select a move-in date.' }); return }
+    if (!guarantorName || !guarantorPhone || !emergencyName || !emergencyPhone) {
+      setApplyToast({ type: 'error', msg: 'Please fill in all required contact fields.' }); return
+    }
+    if (!agreeRules) { setApplyToast({ type: 'error', msg: 'You must agree to the house rules.' }); return }
+    
     setApplySubmitting(true)
     try {
+      const formData = new FormData()
+      formData.append('student_id', currentUser.id)
+      formData.append('move_in_date', applyMoveIn)
+      formData.append('notes', applyNotes)
+      formData.append('guarantor_name', guarantorName)
+      formData.append('guarantor_phone', guarantorPhone)
+      formData.append('guarantor_relation', guarantorRelation)
+      formData.append('rent_payer', rentPayer)
+      formData.append('expected_duration', expectedDuration)
+      formData.append('emergency_contact_name', emergencyName)
+      formData.append('emergency_contact_phone', emergencyPhone)
+      formData.append('agreed_to_rules', agreeRules)
+      if (idDoc) formData.append('id_document', idDoc)
+
       const res = await fetch(`http://localhost:8000/api/listings/${id}/apply`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ student_id: currentUser.id, move_in_date: applyMoveIn, notes: applyNotes })
+        body: formData
       })
       const data = await res.json()
       if (data.success) {
@@ -711,30 +738,90 @@ function ListingDetail() {
               <p className="text-xs text-blue-600 mt-0.5">{listing.location}</p>
             </div>
 
-            <div>
-              <label className="block text-xs font-bold text-slate-600 mb-1.5 uppercase tracking-wide">
-                Preferred Move-In Date <span className="text-red-500">*</span>
-              </label>
-              <input
-                type="date"
-                value={applyMoveIn}
-                min={new Date().toISOString().split('T')[0]}
-                onChange={e => setApplyMoveIn(e.target.value)}
-                className="w-full border border-slate-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-blue-300"
-              />
-            </div>
+            <div className="max-h-[60vh] overflow-y-auto pr-2 space-y-4">
+              <div>
+                <label className="block text-xs font-bold text-slate-600 mb-1.5 uppercase tracking-wide">
+                  Preferred Move-In Date <span className="text-red-500">*</span>
+                </label>
+                <input type="date" value={applyMoveIn} min={new Date().toISOString().split('T')[0]}
+                  onChange={e => setApplyMoveIn(e.target.value)}
+                  className="w-full border border-slate-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-blue-300" />
+              </div>
 
-            <div>
-              <label className="block text-xs font-bold text-slate-600 mb-1.5 uppercase tracking-wide">
-                Message to Landlord <span className="text-slate-400 font-normal">(optional)</span>
-              </label>
-              <textarea
-                value={applyNotes}
-                onChange={e => setApplyNotes(e.target.value)}
-                placeholder="Introduce yourself — your university, year, lifestyle, etc."
-                rows={3}
-                className="w-full border border-slate-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-blue-300 resize-none"
-              />
+              <div>
+                <label className="block text-xs font-bold text-slate-600 mb-1.5 uppercase tracking-wide">Expected Lease Duration</label>
+                <select value={expectedDuration} onChange={e => setExpectedDuration(e.target.value)}
+                  className="w-full border border-slate-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-blue-300 bg-white">
+                  <option value="6 months">6 Months</option>
+                  <option value="1 year">1 Year</option>
+                  <option value="More than 1 year">More than 1 Year</option>
+                  <option value="Less than 6 months">Less than 6 Months</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-slate-600 mb-1.5 uppercase tracking-wide">Who is paying rent?</label>
+                <select value={rentPayer} onChange={e => setRentPayer(e.target.value)}
+                  className="w-full border border-slate-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-blue-300 bg-white">
+                  <option value="self">Self</option>
+                  <option value="parents">Parents</option>
+                  <option value="guardian">Guardian</option>
+                  <option value="other">Other</option>
+                </select>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-xs font-bold text-slate-600 mb-1.5 uppercase tracking-wide">Guarantor Name <span className="text-red-500">*</span></label>
+                  <input type="text" value={guarantorName} onChange={e => setGuarantorName(e.target.value)}
+                    className="w-full border border-slate-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-300" />
+                </div>
+                <div>
+                  <label className="block text-xs font-bold text-slate-600 mb-1.5 uppercase tracking-wide">Guarantor Phone <span className="text-red-500">*</span></label>
+                  <input type="tel" value={guarantorPhone} onChange={e => setGuarantorPhone(e.target.value)}
+                    className="w-full border border-slate-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-300" />
+                </div>
+                <div className="col-span-2">
+                  <label className="block text-xs font-bold text-slate-600 mb-1.5 uppercase tracking-wide">Relationship to Guarantor</label>
+                  <input type="text" value={guarantorRelation} onChange={e => setGuarantorRel(e.target.value)} placeholder="e.g. Father, Mother, Uncle"
+                    className="w-full border border-slate-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-300" />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-xs font-bold text-slate-600 mb-1.5 uppercase tracking-wide">Emergency Contact <span className="text-red-500">*</span></label>
+                  <input type="text" value={emergencyName} onChange={e => setEmergencyName(e.target.value)} placeholder="Name"
+                    className="w-full border border-slate-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-300" />
+                </div>
+                <div>
+                  <label className="block text-xs font-bold text-slate-600 mb-1.5 uppercase tracking-wide">Emergency Phone <span className="text-red-500">*</span></label>
+                  <input type="tel" value={emergencyPhone} onChange={e => setEmergencyPhone(e.target.value)} placeholder="Phone"
+                    className="w-full border border-slate-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-300" />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-slate-600 mb-1.5 uppercase tracking-wide">Upload ID/NID <span className="text-slate-400 font-normal">(optional if verified)</span></label>
+                <input type="file" accept="image/*,.pdf" onChange={e => setIdDoc(e.target.files[0])}
+                  className="w-full text-sm text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100" />
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-slate-600 mb-1.5 uppercase tracking-wide">
+                  Message to Landlord <span className="text-slate-400 font-normal">(optional)</span>
+                </label>
+                <textarea value={applyNotes} onChange={e => setApplyNotes(e.target.value)}
+                  placeholder="Introduce yourself — your university, year, lifestyle, etc." rows={2}
+                  className="w-full border border-slate-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-blue-300 resize-none" />
+              </div>
+
+              <div className="pt-2">
+                <label className="flex items-start gap-3 cursor-pointer">
+                  <input type="checkbox" checked={agreeRules} onChange={e => setAgreeRules(e.target.checked)} className="mt-1 w-4 h-4 text-emerald-600 rounded border-slate-300 focus:ring-emerald-500" />
+                  <span className="text-sm text-slate-600">I agree to abide by the house rules and confirm all provided information is accurate. <span className="text-red-500">*</span></span>
+                </label>
+              </div>
             </div>
 
             {applyToast && (

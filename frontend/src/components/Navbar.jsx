@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from 'react'
 import { Link, NavLink, useNavigate } from 'react-router-dom'
+import NotificationsBell from './NotificationsBell'
 
 const Navbar = () => {
   const navigate = useNavigate()

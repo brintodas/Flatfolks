@@ -132,6 +132,15 @@ function LandlordDashboard() {
   const [tenantsData, setTenantsData] = useState(null)
   const [loading, setLoading] = useState(true)
   const [tenantModalListing, setTenantModalListing] = useState(null)
+  const [approveModal, setApproveModal] = useState(null) // { viewingRequest }
+  const [approveForm, setApproveForm] = useState({ rent_amount: '', start_date: '' })
+  const [approveLoading, setApproveLoading] = useState(false)
+  const [actionToast, setActionToast] = useState(null)
+
+  const showToast = (msg, type = 'success') => {
+    setActionToast({ msg, type })
+    setTimeout(() => setActionToast(null), 4000)
+  }
 
   const loadDashboard = () => {
     fetch(`${API}/${landlordId}/dashboard`)
@@ -167,12 +176,37 @@ function LandlordDashboard() {
     return () => clearInterval(t)
   }, [landlordId])
 
-  const respondToRequest = async (id, status) => {
-    await fetch(`${API}/viewing-requests/${id}`, {
-      method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ status })
-    })
+  const openApproveModal = (v) => {
+    setApproveForm({ rent_amount: v.listing_rent || '', start_date: v.move_in_date || new Date().toISOString().split('T')[0] })
+    setApproveModal(v)
+  }
+
+  const submitApprove = async () => {
+    if (!approveForm.rent_amount || !approveForm.start_date) {
+      showToast('Please fill in rent amount and start date.', 'error'); return
+    }
+    setApproveLoading(true)
+    try {
+      const res = await fetch(`${API}/viewing-requests/${approveModal.id}/approve`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ rent_amount: approveForm.rent_amount, start_date: approveForm.start_date })
+      })
+      const data = await res.json()
+      if (data.success) {
+        setApproveModal(null)
+        showToast('✅ Tenancy created! The student has been notified.')
+        loadDashboard(); loadTenants()
+      } else {
+        showToast(data.message || 'Something went wrong.', 'error')
+      }
+    } catch { showToast('Network error.', 'error') }
+    finally { setApproveLoading(false) }
+  }
+
+  const declineRequest = async (id) => {
+    await fetch(`${API}/viewing-requests/${id}/decline`, { method: 'PUT' })
+    showToast('Application declined. Student notified.')
     loadTenants()
   }
 
@@ -410,28 +444,53 @@ function LandlordDashboard() {
               )}
             </div>
 
-            {/* Viewing requests */}
+            {/* Viewing requests / Applications */}
             <div className="bg-white border border-slate-200 rounded-xl p-6">
-              <h2 className="text-sm font-bold text-slate-700 mb-4">Viewing Requests</h2>
+              <h2 className="text-sm font-bold text-slate-700 mb-4">
+                Applications & Viewing Requests
+                {pendingRequests.length > 0 && (
+                  <span className="ml-2 bg-amber-100 text-amber-700 text-xs font-bold px-2 py-0.5 rounded-full">{pendingRequests.length} pending</span>
+                )}
+              </h2>
               {(!tenantsData || tenantsData.viewing_requests.length === 0) ? (
-                <p className="text-sm text-slate-400 italic">No viewing requests yet.</p>
+                <p className="text-sm text-slate-400 italic">No applications yet.</p>
               ) : (
                 <div className="space-y-3">
                   {tenantsData.viewing_requests.map(v => (
-                    <div key={v.id} className="border border-slate-100 rounded-lg p-3">
-                      <div className="flex items-center justify-between mb-1">
-                        <p className="text-sm font-semibold text-slate-800">{v.student_name}</p>
-                        <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full ${
-                          v.status === 'pending' ? 'bg-amber-50 text-amber-700' :
-                          v.status === 'approved' ? 'bg-green-50 text-green-700' : 'bg-red-50 text-red-600'
+                    <div key={v.id} className="border border-slate-100 rounded-xl p-4">
+                      <div className="flex items-start justify-between mb-1 gap-2">
+                        <div>
+                          <p className="text-sm font-bold text-slate-800">{v.student_name}</p>
+                          <p className="text-xs text-slate-400">{v.listing_title}</p>
+                        </div>
+                        <span className={`shrink-0 text-[10px] font-bold px-2.5 py-1 rounded-full ${
+                          v.status === 'pending'  ? 'bg-amber-50 text-amber-700 border border-amber-200' :
+                          v.status === 'approved' ? 'bg-green-50 text-green-700 border border-green-200' :
+                          'bg-red-50 text-red-600 border border-red-200'
                         }`}>{v.status}</span>
                       </div>
-                      <p className="text-xs text-slate-400 mb-1">{v.listing_title}{v.requested_date ? ` · wants to view ${new Date(v.requested_date).toLocaleDateString()}` : ''}</p>
-                      {v.message && <p className="text-xs text-slate-500 mb-2">"{v.message}"</p>}
+                      {v.move_in_date && (
+                        <p className="text-xs text-slate-500 mb-1">
+                          <i className="fa-regular fa-calendar mr-1" />
+                          Move-in: {new Date(v.move_in_date).toLocaleDateString('en-BD', { day: 'numeric', month: 'long', year: 'numeric' })}
+                        </p>
+                      )}
+                      {v.notes && <p className="text-xs text-slate-500 italic mb-2">"{v.notes}"</p>}
+                      {v.message && !v.notes && <p className="text-xs text-slate-500 italic mb-2">"{v.message}"</p>}
                       {v.status === 'pending' && (
-                        <div className="flex gap-2">
-                          <button onClick={() => respondToRequest(v.id, 'approved')} className="text-xs font-semibold text-green-700 hover:underline">Approve</button>
-                          <button onClick={() => respondToRequest(v.id, 'declined')} className="text-xs font-semibold text-red-500 hover:underline">Decline</button>
+                        <div className="flex gap-2 mt-3">
+                          <button
+                            onClick={() => openApproveModal(v)}
+                            className="flex-1 text-xs font-bold py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg transition-colors"
+                          >
+                            <i className="fa-solid fa-circle-check mr-1.5" />Approve & Move In
+                          </button>
+                          <button
+                            onClick={() => declineRequest(v.id)}
+                            className="flex-1 text-xs font-bold py-2 border border-red-200 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                          >
+                            <i className="fa-solid fa-circle-xmark mr-1.5" />Decline
+                          </button>
                         </div>
                       )}
                     </div>
@@ -451,6 +510,65 @@ function LandlordDashboard() {
           onClose={() => setTenantModalListing(null)}
           onSaved={() => { loadDashboard(); loadTenants() }}
         />
+      )}
+
+      {/* ── Approve & Move-In Modal ── */}
+      {approveModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 px-4">
+          <div className="bg-white rounded-2xl shadow-xl w-full max-w-sm p-6 space-y-4">
+            <div className="flex items-center justify-between">
+              <h2 className="text-base font-black text-slate-900">Approve & Create Tenancy</h2>
+              <button onClick={() => setApproveModal(null)} className="text-slate-400 hover:text-slate-600 text-xl leading-none">&times;</button>
+            </div>
+
+            <div className="bg-emerald-50 border border-emerald-100 rounded-xl px-4 py-3 text-sm">
+              <p className="font-bold text-slate-800">{approveModal.student_name}</p>
+              <p className="text-xs text-slateald-500 mt-0.5">{approveModal.listing_title}</p>
+            </div>
+
+            <div>
+              <label className="block text-xs font-bold text-slate-600 mb-1.5 uppercase tracking-wide">Monthly Rent (৳) <span className="text-red-500">*</span></label>
+              <input
+                type="number"
+                value={approveForm.rent_amount}
+                onChange={e => setApproveForm(f => ({ ...f, rent_amount: e.target.value }))}
+                className="w-full border border-slate-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-300"
+                placeholder="e.g. 8000"
+              />
+            </div>
+            <div>
+              <label className="block text-xs font-bold text-slate-600 mb-1.5 uppercase tracking-wide">Lease Start Date <span className="text-red-500">*</span></label>
+              <input
+                type="date"
+                value={approveForm.start_date}
+                onChange={e => setApproveForm(f => ({ ...f, start_date: e.target.value }))}
+                className="w-full border border-slate-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-300"
+              />
+            </div>
+
+            <div className="flex gap-3 pt-1">
+              <button onClick={() => setApproveModal(null)} className="flex-1 py-3 rounded-xl border border-slate-200 text-slate-600 text-sm font-semibold hover:bg-slate-50">
+                Cancel
+              </button>
+              <button
+                onClick={submitApprove}
+                disabled={approveLoading}
+                className="flex-1 py-3 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-bold disabled:opacity-60 transition-colors"
+              >
+                {approveLoading ? <><i className="fa-solid fa-circle-notch fa-spin mr-2" />Creating…</> : 'Confirm & Create Tenancy'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── Toast ── */}
+      {actionToast && (
+        <div className={`fixed bottom-6 right-6 z-50 px-5 py-3.5 rounded-xl shadow-lg text-sm font-semibold max-w-sm ${
+          actionToast.type === 'error' ? 'bg-red-600 text-white' : 'bg-emerald-600 text-white'
+        }`}>
+          {actionToast.msg}
+        </div>
       )}
     </div>
   )

@@ -16,6 +16,14 @@ function ListingDetail() {
   const [userGroup, setUserGroup] = useState(null)
   const [bookingMode, setBookingMode] = useState(() => sessionStorage.getItem('ff_search_mode') || 'group')
 
+  // ── Application state ──
+  const [application, setApplication]         = useState(null)  // null = not applied, obj = applied
+  const [appLoading, setAppLoading]            = useState(false)
+  const [showApplyModal, setShowApplyModal]    = useState(false)
+  const [applyMoveIn, setApplyMoveIn]          = useState('')
+  const [applyNotes, setApplyNotes]            = useState('')
+  const [applySubmitting, setApplySubmitting]  = useState(false)
+  const [applyToast, setApplyToast]            = useState(null)
 
   useEffect(() => {
     if (!currentUser || currentUser.role !== 'student') return
@@ -52,6 +60,40 @@ function ListingDetail() {
         setVerifiedReports([])
       })
  }, [id])
+
+  // ── Check if student already applied ──
+  useEffect(() => {
+    if (!currentUser?.id || currentUser.role !== 'student') return
+    setAppLoading(true)
+    fetch(`http://localhost:8000/api/listings/${id}/my-application?user_id=${currentUser.id}`)
+      .then(r => r.json())
+      .then(data => { if (data.success) setApplication(data.application) })
+      .catch(() => {})
+      .finally(() => setAppLoading(false))
+  }, [id, currentUser?.id])
+
+  const submitApply = async () => {
+    if (!applyMoveIn) { setApplyToast({ type: 'error', msg: 'Please select a move-in date.' }); return }
+    setApplySubmitting(true)
+    try {
+      const res = await fetch(`http://localhost:8000/api/listings/${id}/apply`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ student_id: currentUser.id, move_in_date: applyMoveIn, notes: applyNotes })
+      })
+      const data = await res.json()
+      if (data.success) {
+        setApplication({ status: 'pending', move_in_date: applyMoveIn, notes: applyNotes })
+        setShowApplyModal(false)
+        setApplyToast({ type: 'success', msg: data.message })
+      } else {
+        setApplyToast({ type: 'error', msg: data.message })
+      }
+    } catch { setApplyToast({ type: 'error', msg: 'Network error. Please try again.' }) }
+    finally { setApplySubmitting(false) }
+    setTimeout(() => setApplyToast(null), 5000)
+  }
+
   if (loading) return (
     <div className="min-h-screen flex items-center justify-center pt-16">
       <div className="flex flex-col items-center gap-3">
@@ -528,6 +570,45 @@ function ListingDetail() {
                       </span>
                     </Link>
                   )}
+
+                  {/* ── Apply for this Listing (students only) ── */}
+                  {currentUser?.role === 'student' && listing.status !== 'inactive' && (
+                    <div className="pt-1">
+                      {appLoading ? (
+                        <div className="w-full py-3.5 text-center text-sm text-slate-400">
+                          <i className="fa-solid fa-circle-notch fa-spin mr-2" />Checking application...
+                        </div>
+                      ) : application ? (
+                        <div className={`w-full flex items-center justify-center gap-2 py-3 rounded-xl text-sm font-semibold border ${
+                          application.status === 'pending'  ? 'bg-amber-50 border-amber-200 text-amber-700' :
+                          application.status === 'approved' ? 'bg-emerald-50 border-emerald-200 text-emerald-700' :
+                          'bg-slate-100 border-slate-200 text-slate-500'
+                        }`}>
+                          <i className={`fa-solid ${
+                            application.status === 'pending'  ? 'fa-clock' :
+                            application.status === 'approved' ? 'fa-circle-check' : 'fa-circle-xmark'
+                          }`} />
+                          {application.status === 'pending'  ? 'Application Pending…' :
+                           application.status === 'approved' ? 'Application Approved! 🎉' :
+                           'Application Declined'}
+                        </div>
+                      ) : (
+                        <button
+                          onClick={() => setShowApplyModal(true)}
+                          className="w-full flex items-center justify-center gap-2 bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-3.5 rounded-xl transition-all shadow-sm"
+                        >
+                          <i className="fa-solid fa-file-signature" />
+                          Apply for This Listing
+                        </button>
+                      )}
+                    </div>
+                  )}
+
+                  {currentUser?.role === 'student' && listing.status === 'inactive' && (
+                    <div className="w-full flex items-center justify-center gap-2 py-3 rounded-xl text-sm font-semibold bg-slate-100 border border-slate-200 text-slate-500">
+                      <i className="fa-solid fa-ban" /> Unit No Longer Available
+                    </div>
+                  )}
                 </div>
               </div>
               {/* Student fraud reporting */}
@@ -615,6 +696,78 @@ function ListingDetail() {
   targetId={id}
   reviewerId={currentUser?.id}
 />
+
+      {/* ── Apply Modal ── */}
+      {showApplyModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 px-4">
+          <div className="bg-white rounded-2xl shadow-xl w-full max-w-md p-6 space-y-5">
+            <div className="flex items-center justify-between">
+              <h2 className="text-lg font-black text-slate-900">Apply for This Listing</h2>
+              <button onClick={() => setShowApplyModal(false)} className="text-slate-400 hover:text-slate-600 text-xl leading-none">&times;</button>
+            </div>
+
+            <div className="bg-blue-50 border border-blue-100 rounded-xl px-4 py-3 text-sm text-blue-800">
+              <strong>{listing.title}</strong>
+              <p className="text-xs text-blue-600 mt-0.5">{listing.location}</p>
+            </div>
+
+            <div>
+              <label className="block text-xs font-bold text-slate-600 mb-1.5 uppercase tracking-wide">
+                Preferred Move-In Date <span className="text-red-500">*</span>
+              </label>
+              <input
+                type="date"
+                value={applyMoveIn}
+                min={new Date().toISOString().split('T')[0]}
+                onChange={e => setApplyMoveIn(e.target.value)}
+                className="w-full border border-slate-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-blue-300"
+              />
+            </div>
+
+            <div>
+              <label className="block text-xs font-bold text-slate-600 mb-1.5 uppercase tracking-wide">
+                Message to Landlord <span className="text-slate-400 font-normal">(optional)</span>
+              </label>
+              <textarea
+                value={applyNotes}
+                onChange={e => setApplyNotes(e.target.value)}
+                placeholder="Introduce yourself — your university, year, lifestyle, etc."
+                rows={3}
+                className="w-full border border-slate-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-blue-300 resize-none"
+              />
+            </div>
+
+            {applyToast && (
+              <div className={`text-sm px-4 py-3 rounded-xl ${applyToast.type === 'error' ? 'bg-red-50 text-red-700 border border-red-200' : 'bg-emerald-50 text-emerald-700 border border-emerald-200'}`}>
+                {applyToast.msg}
+              </div>
+            )}
+
+            <div className="flex gap-3 pt-1">
+              <button onClick={() => setShowApplyModal(false)} className="flex-1 py-3 rounded-xl border border-slate-200 text-slate-600 text-sm font-semibold hover:bg-slate-50">
+                Cancel
+              </button>
+              <button
+                onClick={submitApply}
+                disabled={applySubmitting}
+                className="flex-1 py-3 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-bold disabled:opacity-60 transition-colors"
+              >
+                {applySubmitting ? <><i className="fa-solid fa-circle-notch fa-spin mr-2" />Sending…</> : 'Submit Application'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── Toast (outside modal) ── */}
+      {applyToast && !showApplyModal && (
+        <div className={`fixed bottom-6 right-6 z-50 px-5 py-3.5 rounded-xl shadow-lg text-sm font-semibold max-w-sm ${
+          applyToast.type === 'error' ? 'bg-red-600 text-white' : 'bg-emerald-600 text-white'
+        }`}>
+          <i className={`fa-solid ${applyToast.type === 'error' ? 'fa-circle-xmark' : 'fa-circle-check'} mr-2`} />
+          {applyToast.msg}
+        </div>
+      )}
     </div>
   )
 }

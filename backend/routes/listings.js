@@ -274,4 +274,67 @@ router.get('/:id', (req, res) => {
   })
 })
 
+// ─── POST /api/listings/:id/apply ───────────────────────────────────────────
+// Student submits an application for a listing
+router.post('/:id/apply', (req, res) => {
+  const listing_id = req.params.id
+  const { student_id, move_in_date, notes } = req.body
+
+  if (!student_id) {
+    return res.status(400).json({ success: false, message: 'student_id is required.' })
+  }
+
+  // First fetch the listing to get landlord_id
+  db.query(
+    `SELECT landlord_id, status FROM listings WHERE id = ?`,
+    [listing_id],
+    (err, listings) => {
+      if (err) return res.status(500).json({ success: false, message: 'Server error.' })
+      if (!listings.length) return res.status(404).json({ success: false, message: 'Listing not found.' })
+
+      const listing = listings[0]
+      if (listing.status === 'inactive') {
+        return res.status(400).json({ success: false, message: 'This listing is no longer available.' })
+      }
+      if (!listing.landlord_id) {
+        return res.status(400).json({ success: false, message: 'This listing has no landlord assigned yet.' })
+      }
+
+      db.query(
+        `INSERT INTO viewing_requests (listing_id, student_id, landlord_id, move_in_date, notes, status)
+         VALUES (?, ?, ?, ?, ?, 'pending')`,
+        [listing_id, student_id, listing.landlord_id, move_in_date || null, notes || null],
+        (err2) => {
+          if (err2) {
+            if (err2.code === 'ER_DUP_ENTRY') {
+              return res.status(409).json({ success: false, message: 'You have already applied for this listing.' })
+            }
+            return res.status(500).json({ success: false, message: 'Server error.' })
+          }
+          res.json({ success: true, message: 'Application submitted! The landlord will review it shortly.' })
+        }
+      )
+    }
+  )
+})
+
+// ─── GET /api/listings/:id/my-application?user_id=X ─────────────────────────
+// Lets the frontend check if a student has already applied + current status
+router.get('/:id/my-application', (req, res) => {
+  const { user_id } = req.query
+  const listing_id = req.params.id
+  if (!user_id) return res.status(400).json({ success: false, message: 'user_id is required.' })
+
+  db.query(
+    `SELECT id, status, move_in_date, notes, created_at FROM viewing_requests
+     WHERE listing_id = ? AND student_id = ? LIMIT 1`,
+    [listing_id, user_id],
+    (err, rows) => {
+      if (err) return res.status(500).json({ success: false, message: 'Server error.' })
+      if (!rows.length) return res.json({ success: true, application: null })
+      res.json({ success: true, application: rows[0] })
+    }
+  )
+})
+
 module.exports = router

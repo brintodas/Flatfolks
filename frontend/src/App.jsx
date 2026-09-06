@@ -39,6 +39,7 @@ import PaymentPage            from './pages/PaymentsPage'
 import PaymentResult          from './pages/PaymentResult'
 import PaymentsPage           from './pages/PaymentsPage'
 import RentReminder from './pages/RentReminder'
+import MyTenancy              from './pages/MyTenancy'
 
 function ConditionalFooter() {
   const location = useLocation()
@@ -87,6 +88,7 @@ function App() {
           <Route path="/maintenance"        element={<MaintenancePage />} />
           <Route path="/utility-assistance" element={<UtilityAssistance />} />
           <Route path="/rent-reminder"      element={<RentReminder />} />
+          <Route path="/my-tenancy"         element={<MyTenancy />} />
           <Route path="/lifestyle-quiz"     element={<LifestyleQuiz />} />
 
           {/* Centralized Payment Gateway — every payable flow routes here */}

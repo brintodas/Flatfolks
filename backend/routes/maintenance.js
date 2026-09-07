@@ -6,12 +6,21 @@
 const express = require('express')
 const router = express.Router()
 const db = require('../config/db')
+const { MIN_ADVANCE_FEE } = require('../config/pricing')
 
 // Helper for database queries
 const query = (sql, params = []) =>
   new Promise((resolve, reject) =>
     db.query(sql, params, (err, rows) => (err ? reject(err) : resolve(rows)))
   )
+
+// A service with no priced estimated_cost (or ৳0) still needs a payable
+// advance amount — fall back to the flat minimum fee instead of ৳0.
+const withCostFloor = (cost) => (Number(cost) > 0 ? Number(cost) : MIN_ADVANCE_FEE)
+
+// Same floor, applied to a whole result set's estimated_cost column.
+const applyCostFloor = (rows) =>
+  rows.map((r) => ({ ...r, estimated_cost: withCostFloor(r.estimated_cost) }))
 
 const VALID_TIME_SLOTS = [
   'জোহরের আগে',
@@ -176,7 +185,7 @@ router.post('/bookings', async (req, res) => {
         time_slot,
         problem_description,
         status
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, 'CONFIRMED')
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, 'PENDING_PAYMENT')
     `
     const result = await query(sql, [
       apartment_id || 1,
@@ -190,13 +199,14 @@ router.post('/bookings', async (req, res) => {
 
     const serviceRows = await query('SELECT estimated_cost, name FROM services WHERE id = ?', [service_id])
     const service = serviceRows[0] || {}
+    const bookingCost = withCostFloor(service.estimated_cost)
 
     res.status(201).json({
       success: true,
       booking_id: result.insertId,
-      estimated_cost: service.estimated_cost,
+      estimated_cost: bookingCost,
       service_name: service.name,
-      message: 'Technician booked successfully. Shared with all flatmates!',
+      message: 'Booking created. Please complete payment to confirm.',
     })
   } catch (err) {
     console.error('Error saving booking:', err)
@@ -205,6 +215,11 @@ router.post('/bookings', async (req, res) => {
 })
 
 // ─── 4. Helper function for fetching logs with home / roommate isolation ────
+// Only CONFIRMED (and later IN_PROGRESS / DONE / CANCELLED) bookings show up
+// here — a booking still sitting in PENDING_PAYMENT hasn't actually been
+// "booked" yet from the flat's point of view, so it's deliberately excluded.
+// It still shows up for the person who created it under Due Payments until
+// they either pay (→ CONFIRMED, appears here) or cancel it from there.
 async function getLogsForUserOrApartment(userId, apartmentId) {
   const baseSql = `
     SELECT 
@@ -217,6 +232,7 @@ async function getLogsForUserOrApartment(userId, apartmentId) {
       sr.status,
       sr.created_at,
       s.name AS service_name,
+      s.estimated_cost AS estimated_cost,
       c.name AS category_name,
       t.name AS technician_name,
       t.phone AS technician_phone,
@@ -243,18 +259,21 @@ async function getLogsForUserOrApartment(userId, apartmentId) {
     if (groupRows.length > 0) {
       const flatmateIds = [...new Set(groupRows.map((r) => r.flatmate_id))]
       const groupId = groupRows[0].group_id
-      const sql = `${baseSql} WHERE (sr.requested_by_user_id IN (?) OR sr.apartment_id = ?) ORDER BY sr.id DESC`
-      return await query(sql, [flatmateIds, groupId])
+      const sql = `${baseSql} WHERE (sr.requested_by_user_id IN (?) OR sr.apartment_id = ?) AND sr.status != 'PENDING_PAYMENT' ORDER BY sr.id DESC`
+      const rows = await query(sql, [flatmateIds, groupId])
+      return applyCostFloor(rows)
     } else {
       // User is not in a roommate group -> only sees their own bookings
-      const sql = `${baseSql} WHERE sr.requested_by_user_id = ? ORDER BY sr.id DESC`
-      return await query(sql, [userId])
+      const sql = `${baseSql} WHERE sr.requested_by_user_id = ? AND sr.status != 'PENDING_PAYMENT' ORDER BY sr.id DESC`
+      const rows = await query(sql, [userId])
+      return applyCostFloor(rows)
     }
   }
 
   if (apartmentId && apartmentId !== 'undefined' && apartmentId !== 'null') {
-    const sql = `${baseSql} WHERE sr.apartment_id = ? ORDER BY sr.id DESC`
-    return await query(sql, [apartmentId])
+    const sql = `${baseSql} WHERE sr.apartment_id = ? AND sr.status != 'PENDING_PAYMENT' ORDER BY sr.id DESC`
+    const rows = await query(sql, [apartmentId])
+    return applyCostFloor(rows)
   }
 
   return []

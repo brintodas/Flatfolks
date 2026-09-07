@@ -551,7 +551,8 @@ router.put('/listings/:id/quick-update', (req, res) => {
 })
 
 // ─── PUT /api/landlord/viewing-requests/:id/approve ──────────────────────────
-// Approve an application: creates tenancy, marks listing inactive, notifies student
+// Approve an application: creates tenancy (status=pending_payment), notifies student to pay advance.
+// Listing stays active; flips to 'inactive' only AFTER advance payment is confirmed.
 router.put('/viewing-requests/:id/approve', async (req, res) => {
   const { id } = req.params
   const { rent_amount, start_date } = req.body
@@ -578,12 +579,14 @@ router.put('/viewing-requests/:id/approve', async (req, res) => {
       return res.status(400).json({ success: false, message: 'This application is no longer pending.' })
     }
 
-    // 2. Create tenancy row
-    await q(
+    // 2. Create tenancy row — starts as 'pending_payment'.
+    //    Flips to 'active' (and listing becomes 'inactive') only after advance payment clears.
+    const tenancyResult = await q(
       `INSERT INTO tenancies (listing_id, landlord_id, tenant_user_id, tenant_name, tenant_phone, rent_amount, start_date, status)
-       VALUES (?, ?, ?, ?, ?, ?, ?, 'active')`,
+       VALUES (?, ?, ?, ?, ?, ?, ?, 'pending_payment')`,
       [vr.listing_id, vr.landlord_id, vr.student_id, vr.student_name, vr.student_phone || null, rent_amount, start_date]
     )
+    const tenancyId = tenancyResult.insertId
 
     // 3. Mark the viewing request as approved
     await q(`UPDATE viewing_requests SET status = 'approved' WHERE id = ?`, [id])
@@ -595,21 +598,33 @@ router.put('/viewing-requests/:id/approve', async (req, res) => {
       [vr.listing_id, id]
     )
 
-    // 5. Mark the listing as inactive (unit is now occupied)
-    await q(`UPDATE listings SET status = 'inactive' WHERE id = ?`, [vr.listing_id])
+    // 5. Listing stays active until advance payment is confirmed — NOT marked inactive here.
 
-    // 6. Send in-app notification to the student
+    // 6. Send advance-payment notification to the student
     await q(
-      `INSERT INTO notifications (user_id, type, title, body)
-       VALUES (?, 'system', ?, ?)`,
+      `INSERT INTO notifications (user_id, type, title, message, related_type, related_id)
+       VALUES (?, 'advance_payment', ?, ?, 'tenancy', ?)`,
       [
         vr.student_id,
-        'Application Approved!',
-        `Congratulations! Your application for "${vr.listing_title}" has been approved. You can now view your tenancy and pay rent from your dashboard.`
+        'Advance Payment Required',
+        `Your application for "${vr.listing_title}" has been approved! Please complete your advance payment of ৳${Number(rent_amount).toLocaleString()} to confirm your tenancy.`,
+        tenancyId
       ]
-    ).catch(() => {}) // notification failure must not block the main flow
+    ).catch(() => {})
 
-    res.json({ success: true, message: 'Application approved. Tenancy created.' })
+    // 7. Notify the landlord that advance payment is pending
+    await q(
+      `INSERT INTO notifications (user_id, type, title, message, related_type, related_id)
+       VALUES (?, 'system', ?, ?, 'tenancy', ?)`,
+      [
+        vr.landlord_id,
+        'Application Approved — Awaiting Payment',
+        `You approved ${vr.student_name}'s application for "${vr.listing_title}". The tenancy activates once they pay the advance of ৳${Number(rent_amount).toLocaleString()}.`,
+        tenancyId
+      ]
+    ).catch(() => {})
+
+    res.json({ success: true, message: 'Application approved. Student notified to complete advance payment.' })
   } catch (err) {
     console.error('Approve error:', err)
     res.status(500).json({ success: false, message: 'Server error.' })
@@ -641,7 +656,7 @@ router.put('/viewing-requests/:id/decline', async (req, res) => {
       : `Your application for "${vr.listing_title}" was not selected this time. Keep looking — there are more listings available!`;
 
     await q(
-      `INSERT INTO notifications (user_id, type, title, body)
+      `INSERT INTO notifications (user_id, type, title, message)
        VALUES (?, 'system', ?, ?)`,
       [vr.student_id, 'Application Update', notifBody]
     ).catch(() => {})

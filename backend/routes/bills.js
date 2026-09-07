@@ -24,8 +24,28 @@ const query = (sql, params = []) =>
 // ─── GET /api/bills/group/:groupId ───────────────────────────────────────────
 router.get('/group/:groupId', async (req, res) => {
   const { groupId } = req.params
+  const userId = req.query.user_id || req.body?.user_id
+
   if (!groupId) {
     return res.status(400).json({ success: false, message: 'groupId is required.' })
+  }
+
+  // Authorization check: User must be a member of the group if userId is provided
+  if (userId) {
+    try {
+      const isMember = await query(
+        'SELECT 1 FROM roommate_group_members WHERE group_id = ? AND user_id = ?',
+        [groupId, userId]
+      )
+      if (isMember.length === 0) {
+        return res.status(403).json({
+          success: false,
+          message: 'You are not authorized to view this flat\'s bills.',
+        })
+      }
+    } catch (authErr) {
+      console.error('Authorization check error in bills:', authErr)
+    }
   }
 
   try {

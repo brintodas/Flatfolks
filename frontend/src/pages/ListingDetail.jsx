@@ -15,7 +15,40 @@ function ListingDetail() {
   const [verifiedReports, setVerifiedReports] = useState([])
   const [userGroup, setUserGroup] = useState(null)
   const [bookingMode, setBookingMode] = useState(() => sessionStorage.getItem('ff_search_mode') || 'group')
+  const [linkCopied, setLinkCopied] = useState(false)
+  const handleShare = async () => {
+  const shareData = {
+    title: listing?.title || 'Flatfolks Listing',
+    text: listing
+      ? `Check out this flat: ${listing.title}`
+      : 'Check out this flat on Flatfolks',
+    url: window.location.href
+  }
 
+  try {
+    if (navigator.share) {
+      await navigator.share(shareData)
+    } else {
+      await navigator.clipboard.writeText(window.location.href)
+      setLinkCopied(true)
+      setTimeout(() => setLinkCopied(false), 2000)
+    }
+  } catch (err) {
+    if (err?.name !== 'AbortError') {
+      console.error('Share failed:', err)
+    }
+  }
+}
+
+const handleCopyLink = async () => {
+  try {
+    await navigator.clipboard.writeText(window.location.href)
+    setLinkCopied(true)
+    setTimeout(() => setLinkCopied(false), 2000)
+  } catch (err) {
+    console.error('Copy link failed:', err)
+  }
+}
   // ── Application state ──
   const [application, setApplication]         = useState(null)  // null = not applied, obj = applied
   const [appLoading, setAppLoading]            = useState(false)
@@ -409,6 +442,25 @@ function ListingDetail() {
                   {[listing.location, listing.area, listing.district].filter(Boolean).join(', ')}
                 </p>
               </div>
+<div className="flex items-center gap-2 shrink-0">
+  <button
+    type="button"
+    onClick={handleShare}
+    className="px-3 py-2 rounded-lg border border-slate-200 text-sm font-semibold text-slate-700 hover:bg-slate-50 flex items-center gap-2"
+  >
+    <i className="fa-solid fa-share-nodes"></i>
+    Share
+  </button>
+
+  <button
+    type="button"
+    onClick={handleCopyLink}
+    className="px-3 py-2 rounded-lg border border-slate-200 text-sm font-semibold text-slate-700 hover:bg-slate-50 flex items-center gap-2"
+  >
+    <i className="fa-solid fa-link"></i>
+    {linkCopied ? 'Copied!' : 'Copy Link'}
+  </button>
+</div>
               <span className="shrink-0 text-xs font-bold px-3 py-1.5 rounded-full text-white"
                 style={{ background: genderColor }}>
                 {genderLabel}

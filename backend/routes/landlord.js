@@ -150,16 +150,25 @@ router.get('/:id/public', async (req, res) => {
     if (userRows.length === 0) return res.json({ success: false, message: 'Landlord not found' })
     const landlord = userRows[0]
 
-    // active/open listings — drives the portfolio list, occupancy stats, service areas, and price range
-    const listings = await q(
+    // ALL listings this landlord owns, regardless of status — this is what
+    // occupancy stats, service areas, and price range are computed from, so
+    // these numbers match the private dashboard (GET /:id/dashboard) exactly.
+    // NOTE: `l.status` flips to 'inactive' automatically once a unit becomes
+    // occupied (see payment_gateway_migration.sql), so filtering it out here
+    // was silently excluding occupied units from the public occupancy stats.
+    const allListings = await q(
       `SELECT l.id, l.title, l.property_group, l.rent, l.location, l.area, l.district,
               l.beds, l.photos, l.status, l.property_type,
               (SELECT COUNT(*) FROM tenancies t WHERE t.listing_id = l.id AND t.status = 'active') AS occupied
        FROM listings l
-       WHERE l.landlord_id = ? AND l.status != 'inactive'
+       WHERE l.landlord_id = ?
        ORDER BY l.created_at DESC`,
       [landlordId]
     )
+
+    // Only the listings students can actually browse/apply to right now —
+    // drives the public "Portfolio" photo grid only, not the stats above.
+    const listings = allListings.filter(l => l.status !== 'inactive')
 
     const ratingRows = await q(
       `SELECT ROUND(AVG(rating), 1) AS avg_rating, COUNT(*) AS review_count
@@ -200,8 +209,8 @@ router.get('/:id/public', async (req, res) => {
       [landlordId]
     )
 
-    const totalUnits = listings.length
-    const vacantUnits = listings.filter(l => l.occupied === 0).length
+    const totalUnits = allListings.length
+    const vacantUnits = allListings.filter(l => l.occupied === 0).length
     const occupiedUnits = totalUnits - vacantUnits
     const occupancyRate = totalUnits ? Math.round((occupiedUnits / totalUnits) * 100) : 0
 
@@ -210,13 +219,14 @@ router.get('/:id/public', async (req, res) => {
       return { rating: star, count: row ? row.count : 0 }
     })
 
-    // service areas + price range, derived from their current open listings
+    // service areas + price range, derived from the FULL portfolio (so this
+    // also matches the dashboard, not just the currently-browsable listings)
     const areaSet = new Set()
-    listings.forEach(l => {
+    allListings.forEach(l => {
       const label = [l.area, l.district].filter(Boolean).join(', ')
       if (label) areaSet.add(label)
     })
-    const rents = listings.map(l => l.rent).filter(r => r != null)
+    const rents = allListings.map(l => l.rent).filter(r => r != null)
 
     const viewingTotal = viewingRows[0].total || 0
     const viewingResponded = viewingRows[0].responded || 0

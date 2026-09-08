@@ -372,4 +372,91 @@ router.get('/:id/my-application', (req, res) => {
   )
 })
 
+// ─── PATCH /api/listings/:id/rent ───────────────────────────────────────────
+// Landlord-only: change a listing's monthly rent. The previous rent is
+// logged to listing_rent_history so students can see how rent has moved
+// on the listing detail page. Nothing else about the listing is editable
+// here — this route is scoped to just the rent-edit feature.
+router.patch('/:id/rent', (req, res) => {
+  const listingId = req.params.id
+  const { landlord_id, rent } = req.body
+
+  const newRent = parseInt(rent)
+  if (!landlord_id) {
+    return res.status(400).json({ success: false, message: 'landlord_id is required.' })
+  }
+  if (!newRent || newRent <= 0) {
+    return res.status(400).json({ success: false, message: 'A valid rent amount is required.' })
+  }
+
+  db.query('SELECT id, rent, landlord_id FROM listings WHERE id = ?', [listingId], (err, rows) => {
+    if (err) {
+      console.log('Error fetching listing for rent edit:', err)
+      return res.status(500).json({ success: false, message: 'Server error.' })
+    }
+    if (rows.length === 0) {
+      return res.status(404).json({ success: false, message: 'Listing not found.' })
+    }
+
+    const listing = rows[0]
+    if (!listing.landlord_id || String(listing.landlord_id) !== String(landlord_id)) {
+      return res.status(403).json({ success: false, message: 'You are not authorized to edit this listing.' })
+    }
+
+    const oldRent = listing.rent
+    if (newRent === oldRent) {
+      return res.status(400).json({ success: false, message: 'New rent must be different from the current rent.' })
+    }
+
+    db.query('UPDATE listings SET rent = ? WHERE id = ?', [newRent, listingId], (err2) => {
+      if (err2) {
+        console.log('Error updating rent:', err2)
+        return res.status(500).json({ success: false, message: 'Failed to update rent.' })
+      }
+
+      db.query(
+        `INSERT INTO listing_rent_history (listing_id, old_rent, new_rent, changed_by) VALUES (?, ?, ?, ?)`,
+        [listingId, oldRent, newRent, landlord_id],
+        (err3, result) => {
+          if (err3) {
+            // Rent itself already updated successfully — a failure to log
+            // history shouldn't be reported to the landlord as a failure.
+            console.log('Error logging rent history:', err3)
+            return res.json({ success: true, rent: newRent, message: 'Rent updated.' })
+          }
+          res.json({
+            success: true,
+            rent: newRent,
+            message: 'Rent updated successfully.',
+            history_entry: {
+              id: result.insertId,
+              old_rent: oldRent,
+              new_rent: newRent,
+              changed_at: new Date().toISOString(),
+            },
+          })
+        }
+      )
+    })
+  })
+})
+
+// ─── GET /api/listings/:id/rent-history ─────────────────────────────────────
+// Public/read-only — shown on the listing detail page so students can see
+// how the rent for this specific listing has changed over time.
+router.get('/:id/rent-history', (req, res) => {
+  db.query(
+    `SELECT id, old_rent, new_rent, changed_at FROM listing_rent_history
+     WHERE listing_id = ? ORDER BY changed_at DESC`,
+    [req.params.id],
+    (err, rows) => {
+      if (err) {
+        console.log('Error fetching rent history:', err)
+        return res.status(500).json({ success: false, message: 'Server error.' })
+      }
+      res.json({ success: true, data: rows })
+    }
+  )
+})
+
 module.exports = router

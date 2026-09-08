@@ -25,7 +25,7 @@ const SERVICE_LABELS = {
   maintenance: 'Maintenance',
   utility_assistance: 'Utility',
   shared_bill: 'Shared Bill',
-  meal: 'Meal Plan',
+  meal_subscription: 'Meal Plan',
   other: 'Other',
 }
 
@@ -35,8 +35,15 @@ const SERVICE_ICON = {
   maintenance: 'fa-wrench',
   utility_assistance: 'fa-bolt',
   shared_bill: 'fa-users',
-  meal: 'fa-utensils',
+  meal_subscription: 'fa-utensils',
   other: 'fa-circle-dollar-to-slot',
+}
+
+// Service types that can be cancelled straight from the Due Payments list,
+// before ever paying — and which endpoint handles the cancel for each.
+const CANCELLABLE_DUE_TYPES = {
+  maintenance: { method: 'DELETE', url: (p, uid) => `${API}/maintenance/bookings/${p.reference_id}?user_id=${uid}` },
+  meal_subscription: { method: 'PATCH', url: (p) => `${API}/meals/subscriptions/${p.reference_id}` },
 }
 
 export default function PaymentsPage() {
@@ -91,24 +98,30 @@ export default function PaymentsPage() {
     finally { setLoadingHistory(false) }
   }, [currentUser?.id])
 
-  // ── Cancel an unpaid maintenance booking directly from the due list ────────
+  // ── Cancel an unpaid due item directly from the list ────────────────────────
   // (Advance-deposit dues aren't cancellable here — that flow goes through
   // the landlord, not the payer.)
   const [cancellingId, setCancellingId] = useState(null)
   const handleCancelDue = async (payment) => {
-    if (payment.type !== 'maintenance') return
-    if (!window.confirm('Cancel this maintenance booking? You will not be charged.')) return
+    const handler = CANCELLABLE_DUE_TYPES[payment.type]
+    if (!handler) return
+    if (!window.confirm('Cancel this? You will not be charged.')) return
     setCancellingId(payment.id)
     try {
-      const res = await fetch(
-        `${API}/maintenance/bookings/${payment.reference_id}?user_id=${currentUser.id}`,
-        { method: 'DELETE' }
-      )
+      const res = await fetch(handler.url(payment, currentUser.id), {
+        method: handler.method,
+        ...(handler.method === 'PATCH'
+          ? {
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ user_id: currentUser.id, status: 'cancelled' }),
+            }
+          : {}),
+      })
       const json = await res.json()
       if (json.success) {
         setDuePayments((prev) => prev.filter((p) => p.id !== payment.id))
       } else {
-        alert(json.message || 'Could not cancel this booking.')
+        alert(json.message || 'Could not cancel this.')
       }
     } catch (err) {
       alert('Network error while cancelling.')
@@ -341,7 +354,7 @@ export default function PaymentsPage() {
                     <p className="text-3xl font-extrabold text-slate-900 mt-3">৳{Number(p.amount).toLocaleString()}</p>
                   </div>
                   <div className="mt-6 flex gap-2">
-                    {p.type === 'maintenance' && (
+                    {CANCELLABLE_DUE_TYPES[p.type] && (
                       <button
                         onClick={() => handleCancelDue(p)}
                         disabled={cancellingId === p.id}
@@ -745,6 +758,14 @@ export default function PaymentsPage() {
                             className="w-full py-3.5 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-xl transition-colors"
                           >
                             View Maintenance Log →
+                          </button>
+                        )}
+                        {(selectedPayment.type === 'meal_subscription') && (
+                          <button
+                            onClick={() => { handleDoneAfterSuccess(); navigate('/meal-plans') }}
+                            className="w-full py-3.5 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-xl transition-colors"
+                          >
+                            View My Meal Plan →
                           </button>
                         )}
                         <button

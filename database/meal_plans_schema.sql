@@ -60,7 +60,7 @@ INSERT INTO `meal_providers` (`id`, `name`, `contact_phone`, `contact_email`, `a
 (1, 'Badda Student Mess', '01711000001', 'badda.mess@flatfolks.local', 'Badda', 'Dhaka', 'Small mess run by Rahim bhai near Link Road. Mostly BRACU students. Food is simple but filling — nothing fancy, just proper home-style bhaat-dal.', 1, 4.60, 'active'),
 (2, 'Dhanmondi Home Kitchen', '01711000002', 'dhanmondi.kitchen@flatfolks.local', 'Dhanmondi', 'Dhaka', 'Run by Aunty Farida from her flat kitchen. Good if you just moved in and the stove is not set up yet. Lunch boxes only, no dine-in.', 1, 4.50, 'active'),
 (3, 'Uttara Mess Point', '01711000003', 'uttara.mess@flatfolks.local', 'Uttara', 'Dhaka', 'Sector 4 er pasher mess. Breakfast is basic but lunch is solid. A lot of NSU and UIU students eat here.', 1, 4.40, 'active'),
-(4, 'Bashundhara Catering Hub', '01711000004', 'bashundhara.catering@flatfolks.local', 'Bashundhara R/A', 'Dhaka', 'Slightly better quality than average mess — they actually change the menu and don't repeat chicken curry 5 days straight.', 1, 4.70, 'active'),
+(4, 'Bashundhara Catering Hub', '01711000004', 'bashundhara.catering@flatfolks.local', 'Bashundhara R/A', 'Dhaka', 'Slightly better quality than average mess — they actually change the menu and don''t repeat chicken curry 5 days straight.', 1, 4.70, 'active'),
 (5, 'Mirpur Student Meals', '01711000005', 'mirpur.meals@flatfolks.local', 'Mirpur', 'Dhaka', 'Cheapest option on the list. Portions are okay, taste is fine for the price. Pickup from Mirpur 10 stand.', 0, 4.30, 'active');
 
 -- Seed plans

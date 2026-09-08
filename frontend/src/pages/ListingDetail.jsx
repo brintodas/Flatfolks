@@ -662,7 +662,7 @@ function ListingDetail() {
     <div className="mt-4">
       <FraudReportForm
         listingId={listing.id}
-        onSubmitted={() => setShowFraudReportForm(false)}
+        onSubmitted={() => setTimeout(() => setShowFraudReportForm(false), 2500)}
       />
     </div>
   )}

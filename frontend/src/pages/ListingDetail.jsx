@@ -34,6 +34,14 @@ function ListingDetail() {
   const [applySubmitting, setApplySubmitting]  = useState(false)
   const [applyToast, setApplyToast]            = useState(null)
 
+  // ── Rent editing (landlord-only) + rent history (everyone) ──
+  const [rentHistory, setRentHistory]     = useState([])
+  const [showEditRent, setShowEditRent]   = useState(false)
+  const [showRentHistory, setShowRentHistory] = useState(false)
+  const [newRent, setNewRent]             = useState('')
+  const [rentSaving, setRentSaving]       = useState(false)
+  const [rentError, setRentError]         = useState('')
+
   useEffect(() => {
     if (!currentUser || currentUser.role !== 'student') return
     fetch(`http://localhost:8000/api/roommates/my-group?user_id=${currentUser.id}`)
@@ -69,6 +77,13 @@ function ListingDetail() {
         setVerifiedReports([])
       })
  }, [id])
+
+  useEffect(() => {
+    fetch(`http://localhost:8000/api/listings/${id}/rent-history`)
+      .then(res => res.json())
+      .then(json => { if (json.success) setRentHistory(json.data || []) })
+      .catch(() => {})
+  }, [id])
 
   // ── Check if student already applied ──
   useEffect(() => {
@@ -121,6 +136,47 @@ function ListingDetail() {
     setTimeout(() => setApplyToast(null), 5000)
   }
 
+  const openEditRent = () => {
+    setNewRent(listing.rent != null ? String(listing.rent) : '')
+    setRentError('')
+    setShowEditRent(true)
+  }
+
+  const handleUpdateRent = async () => {
+    const parsed = Number(newRent)
+    if (!newRent || !Number.isFinite(parsed) || parsed <= 0) {
+      setRentError('Enter a valid rent amount.')
+      return
+    }
+    if (parsed === Number(listing.rent)) {
+      setRentError('New rent must be different from the current rent.')
+      return
+    }
+    setRentSaving(true)
+    setRentError('')
+    try {
+      const res = await fetch(`http://localhost:8000/api/listings/${id}/rent`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ landlord_id: currentUser.id, rent: parsed }),
+      })
+      const data = await res.json()
+      if (data.success) {
+        setListing(prev => ({ ...prev, rent: data.rent }))
+        if (data.history_entry) {
+          setRentHistory(prev => [data.history_entry, ...prev])
+        }
+        setShowEditRent(false)
+      } else {
+        setRentError(data.message || 'Could not update rent.')
+      }
+    } catch {
+      setRentError('Network error. Please try again.')
+    } finally {
+      setRentSaving(false)
+    }
+  }
+
   if (loading) return (
     <div className="min-h-screen flex items-center justify-center pt-16">
       <div className="flex flex-col items-center gap-3">
@@ -140,6 +196,8 @@ function ListingDetail() {
 
   const photos = listing.photos ? listing.photos.split(',').filter(p => p.trim()) : []
   const BASE = 'http://localhost:8000/uploads'
+  const isOwner = currentUser?.role === 'landlord' && listing.landlord_id &&
+    String(currentUser.id) === String(listing.landlord_id)
 
   const genderColor = listing.gender_preference === 'female' ? '#db2777' :
                       listing.gender_preference === 'male'   ? '#2563eb' : '#16a34a'
@@ -501,41 +559,55 @@ function ListingDetail() {
 
                 {/* Price header */}
                 <div className="p-6 border-b border-slate-100">
-                  {bookingMode === 'group' && userGroup && userGroup.members?.length > 1 ? (
-                    <div>
-                      <div className="flex items-baseline gap-2 mb-0.5">
-                        <span className="text-3xl font-black text-blue-700">
-                          ৳{Math.round(listing.rent / userGroup.members.length).toLocaleString()}
-                        </span>
-                        <span className="text-slate-500 font-semibold text-xs">/ person per month</span>
-                      </div>
-                      <p className="text-xs text-slate-500 mt-1 font-medium">
-                        Total rent: <strong className="text-slate-800">৳{Number(listing.rent).toLocaleString()}/mo</strong> split across {userGroup.members.length} roommates
-                      </p>
-                      <div className="mt-2.5 flex items-center gap-1.5 flex-wrap">
-                        <span className="text-[11px] font-bold text-slate-600">Roommates:</span>
-                        {userGroup.members.map((m) => (
-                          <span key={m.id} className="text-[10px] font-semibold bg-blue-50 text-blue-700 border border-blue-100 px-2 py-0.5 rounded-md">
-                            {m.full_name?.split(' ')[0] || 'Member'}
-                          </span>
-                        ))}
-                      </div>
-                    </div>
-                  ) : (
-                    <div>
-                      <div className="flex items-baseline gap-2 mb-1">
-                        <span className="text-3xl font-black text-slate-900">
-                          ৳{Number(listing.rent).toLocaleString()}
-                        </span>
-                        <span className="text-slate-400 font-normal">/ month</span>
-                      </div>
-                      {userGroup && (
-                        <p className="text-xs text-indigo-600 font-medium">
-                          Individual student rate
-                        </p>
+                  <div className="flex items-start justify-between gap-2">
+                    <div className="flex-1">
+                      {bookingMode === 'group' && userGroup && userGroup.members?.length > 1 ? (
+                        <div>
+                          <div className="flex items-baseline gap-2 mb-0.5">
+                            <span className="text-3xl font-black text-blue-700">
+                              ৳{Math.round(listing.rent / userGroup.members.length).toLocaleString()}
+                            </span>
+                            <span className="text-slate-500 font-semibold text-xs">/ person per month</span>
+                          </div>
+                          <p className="text-xs text-slate-500 mt-1 font-medium">
+                            Total rent: <strong className="text-slate-800">৳{Number(listing.rent).toLocaleString()}/mo</strong> split across {userGroup.members.length} roommates
+                          </p>
+                          <div className="mt-2.5 flex items-center gap-1.5 flex-wrap">
+                            <span className="text-[11px] font-bold text-slate-600">Roommates:</span>
+                            {userGroup.members.map((m) => (
+                              <span key={m.id} className="text-[10px] font-semibold bg-blue-50 text-blue-700 border border-blue-100 px-2 py-0.5 rounded-md">
+                                {m.full_name?.split(' ')[0] || 'Member'}
+                              </span>
+                            ))}
+                          </div>
+                        </div>
+                      ) : (
+                        <div>
+                          <div className="flex items-baseline gap-2 mb-1">
+                            <span className="text-3xl font-black text-slate-900">
+                              ৳{Number(listing.rent).toLocaleString()}
+                            </span>
+                            <span className="text-slate-400 font-normal">/ month</span>
+                          </div>
+                          {userGroup && (
+                            <p className="text-xs text-indigo-600 font-medium">
+                              Individual student rate
+                            </p>
+                          )}
+                        </div>
                       )}
                     </div>
-                  )}
+
+                    {isOwner && (
+                      <button
+                        onClick={openEditRent}
+                        className="shrink-0 flex items-center gap-1.5 text-xs font-semibold text-blue-700 border border-blue-200 hover:bg-blue-50 px-2.5 py-1.5 rounded-lg transition-colors"
+                        title="Edit monthly rent"
+                      >
+                        <i className="fa-solid fa-pen text-[10px]"></i> Edit rent
+                      </button>
+                    )}
+                  </div>
 
                   {listing.available_from && (
                     <p className="text-sm text-slate-500 mt-2">
@@ -546,6 +618,39 @@ function ListingDetail() {
                         })}
                       </span>
                     </p>
+                  )}
+
+                  {/* Rent history — visible to everyone viewing this listing */}
+                  {rentHistory.length > 0 && (
+                    <div className="mt-3 pt-3 border-t border-slate-100">
+                      <button
+                        onClick={() => setShowRentHistory(v => !v)}
+                        className="flex items-center gap-1.5 text-xs font-semibold text-slate-500 hover:text-slate-700 transition-colors"
+                      >
+                        <i className={`fa-solid fa-clock-rotate-left text-[10px]`}></i>
+                        {showRentHistory ? 'Hide rent history' : `View rent history (${rentHistory.length})`}
+                        <i className={`fa-solid fa-chevron-${showRentHistory ? 'up' : 'down'} text-[9px]`}></i>
+                      </button>
+
+                      {showRentHistory && (
+                        <ul className="mt-2.5 space-y-1.5">
+                          {rentHistory.map(h => {
+                            const increased = Number(h.new_rent) > Number(h.old_rent)
+                            return (
+                              <li key={h.id} className="flex items-center justify-between text-xs text-slate-500">
+                                <span className="flex items-center gap-1.5">
+                                  <i className={`fa-solid ${increased ? 'fa-arrow-trend-up text-red-500' : 'fa-arrow-trend-down text-emerald-600'}`}></i>
+                                  ৳{Number(h.old_rent).toLocaleString()} → ৳{Number(h.new_rent).toLocaleString()}
+                                </span>
+                                <span className="text-slate-400">
+                                  {new Date(h.changed_at).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}
+                                </span>
+                              </li>
+                            )
+                          })}
+                        </ul>
+                      )}
+                    </div>
                   )}
                 </div>
 
@@ -847,6 +952,56 @@ function ListingDetail() {
                 className="flex-1 py-3 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-bold disabled:opacity-60 transition-colors"
               >
                 {applySubmitting ? <><i className="fa-solid fa-circle-notch fa-spin mr-2" />Sending…</> : 'Submit Application'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── Edit Rent Modal (landlord-only) ── */}
+      {showEditRent && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 px-4">
+          <div className="bg-white rounded-2xl shadow-xl w-full max-w-sm p-6 space-y-5">
+            <div className="flex items-center justify-between">
+              <h2 className="text-lg font-black text-slate-900">Edit Monthly Rent</h2>
+              <button onClick={() => setShowEditRent(false)} className="text-slate-400 hover:text-slate-600 text-xl leading-none">&times;</button>
+            </div>
+
+            <div className="bg-slate-50 border border-slate-100 rounded-xl px-4 py-3 text-sm text-slate-600">
+              Current rent: <strong className="text-slate-800">৳{Number(listing.rent).toLocaleString()}/mo</strong>
+              <p className="text-xs text-slate-400 mt-1">
+                Changing this will be logged and shown to students as rent history on this listing.
+              </p>
+            </div>
+
+            <div>
+              <label className="block text-xs font-bold text-slate-600 mb-1.5 uppercase tracking-wide">
+                New Monthly Rent (৳)
+              </label>
+              <input
+                type="number"
+                min="1"
+                value={newRent}
+                onChange={e => setNewRent(e.target.value)}
+                placeholder="e.g. 20000"
+                className="w-full border border-slate-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-blue-300"
+              />
+            </div>
+
+            {rentError && (
+              <p className="text-sm text-red-600 bg-red-50 border border-red-200 rounded-xl px-4 py-3">{rentError}</p>
+            )}
+
+            <div className="flex gap-3 pt-1">
+              <button onClick={() => setShowEditRent(false)} className="flex-1 py-3 rounded-xl border border-slate-200 text-slate-600 text-sm font-semibold hover:bg-slate-50">
+                Cancel
+              </button>
+              <button
+                onClick={handleUpdateRent}
+                disabled={rentSaving}
+                className="flex-1 py-3 rounded-xl bg-blue-700 hover:bg-blue-800 text-white text-sm font-bold disabled:opacity-60 transition-colors"
+              >
+                {rentSaving ? <><i className="fa-solid fa-circle-notch fa-spin mr-2" />Saving…</> : 'Save New Rent'}
               </button>
             </div>
           </div>

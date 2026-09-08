@@ -73,9 +73,7 @@ async function ensureTablesAndData() {
         updated_at timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
         PRIMARY KEY (id),
         KEY idx_user (user_id),
-        KEY idx_plan (plan_id),
-        CONSTRAINT meal_subscriptions_plan_fk FOREIGN KEY (plan_id) REFERENCES meal_plans (id),
-        CONSTRAINT meal_subscriptions_user_fk FOREIGN KEY (user_id) REFERENCES users (id) ON DELETE CASCADE
+        KEY idx_plan (plan_id)
       ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci
     `)
 

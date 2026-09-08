@@ -154,6 +154,7 @@ const Navbar = () => {
         { to: '/my-applications', icon: 'fa-file-signature', label: 'My Applications' },
         { to: '/bills', icon: 'fa-receipt', label: 'Shared Bills' },
         { to: '/meal-plans', icon: 'fa-utensils', label: 'Meal Plans' },
+        { to: '/utility-assistance', icon: 'fa-plug', label: 'Utility Assistance' },
         { to: '/maintenance', icon: 'fa-wrench', label: 'Maintenance' },
         { to: '/rent-reminder', icon: 'fa-calendar-check', label: 'Rent Reminder' },
         { to: '/lifestyle-quiz', icon: 'fa-clipboard-list', label: 'Lifestyle Quiz' },

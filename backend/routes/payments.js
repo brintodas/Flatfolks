@@ -25,7 +25,7 @@ const query = (sql, params = []) =>
 // SSLCommerz posts these callbacks as classic form submissions, not JSON
 router.use(express.urlencoded({ extended: true }))
 
-const VALID_SERVICE_TYPES = ['rent', 'advance_payment', 'maintenance', 'utility_assistance', 'shared_bill', 'other']
+const VALID_SERVICE_TYPES = ['rent', 'advance_payment', 'maintenance', 'utility_assistance', 'shared_bill', 'meal_subscription', 'other']
 
 function makeTranId(serviceType) {
   return `FF-${serviceType.toUpperCase()}-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`
@@ -147,6 +147,34 @@ async function applySuccessfulPayment(payment) {
           title: 'Maintenance Booking Confirmed',
           message: `Your payment for "${svc.service_name}" has been received. The technician will contact you soon.`,
           related_type: 'maintenance',
+          related_id: payment.reference_id,
+        })
+      }
+    }
+    return
+  }
+
+  // ── Meal plan subscription ────────────────────────────────────────────────
+  if (payment.service_type === 'meal_subscription') {
+    await query(`UPDATE meal_subscriptions SET status = 'active' WHERE id = ?`, [payment.reference_id])
+
+    if (payment.payer_id) {
+      const subRows = await query(
+        `SELECT ms.id, mp.name AS plan_name, p.name AS provider_name
+         FROM meal_subscriptions ms
+         JOIN meal_plans mp ON mp.id = ms.plan_id
+         JOIN meal_providers p ON p.id = mp.provider_id
+         WHERE ms.id = ?`,
+        [payment.reference_id]
+      )
+      const sub = subRows[0]
+      if (sub) {
+        await createNotification({
+          user_id: payment.payer_id,
+          type: 'payment_sent',
+          title: 'Meal Plan Confirmed',
+          message: `Your payment for "${sub.plan_name}" (${sub.provider_name}) has been received. Your subscription is now active.`,
+          related_type: 'meal_subscription',
           related_id: payment.reference_id,
         })
       }
@@ -350,6 +378,32 @@ router.get('/due/:userId', async (req, res) => {
         service_type: 'maintenance',
         reference_id: m.id,
         description: `${m.category_name} — ${m.service_name}`,
+        amount,
+      })
+    }
+
+    // Unpaid meal plan subscriptions
+    const mealSubs = await query(
+      `SELECT ms.id, mp.name AS plan_name,
+              CAST(mp.price_monthly AS DECIMAL(10,2)) AS price_monthly,
+              CAST(mp.price_weekly AS DECIMAL(10,2)) AS price_weekly,
+              p.name AS provider_name
+       FROM meal_subscriptions ms
+       JOIN meal_plans mp ON mp.id = ms.plan_id
+       JOIN meal_providers p ON p.id = mp.provider_id
+       WHERE ms.user_id = ? AND ms.status = 'pending'`,
+      [userId]
+    )
+    for (const m of mealSubs) {
+      const amount = Number(m.price_monthly) > 0 ? Number(m.price_monthly)
+        : Number(m.price_weekly) > 0 ? Number(m.price_weekly)
+        : MIN_ADVANCE_FEE
+      dues.push({
+        id: `meal_subscription_${m.id}`,
+        type: 'meal_subscription',
+        service_type: 'meal_subscription',
+        reference_id: m.id,
+        description: `${m.provider_name} — ${m.plan_name}`,
         amount,
       })
     }

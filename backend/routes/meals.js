@@ -1,6 +1,15 @@
 const express = require('express')
 const router = express.Router()
 const db = require('../config/db')
+const { MIN_ADVANCE_FEE } = require('../config/pricing')
+
+// A plan with no priced monthly/weekly rate yet still needs a payable amount
+// to send to the payment gateway — same floor pattern as maintenance.js.
+const planAmount = (plan) => {
+  if (Number(plan.price_monthly) > 0) return Number(plan.price_monthly)
+  if (Number(plan.price_weekly) > 0) return Number(plan.price_weekly)
+  return MIN_ADVANCE_FEE
+}
 
 const query = (sql, params = []) =>
   new Promise((resolve, reject) =>
@@ -230,7 +239,11 @@ router.get('/subscriptions', async (req, res) => {
   }
 })
 
-// POST /api/meals/subscriptions — subscribe to a plan
+// POST /api/meals/subscriptions — start a subscription to a plan.
+// Mirrors maintenance.js's booking flow: the row is created as 'pending'
+// (not activated yet) and the frontend sends the student to the payment
+// gateway. It only becomes 'active' once payments.js confirms the charge —
+// see applySuccessfulPayment() in routes/payments.js.
 router.post('/subscriptions', async (req, res) => {
   const {
     user_id,
@@ -238,7 +251,6 @@ router.post('/subscriptions', async (req, res) => {
     start_date,
     delivery_address,
     special_notes,
-    payment_method = 'bkash',
   } = req.body
 
   if (!user_id || !plan_id || !start_date) {
@@ -255,7 +267,9 @@ router.post('/subscriptions', async (req, res) => {
 
   try {
     const plans = await query(
-      `SELECT mp.id
+      `SELECT mp.id, mp.name, CAST(mp.price_monthly AS DECIMAL(10,2)) AS price_monthly,
+              CAST(mp.price_weekly AS DECIMAL(10,2)) AS price_weekly,
+              p.name AS provider_name
        FROM meal_plans mp
        JOIN meal_providers p ON p.id = mp.provider_id
        WHERE mp.id = ? AND mp.status = 'active' AND p.status = 'active'`,
@@ -264,6 +278,7 @@ router.post('/subscriptions', async (req, res) => {
     if (plans.length === 0) {
       return res.status(404).json({ success: false, message: 'Meal plan not found' })
     }
+    const plan = plans[0]
 
     const existing = await query(
       `SELECT id FROM meal_subscriptions
@@ -273,30 +288,25 @@ router.post('/subscriptions', async (req, res) => {
     if (existing.length > 0) {
       return res.status(409).json({
         success: false,
-        message: 'You already have an active subscription for this plan',
+        message: 'You already have a subscription for this plan (active, or awaiting payment)',
       })
     }
 
     const result = await query(
       `INSERT INTO meal_subscriptions
-        (plan_id, user_id, status, start_date, delivery_address, special_notes, payment_method)
-       VALUES (?, ?, 'active', ?, ?, ?, ?)`,
-      [plan_id, user_id, start_date, delivery_address || null, special_notes || null, payment_method]
+        (plan_id, user_id, status, start_date, delivery_address, special_notes)
+       VALUES (?, ?, 'pending', ?, ?, ?)`,
+      [plan_id, user_id, start_date, delivery_address || null, special_notes || null]
     )
 
-    const rows = await query(
-      `SELECT
-        ms.id, ms.status, ms.start_date, ms.delivery_address, ms.special_notes, ms.payment_method,
-        mp.name AS plan_name,
-        p.name AS provider_name
-      FROM meal_subscriptions ms
-      JOIN meal_plans mp ON mp.id = ms.plan_id
-      JOIN meal_providers p ON p.id = mp.provider_id
-      WHERE ms.id = ?`,
-      [result.insertId]
-    )
-
-    res.json({ success: true, data: rows[0], message: 'Subscription created successfully' })
+    res.status(201).json({
+      success: true,
+      subscription_id: result.insertId,
+      amount_due: planAmount(plan),
+      plan_name: plan.name,
+      provider_name: plan.provider_name,
+      message: 'Subscription started. Please complete payment to confirm.',
+    })
   } catch (err) {
     console.error(err)
     res.status(500).json({ success: false, message: 'Server error' })

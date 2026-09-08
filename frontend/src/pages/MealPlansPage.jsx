@@ -152,7 +152,8 @@ export default function MealPlansPage() {
       .catch(() => {})
   }, [currentUser?.id])
 
-  const activeSub = subscriptions.find(s => s.status === 'active' || s.status === 'pending')
+  const activeSub = subscriptions.find(s => s.status === 'active')
+  const pendingSub = subscriptions.find(s => s.status === 'pending')
 
   const updateFilter = (key, val) => setFilters(prev => ({ ...prev, [key]: val }))
   const applyFilters = () => setApplied(filters)
@@ -191,15 +192,48 @@ export default function MealPlansPage() {
           </p>
         </div>
 
+        {pendingSub && (
+          <div className="mb-6 bg-amber-50 border border-amber-200 rounded-xl p-5">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+              <div>
+                <p className="text-xs font-semibold uppercase tracking-wide text-amber-700 mb-1">
+                  <i className="fa-solid fa-triangle-exclamation mr-1.5"></i>Payment pending
+                </p>
+                <h2 className="text-base font-bold text-slate-800">{pendingSub.plan_name}</h2>
+                <p className="text-sm text-slate-500">{pendingSub.provider_name} · {pendingSub.provider_area}</p>
+                <p className="text-xs text-amber-700 mt-1.5 font-medium">
+                  Confirm payment to activate this subscription — it's waiting for you in Due Payments.
+                </p>
+              </div>
+              <div className="flex gap-2 shrink-0">
+                <Link
+                  to="/payments"
+                  className="px-4 py-2 text-sm font-semibold text-white bg-amber-600 hover:bg-amber-700 rounded-lg"
+                >
+                  Complete Payment
+                </Link>
+                <button
+                  onClick={() => handleCancel(pendingSub.id)}
+                  className="px-4 py-2 text-sm font-semibold text-red-600 border border-red-200 hover:bg-red-50 rounded-lg"
+                >
+                  Cancel
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
         {activeSub && (
           <div className="mb-6 bg-white border border-green-200 rounded-xl p-5">
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
               <div>
-                <p className="text-xs font-semibold uppercase tracking-wide text-green-700 mb-1">Active subscription</p>
+                <p className="text-xs font-semibold uppercase tracking-wide text-green-700 mb-1">
+                  <i className="fa-solid fa-circle-check mr-1.5"></i>Active subscription
+                </p>
                 <h2 className="text-base font-bold text-slate-800">{activeSub.plan_name}</h2>
                 <p className="text-sm text-slate-500">{activeSub.provider_name} · {activeSub.provider_area}</p>
                 <p className="text-xs text-slate-400 mt-1">
-                  Started {new Date(activeSub.start_date).toLocaleDateString()} · {activeSub.status}
+                  Started {new Date(activeSub.start_date).toLocaleDateString()}
                 </p>
               </div>
               <button

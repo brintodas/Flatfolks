@@ -15,14 +15,6 @@ const DELIVERY_LABELS = {
   both: 'Pickup or home delivery',
 }
 
-const PAYMENT_METHODS = [
-  { value: 'bkash', label: 'bKash' },
-  { value: 'nagad', label: 'Nagad' },
-  { value: 'cash', label: 'Cash' },
-  { value: 'bank', label: 'Bank transfer' },
-  { value: 'other', label: 'Other' },
-]
-
 function formatPrice(plan) {
   if (plan?.price_monthly) return `৳${Number(plan.price_monthly).toLocaleString()}/month`
   if (plan?.price_weekly) return `৳${Number(plan.price_weekly).toLocaleString()}/week`
@@ -39,13 +31,11 @@ export default function MealPlanDetail() {
   const [notFound, setNotFound] = useState(false)
   const [subscribing, setSubscribing] = useState(false)
   const [error, setError] = useState('')
-  const [success, setSuccess] = useState('')
 
   const [form, setForm] = useState({
     start_date: new Date().toISOString().slice(0, 10),
     delivery_address: '',
     special_notes: '',
-    payment_method: 'bkash',
   })
 
   useEffect(() => {
@@ -68,7 +58,6 @@ export default function MealPlanDetail() {
   const handleSubscribe = async e => {
     e.preventDefault()
     setError('')
-    setSuccess('')
 
     if (!currentUser) {
       navigate('/signin')
@@ -92,8 +81,15 @@ export default function MealPlanDetail() {
       })
       const data = await res.json()
       if (data.success) {
-        setSuccess('Subscription confirmed! The provider will contact you shortly.')
-        setTimeout(() => navigate('/meal-plans'), 2000)
+        // Subscription is now 'pending' — send the student to the payment
+        // gateway to complete it, exactly like the maintenance booking flow.
+        const params = new URLSearchParams({
+          service_type: 'meal_subscription',
+          reference_id: data.subscription_id,
+          amount: data.amount_due || 0,
+          title: data.plan_name || plan.name || 'Meal Plan Subscription',
+        })
+        navigate(`/payments?${params.toString()}`)
       } else {
         setError(data.message || 'Could not subscribe.')
       }
@@ -215,7 +211,7 @@ export default function MealPlanDetail() {
             <div className="bg-white border border-slate-200 rounded-xl p-6 lg:sticky lg:top-24">
               <h2 className="text-base font-bold text-slate-800 mb-1">Subscribe to this plan</h2>
               <p className="text-xs text-slate-500 mb-5">
-                Perfect if you have moved in but do not have kitchen access yet.
+                Perfect if you have moved in but do not have kitchen access yet. You'll choose how to pay on the next step.
               </p>
 
               {!currentUser ? (
@@ -265,20 +261,6 @@ export default function MealPlanDetail() {
                     />
                   </div>
 
-                  <div>
-                    <label className="block text-xs font-semibold text-slate-500 mb-1.5">Payment method</label>
-                    <select
-                      name="payment_method"
-                      value={form.payment_method}
-                      onChange={handleChange}
-                      className="w-full px-3 py-2 text-sm border border-slate-200 rounded-lg outline-none focus:border-blue-500"
-                    >
-                      {PAYMENT_METHODS.map(m => (
-                        <option key={m.value} value={m.value}>{m.label}</option>
-                      ))}
-                    </select>
-                  </div>
-
                   {plan.provider_phone && (
                     <p className="text-xs text-slate-400">
                       Provider contact: {plan.provider_phone}
@@ -288,16 +270,13 @@ export default function MealPlanDetail() {
                   {error && (
                     <p className="text-sm text-red-600 bg-red-50 border border-red-200 rounded-lg px-3 py-2">{error}</p>
                   )}
-                  {success && (
-                    <p className="text-sm text-green-700 bg-green-50 border border-green-200 rounded-lg px-3 py-2">{success}</p>
-                  )}
 
                   <button
                     type="submit"
                     disabled={subscribing}
                     className="w-full py-2.5 text-sm font-semibold text-white bg-blue-700 hover:bg-blue-800 rounded-lg disabled:opacity-60"
                   >
-                    {subscribing ? 'Subscribing...' : 'Confirm subscription'}
+                    {subscribing ? 'Starting subscription...' : 'Continue to Payment'}
                   </button>
                 </form>
               )}
